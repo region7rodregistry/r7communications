@@ -186,6 +186,42 @@
             text-overflow: ellipsis;
             overflow: hidden;
         }
+        /* Archive tab active state */
+        .archive-tab-active {
+            background-color: #2563eb !important;
+            color: #fff !important;
+            font-weight: 700;
+        }
+        /* Custom scrollbar for archive tabs on mobile */
+        #archiveTypeTabs::-webkit-scrollbar {
+            height: 6px;
+        }
+        #archiveTypeTabs::-webkit-scrollbar-thumb {
+            background: #bfdbfe;
+            border-radius: 4px;
+        }
+        #archiveTypeTabs::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+        @media (max-width: 640px) {
+            #archiveTypeTabs {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+            .archive-type-tab {
+                font-size: 1rem;
+                min-width: 110px;
+                margin-left: 0.25rem;
+                margin-right: 0.25rem;
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -301,7 +337,7 @@
                         <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Memos</p>
+                        <p class="text-sm font-medium text-gray-600">Total Documents</p>
                         <p id="totalMemos" class="text-2xl font-bold text-gray-900">0</p>
                     </div>
                 </div>
@@ -508,12 +544,13 @@
                             </button>
                         </div>
                         <!-- Archive Memo Type Tabs (hidden by default, shown only on Archive tab) -->
-                        <div id="archiveTypeTabs" class="flex space-x-2 ml-4 hidden transition-all duration-300">
-                            <button data-type="CO" class="archive-type-tab px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-t-lg transition duration-200">CO</button>
-                            <button data-type="PO" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">PO</button>
-                            <button data-type="Office Order" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Office Order</button>
-                            <button data-type="Advisory" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Advisory</button>
-                            <button data-type="Bulletin" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Bulletin</button>
+                        <div id="archiveTypeTabs" class="w-full overflow-x-auto whitespace-nowrap py-2 px-1 bg-gray-50 rounded-lg shadow-sm mb-4 ml-0 sm:ml-4 hidden transition-all duration-300 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
+                            <button data-type="CO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-blue-600 text-white archive-tab-active">CO</button>
+                            <button data-type="PO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">PO</button>
+                            <button data-type="Office Order" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Office Order</button>
+                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory</button>
+                            <button data-type="Bulletin" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Bulletin</button>
+                            <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
                         </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
                         <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
@@ -568,12 +605,14 @@
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead id="memosTableHead" class="bg-gray-50"></thead>
+                <table class="min-w-full divide-y divide-gray-200 hidden sm:table">
+                    <thead id="memosTableHead" class="bg-gray-50 hidden sm:table-header-group"></thead>
                     <tbody id="memosTableBody" class="bg-white divide-y divide-gray-200">
                         <!-- Table rows will be populated dynamically -->
                     </tbody>
                 </table>
+                <!-- Responsive card container for mobile -->
+                <div id="memosCardBody" class="block sm:hidden"></div>
             </div>
         </div>
     </div>
@@ -618,32 +657,35 @@
         const actionToggleContainer = document.getElementById('actionToggleContainer');
 
         function updateTabStyles() {
+            // Show/hide stats cards and logsheet preview toggle based on tab
+            if (currentView === 'approved') {
+                statsCards.classList.add('hidden');
+                actionToggleContainer.classList.remove('hidden');
+            } else {
+                statsCards.classList.remove('hidden');
+                statsCards.classList.add('stats-enter');
+                statsCards.classList.remove('stats-exit');
+                actionToggleContainer.classList.add('hidden');
+            }
             // Remove highlight from all tabs first
             pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            pendingMemosTab.classList.add('text-gray-500');
+            pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            approvedMemosTab.classList.add('text-gray-500');
+            approvedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            archiveMemosTab.classList.add('text-gray-500');
-            // Highlight only the active tab
+            archiveMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+
+            // Add highlight to the active tab
             if (currentView === 'pending') {
                 pendingMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
-                pendingMemosTab.classList.remove('text-gray-500');
+                pendingMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             } else if (currentView === 'approved') {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
-                approvedMemosTab.classList.remove('text-gray-500');
+                approvedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             } else if (currentView === 'archive') {
                 archiveMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
-                archiveMemosTab.classList.remove('text-gray-500');
+                archiveMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             }
-            
-            // Hide action toggle container
-            actionToggleContainer.classList.add('hidden');
-            
-            // Show stats cards with animation
-            statsCards.classList.remove('hidden');
-            statsCards.classList.add('stats-enter');
-            statsCards.classList.remove('stats-exit');
 
             // Show priority and status columns, hide description and ROD/FASD columns
             document.querySelectorAll('.priority-status-col').forEach(col => col.classList.remove('hidden'));
@@ -859,17 +901,19 @@
             });
         });
 
-        // Render memos to table
+        // Render memos to table and cards
         function renderMemos(memos) {
             renderTableHeader();
             memosTableBody.innerHTML = '';
+            const memosCardBody = document.getElementById('memosCardBody');
+            if (memosCardBody) memosCardBody.innerHTML = '';
             let filteredMemos = memos;
             // Strict filter for pending tab
             if (currentView === 'pending') {
                 filteredMemos = memos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
             }
             filteredMemos.forEach(memo => {
-                console.log("Rendering memo row:", memo);
+                // --- DESKTOP TABLE ROW (unchanged) ---
                 const row = document.createElement('tr');
                 row.className = 'resizable-row';
                 if (!isActionMode && currentView === 'approved') {
@@ -1010,6 +1054,52 @@
                 const checkbox = row.querySelector('.memo-checkbox');
                 if (checkbox && !isActionMode) {
                     checkbox.addEventListener('change', handleIndividualCheckbox);
+                }
+
+                // --- MOBILE CARD ---
+                if (memosCardBody) {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white shadow-md rounded-lg p-4 mb-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
+                            <span class="text-sm font-semibold text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
+                            <span class="block text-sm text-gray-900">${memo.title}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">From:</span>
+                            <span class="block text-sm text-gray-900">${memo.department}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
+                            <span class="block text-sm text-gray-900">${memo.recipients}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
+                            <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
+                            <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
+                            <span class="block text-sm text-gray-900">${memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}</span>
+                        </div>
+                        <div class="mb-1">
+                            <span class="block text-xs font-bold text-gray-500 uppercase">Received by:</span>
+                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}</span>
+                        </div>
+                        <div class="flex space-x-2 mt-2">
+                            <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
+                            <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
+                            <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
+                        </div>
+                    `;
+                    memosCardBody.appendChild(card);
                 }
             });
 
@@ -2036,14 +2126,11 @@
         // Tab switching for archive type tabs
         function setActiveArchiveTypeTab(type) {
             currentArchiveType = type;
-            // Update tab styles
+            // Only one tab active
             document.querySelectorAll('.archive-type-tab').forEach(tab => {
+                tab.classList.remove('archive-tab-active');
                 if (tab.getAttribute('data-type') === type) {
-                    tab.classList.add('bg-blue-600', 'text-white');
-                    tab.classList.remove('bg-gray-100', 'text-gray-700');
-                } else {
-                    tab.classList.remove('bg-blue-600', 'text-white');
-                    tab.classList.add('bg-gray-100', 'text-gray-700');
+                    tab.classList.add('archive-tab-active');
                 }
             });
             // Animate table fade out/in
