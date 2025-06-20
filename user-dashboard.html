@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - TESDA MBMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 50%, #e6e9ff 100%);
+            min-height: 100vh;
+        }
+        .gradient-card {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .gradient-header {
+            background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+        }
+        .table-header {
+            background: #f8fafc;
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getMemosByDepartment, logoutUser, auth, db } from './firebase-config.js';
+    </script>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-4 rounded-lg shadow-lg">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="hidden fixed top-4 right-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-md shadow-lg z-50"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="gradient-header rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i data-lucide="file-text" class="w-8 h-8 text-white mr-3"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">User Dashboard</h1>
+                        <p class="text-sm text-gray-200">Memo-Based Management System</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="text-sm text-white"></span>
+                    <button id="logoutBtn" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="gradient-card rounded-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Memos</p>
+                        <p id="totalMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gradient-card rounded-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-50 rounded-lg">
+                        <i data-lucide="clock" class="w-6 h-6 text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pending Memos</p>
+                        <p id="pendingMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gradient-card rounded-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-50 rounded-lg">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Approved Memos</p>
+                        <p id="approvedMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div class="flex space-x-4">
+                <button onclick="window.location.href='create-memo.html'" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                    Create New Memo
+                </button>
+                <button id="viewDraftsBtn" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i data-lucide="file" class="w-4 h-4 mr-2"></i>
+                    View Drafts
+                </button>
+            </div>
+            <div class="flex-1 sm:ml-4 max-w-md">
+                <div class="relative">
+                    <input type="text" id="searchInput" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Search memos...">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Memos Table -->
+        <div class="gradient-card rounded-lg overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Recent Memos</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Memo Number</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipients</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rod-fasd-col hidden">Released to ROD/FASD</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rod-fasd-col hidden">Received by ROD/FASD</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memosTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-header mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p class="text-center text-sm text-white">
+                © <span id="currentYear"></span> Developed by TESDA Region VII. All rights reserved. - ROD / ICT Unit
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getMemosByDepartment, logoutUser, auth, db } from './firebase-config.js';
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Get DOM elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+        const memosTableBody = document.getElementById('memosTableBody');
+        const userInfo = document.getElementById('userInfo');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const totalMemos = document.getElementById('totalMemos');
+        const pendingMemos = document.getElementById('pendingMemos');
+        const approvedMemos = document.getElementById('approvedMemos');
+        const searchInput = document.getElementById('searchInput');
+
+        let allMemos = []; // Store all memos for filtering
+
+        // Check authentication
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Display user info
+            const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+            if (userData) {
+                userInfo.textContent = `${userData.username} (${userData.department})`;
+            }
+
+            // Load memos
+            await loadMemos();
+
+            // Add search input event listener
+            searchInput.addEventListener('input', filterMemos);
+        });
+
+        // Filter memos based on search input
+        function filterMemos() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            const filteredMemos = allMemos.filter(memo => {
+                return (
+                    memo.memoNumber.toLowerCase().includes(searchTerm) ||
+                    memo.title.toLowerCase().includes(searchTerm) ||
+                    memo.department.toLowerCase().includes(searchTerm) ||
+                    memo.recipients.some(recipient => recipient.toLowerCase().includes(searchTerm)) ||
+                    memo.category.toLowerCase().includes(searchTerm) ||
+                    memo.priority.toLowerCase().includes(searchTerm) ||
+                    memo.status.toLowerCase().includes(searchTerm)
+                );
+            });
+
+            // Update stats with filtered results
+            totalMemos.textContent = filteredMemos.length;
+            pendingMemos.textContent = filteredMemos.filter(m => m.status === 'pending').length;
+            approvedMemos.textContent = filteredMemos.filter(m => m.status === 'approved').length;
+
+            // Update table with filtered results
+            updateTable(filteredMemos);
+        }
+
+        // Update table with provided memos
+        function updateTable(memos) {
+            memosTableBody.innerHTML = '';
+            
+            memos.forEach(memo => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.memoNumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.recipients.join(', ')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
+                            ${memo.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${memo.createdAt.toDate().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 rod-fasd-col hidden">
+                        ${memo.releasedToRodFasd ? 
+                            memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            }) : 
+                            'Not released yet'
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 rod-fasd-col hidden">
+                        ${memo.receivedByRodFasd ? 
+                            memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            }) : 
+                            'Not received yet'
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="flex space-x-3">
+                            <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                            ${memo.status.toLowerCase() === 'approved' && memo.releasedToRodFasd ? 
+                                `<button onclick="markAsReceived('${memo.id}')" class="text-purple-600 hover:text-purple-900">Received</button>` : 
+                                ''
+                            }
+                        </div>
+                    </td>
+                `;
+                memosTableBody.appendChild(row);
+            });
+        }
+
+        // Load memos from Firestore
+        let unsubscribeMemos = null; // Store the unsubscribe function
+
+        async function loadMemos() {
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
+                // Get memos for the user's department
+                const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+                
+                // Set up real-time listener
+                unsubscribeMemos = await getMemosByDepartment(userData.department, (memos) => {
+                    allMemos = memos;
+                    
+                    // Sort memos by creation date (newest first)
+                    allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
+                    // Update stats and table
+                    totalMemos.textContent = allMemos.length;
+                    pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                    approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+
+                    updateTable(allMemos);
+                });
+
+            } catch (error) {
+                console.error('Error loading memos:', error);
+                errorMessage.textContent = 'Error loading memos. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        // Cleanup function to remove listeners
+        function cleanup() {
+            if (unsubscribeMemos) {
+                unsubscribeMemos();
+            }
+        }
+
+        // Add cleanup on page unload
+        window.addEventListener('beforeunload', cleanup);
+
+        // Get status color class
+        function getStatusColor(status) {
+            switch (status.toLowerCase()) {
+                case 'pending':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'approved':
+                    return 'bg-green-100 text-green-800';
+                case 'rejected':
+                    return 'bg-red-100 text-red-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Update logout to include cleanup
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                cleanup(); // Clean up listeners
+                await logoutUser();
+                localStorage.removeItem('tesdaUser');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                errorMessage.textContent = 'Error logging out. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+
+        // View memo function
+        window.viewMemo = function(memoId) {
+            window.location.href = `view-memo.html?id=${memoId}`;
+        };
+
+        // Add the markAsReceived function
+        window.markAsReceived = async function(memoId) {
+            try {
+                const memoRef = doc(db, 'memos', memoId);
+                await updateDoc(memoRef, {
+                    receivedByRodFasd: serverTimestamp(),
+                    status: 'Received'
+                });
+                showSuccessToast('Memo marked as received successfully');
+            } catch (error) {
+                console.error('Error marking memo as received:', error);
+                showErrorToast('Error marking memo as received');
+            }
+        };
+
+        // Add success and error toast functions if they don't exist
+        function showSuccessToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-0';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transform = 'translateY(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showErrorToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-0';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transform = 'translateY(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialize Users - TESDA MBMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="firebase-config.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-900">Initialize Users</h2>
+            <p class="mt-2 text-sm text-gray-600">Click the button below to create user documents in Firestore</p>
+        </div>
+
+        <div id="statusMessage" class="hidden bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md"></div>
+
+        <button
+            id="initButton"
+            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+            Initialize Users
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeUsers } from './firebase-config.js';
+
+        const initButton = document.getElementById('initButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        initButton.addEventListener('click', async () => {
+            try {
+                initButton.disabled = true;
+                initButton.textContent = 'Initializing...';
+                
+                await initializeUsers();
+                
+                statusMessage.textContent = 'Users initialized successfully!';
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+            } catch (error) {
+                console.error('Error:', error);
+                statusMessage.textContent = 'Error initializing users. Please try again.';
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+            } finally {
+                initButton.disabled = false;
+                initButton.textContent = 'Initialize Users';
+            }
+        });
+    </script>
+</body>
+</html> 

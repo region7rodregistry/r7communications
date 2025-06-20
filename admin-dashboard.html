@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TESDA MBMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); }
+            to { transform: translateX(100%); }
+        }
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .toast-exit {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-enter {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        /* Add new animations for stats cards */
+        @keyframes fadeSlideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeSlideOut {
+            from { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to { 
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+        .stats-enter {
+            animation: fadeSlideIn 0.3s ease-out forwards;
+        }
+        .stats-exit {
+            animation: fadeSlideOut 0.3s ease-in forwards;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+            .max-w-7xl {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            #statsCards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .search-container {
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            #searchInput {
+                width: 100%;
+            }
+
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .table-responsive {
+                min-width: 800px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .action-buttons button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #statsCards {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                text-align: center;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab-container {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab-buttons {
+                min-width: 300px;
+            }
+        }
+
+        /* Add styles for resizable rows */
+        .resizable-row {
+            position: relative;
+            transition: height 0.3s ease-in-out;
+        }
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            cursor: row-resize;
+            background: transparent;
+            transition: background 0.2s;
+            display: none; /* Hidden by default */
+        }
+        .log-sheet-preview .resize-handle {
+            display: block; /* Show only in log sheet preview mode */
+        }
+        .resize-handle:hover {
+            background: #3b82f6;
+        }
+        .resize-handle.active {
+            background: #3b82f6;
+        }
+        /* Force row height in log sheet preview mode */
+        .log-sheet-preview tbody tr {
+            height: 180px !important;
+            min-height: 180px !important;
+        }
+        .log-sheet-preview tbody td {
+            height: 180px !important;
+            min-height: 180px !important;
+            vertical-align: middle;
+        }
+        .compressed-subject {
+            max-width: 241px;
+            width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .log-sheet-preview .compressed-subject {
+            max-width: 500px;
+            width: 600px;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: initial;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-4 rounded-lg shadow-lg">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="hidden fixed top-4 right-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-md shadow-lg z-50"></div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="hidden fixed top-4 right-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-md shadow-lg z-50 flex items-center">
+        <i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-600"></i>
+        <span id="successMessage"></span>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 modal-enter">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Confirm Deletion</h3>
+                    <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-500">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-500">Please enter the admin password to confirm deletion:</p>
+                </div>
+                <div class="mb-4">
+                    <input type="password" id="deletePassword" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Enter admin password">
+                    <p id="passwordError" class="hidden mt-2 text-sm text-red-600"></p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeDeleteModal()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                    <button onclick="confirmDelete()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div id="statusModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 modal-enter">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Change Status</h3>
+                    <button onclick="closeStatusModal()" class="text-gray-400 hover:text-gray-500">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-500">Are you sure you want to change the status of this memo?</p>
+                </div>
+                <div class="mb-4">
+                    <select id="newStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="approved">Approved</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeStatusModal()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                    <button onclick="confirmStatusChange()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-10 py-10">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div class="flex items-center">
+                <img src="./icons/tlogo.png" alt="TESDA Logo" class="w-12 h-12 mr-3">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 id="pageHeader" class="text-2xl font-bold text-gray-900 cursor-pointer">TESDA Region VII - Records Unit</h1>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-500">Outgoing Communications</p>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <span id="userInfo" class="text-sm text-gray-600"></span>
+                <button id="logoutBtn" class="w-full sm:w-auto inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Memos</p>
+                        <p id="totalMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <i data-lucide="clock" class="w-6 h-6 text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pending Memos</p>
+                        <p id="pendingMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Approved Memos</p>
+                        <p id="approvedMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <i data-lucide="hash" class="w-6 h-6 text-purple-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">PO-Number</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextMemoNumber" class="text-2xl font-bold text-gray-900">0000</p>
+                            <button onclick="editMemoNumber('current')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="memoNumberEdit" class="hidden mt-2">
+                            <input type="number" id="memoNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('current')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-indigo-100 rounded-lg">
+                        <i data-lucide="hash" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">CO-Memo Number</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextCoMemoNumber" class="text-2xl font-bold text-gray-900">0000</p>
+                            <button onclick="editMemoNumber('coCurrent')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="coMemoNumberEdit" class="hidden mt-2">
+                            <input type="number" id="coMemoNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('coCurrent')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Office Order - Number Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-pink-100 rounded-lg">
+                        <i data-lucide="hash" class="w-6 h-6 text-pink-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">Office Order - Number</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextOfficeOrderNumber" class="text-2xl font-bold text-gray-900">0000</p>
+                            <button onclick="editMemoNumber('officeOrder')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="officeOrderNumberEdit" class="hidden mt-2">
+                            <input type="number" id="officeOrderNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('officeOrder')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advisory - Number Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <i data-lucide="hash" class="w-6 h-6 text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">Advisory - Number</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextAdvisoryNumber" class="text-2xl font-bold text-gray-900">0000</p>
+                            <button onclick="editMemoNumber('advisory')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="advisoryNumberEdit" class="hidden mt-2">
+                            <input type="number" id="advisoryNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('advisory')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulletin - Number Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <i data-lucide="hash" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">Bulletin - Number</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextBulletinNumber" class="text-2xl font-bold text-gray-900">0000</p>
+                            <button onclick="editMemoNumber('bulletin')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="bulletinNumberEdit" class="hidden mt-2">
+                            <input type="number" id="bulletinNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('bulletin')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Memos Table -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-8 py-6 sm:px-10 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center space-x-4 w-full sm:w-auto">
+                        <div class="flex space-x-2 bg-gray-100 p-2 rounded-lg">
+                            <button id="allMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
+                                All Memos
+                            </button>
+                            <button id="approvedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Approved Memos
+                            </button>
+                            <button id="archiveMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Archive
+                            </button>
+                        </div>
+                        <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
+                        <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-600"></span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="actionToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                                <span class="text-sm text-gray-600">Log Sheet Preview</span>
+                            </div>
+                            <div id="actionTakenInputContainer" class="hidden">
+                                <input type="text" 
+                                       id="actionTakenInput"
+                                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Enter Series Number...">
+                                <button onclick="applyActionTaken()" 
+                                        class="ml-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative w-full sm:w-auto">
+                        <div class="relative">
+                            <div class="flex items-center space-x-2">
+                                <select id="searchFilter" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="all">All Fields</option>
+                                    <option value="memoNumber">Memo Number</option>
+                                    <option value="title">Subject</option>
+                                    <option value="department">Department</option>
+                                    <option value="recipients">Recipients</option>
+                                    <option value="priority">Priority</option>
+                                    <option value="status">Status</option>
+                                </select>
+                                <div class="relative flex-grow">
+                                    <input type="text" id="searchInput" 
+                                           class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                           placeholder="Search memos...">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <div id="searchSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <button id="clearSearch" class="hidden text-gray-400 hover:text-gray-600">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                        </button>
+                                        <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="searchSuggestions" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead id="memosTableHead" class="bg-gray-50"></thead>
+                    <tbody id="memosTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { logoutUser, auth, deleteMemoFromFirestore } from './firebase-config.js';
+        import { doc, updateDoc, serverTimestamp, onSnapshot, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { db } from './firebase-config.js';
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Get DOM elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+        const successToast = document.getElementById('successToast');
+        const successMessage = document.getElementById('successMessage');
+        const deleteModal = document.getElementById('deleteModal');
+        const deletePassword = document.getElementById('deletePassword');
+        const passwordError = document.getElementById('passwordError');
+        const memosTableBody = document.getElementById('memosTableBody');
+        const userInfo = document.getElementById('userInfo');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const totalMemos = document.getElementById('totalMemos');
+        const pendingMemos = document.getElementById('pendingMemos');
+        const approvedMemos = document.getElementById('approvedMemos');
+        const searchInput = document.getElementById('searchInput');
+        const searchFilter = document.getElementById('searchFilter');
+        const searchSpinner = document.getElementById('searchSpinner');
+        const clearSearch = document.getElementById('clearSearch');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+
+        let currentMemoId = null;
+        let allMemos = []; // Store all memos for filtering
+        let currentView = 'all'; // Track current view
+
+        // Tab switching functionality
+        const allMemosTab = document.getElementById('allMemosTab');
+        const approvedMemosTab = document.getElementById('approvedMemosTab');
+        const archiveMemosTab = document.getElementById('archiveMemosTab');
+        const statsCards = document.getElementById('statsCards');
+        const actionToggleContainer = document.getElementById('actionToggleContainer');
+
+        function updateTabStyles() {
+            if (currentView === 'all') {
+                allMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                allMemosTab.classList.remove('text-gray-500');
+                approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                approvedMemosTab.classList.add('text-gray-500');
+                archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                archiveMemosTab.classList.add('text-gray-500');
+                
+                // Hide action toggle container
+                actionToggleContainer.classList.add('hidden');
+                
+                // Show stats cards with animation
+                statsCards.classList.remove('hidden');
+                statsCards.classList.add('stats-enter');
+                statsCards.classList.remove('stats-exit');
+
+                // Show priority and status columns, hide description and ROD/FASD columns
+                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.remove('hidden'));
+                document.querySelectorAll('.description-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.recipients-col').forEach(col => col.classList.remove('hidden'));
+                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
+
+                // Reset to actions view
+                isActionMode = true;
+                actionToggle.checked = true;
+                const actionButtons = document.querySelectorAll('.action-buttons');
+                const actionTaken = document.querySelectorAll('.action-taken');
+                actionButtons.forEach(btn => btn.classList.remove('hidden'));
+                actionTaken.forEach(input => input.classList.add('hidden'));
+                document.querySelector('th:last-child').textContent = 'Actions';
+            } else if (currentView === 'approved') {
+                approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                approvedMemosTab.classList.remove('text-gray-500');
+                allMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                allMemosTab.classList.add('text-gray-500');
+                archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                archiveMemosTab.classList.add('text-gray-500');
+                
+                // Show action toggle container
+                actionToggleContainer.classList.remove('hidden');
+                
+                // Hide stats cards with animation
+                statsCards.classList.add('stats-exit');
+                statsCards.classList.remove('stats-enter');
+                
+                // Hide priority and status columns, show description and ROD/FASD columns
+                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.description-col').forEach(col => col.classList.remove('hidden'));
+                document.querySelectorAll('.recipients-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.remove('hidden'));
+                
+                // Show checkbox column only when log sheet preview is enabled
+                if (!isActionMode) {
+                    document.querySelectorAll('.checkbox-col').forEach(col => col.classList.remove('hidden'));
+                } else {
+                    document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
+                }
+                
+                // Wait for animation to complete before hiding
+                setTimeout(() => {
+                    statsCards.classList.add('hidden');
+                }, 300); // Match this with the animation duration
+            } else if (currentView === 'archive') {
+                archiveMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                archiveMemosTab.classList.remove('text-gray-500');
+                allMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                allMemosTab.classList.add('text-gray-500');
+                approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                approvedMemosTab.classList.add('text-gray-500');
+                
+                // Hide action toggle container
+                actionToggleContainer.classList.add('hidden');
+                
+                // Hide stats cards with animation
+                statsCards.classList.add('stats-exit');
+                statsCards.classList.remove('stats-enter');
+                
+                // Use same columns as approved memos: hide priority/status, show ROD/FASD columns
+                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.description-col').forEach(col => col.classList.remove('hidden'));
+                document.querySelectorAll('.recipients-col').forEach(col => col.classList.add('hidden'));
+                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.remove('hidden'));
+                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
+
+                // Set to actions view for archive
+                isActionMode = true;
+                actionToggle.checked = true;
+                const actionButtons = document.querySelectorAll('.action-buttons');
+                const actionTaken = document.querySelectorAll('.action-taken');
+                actionButtons.forEach(btn => btn.classList.remove('hidden'));
+                actionTaken.forEach(input => input.classList.add('hidden'));
+                document.querySelector('th:last-child').textContent = 'Actions';
+                
+                // Set row height to 60px for archive tab
+                const tableRows = document.querySelectorAll('tbody tr');
+                tableRows.forEach(row => {
+                    row.style.height = '60px';
+                    row.style.minHeight = '60px';
+                });
+                
+                // Wait for animation to complete before hiding
+                setTimeout(() => {
+                    statsCards.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // Helper function to check if memo is archived
+        function isMemoArchived(memo) {
+            return memo.status && memo.status.toLowerCase() === 'archived';
+        }
+
+        // Helper function to check if memo should appear in approved tab
+        function shouldShowInApprovedTab(memo) {
+            // First, ensure it's not archived
+            if (isMemoArchived(memo)) {
+                return false;
+            }
+            
+            // Then check if it meets approved criteria
+            return memo.status && (
+                memo.status.toLowerCase() === 'approved' || 
+                (memo.receivedByRodFasd !== null && memo.receivedByRodFasd !== undefined)
+            );
+        }
+
+        allMemosTab.addEventListener('click', () => {
+            currentView = 'all';
+            updateTabStyles();
+            renderMemos(allMemos);
+        });
+
+        approvedMemosTab.addEventListener('click', () => {
+            currentView = 'approved';
+            updateTabStyles();
+            const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+            renderMemos(approvedMemos);
+
+            // Set row height based on log sheet preview state
+            const tableRows = document.querySelectorAll('tbody tr');
+            if (!isActionMode) { // If log sheet preview is on
+                tableRows.forEach(row => {
+                    row.style.height = '180px';
+                    row.style.minHeight = '180px';
+                });
+            }
+        });
+
+        archiveMemosTab.addEventListener('click', () => {
+            currentView = 'archive';
+            updateTabStyles();
+            const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+            renderMemos(archiveMemos);
+
+            // Set row height to 60px for archive tab
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.style.height = '60px';
+                row.style.minHeight = '60px';
+            });
+        });
+
+        // Show success toast
+        function showSuccessToast(message) {
+            successMessage.textContent = message;
+            successToast.classList.remove('hidden');
+            successToast.classList.add('toast-enter');
+            
+            setTimeout(() => {
+                successToast.classList.add('toast-exit');
+                setTimeout(() => {
+                    successToast.classList.add('hidden');
+                    successToast.classList.remove('toast-enter', 'toast-exit');
+                }, 300);
+            }, 3000);
+        }
+
+        // Check authentication
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Display user info
+            const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+            if (userData) {
+                userInfo.textContent = `${userData.username} (${userData.department})`;
+            }
+
+            // Set up real-time listener for memos
+            const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
+            onSnapshot(memosQuery, (snapshot) => {
+                console.log("Received snapshot from Firestore:", snapshot.size, "documents");
+                allMemos = [];
+                snapshot.forEach((doc) => {
+                    const memoData = {
+                        id: doc.id,
+                        ...doc.data()
+                    };
+                    console.log("Processing memo:", memoData);
+                    allMemos.push(memoData);
+                });
+
+                // Update stats
+                totalMemos.textContent = allMemos.length;
+                pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+
+                // Store memos globally for search functionality
+                window.allMemos = allMemos;
+
+                console.log("Rendering memos:", allMemos.length, "memos");
+                // Render memos
+                renderMemos(allMemos);
+            });
+
+            // Set up real-time listener for next memo number
+            const memoNumberRef = doc(db, "memoNumbers", "current");
+            onSnapshot(memoNumberRef, (doc) => {
+                if (doc.exists()) {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('nextMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                }
+            });
+
+            // Set up real-time listener for next CO memo number
+            const coMemoNumberRef = doc(db, "memoNumbers", "coCurrent");
+            onSnapshot(coMemoNumberRef, async (doc) => {
+                if (!doc.exists()) {
+                    // Initialize CO number document if it doesn't exist
+                    try {
+                        await updateDoc(coMemoNumberRef, { number: 0 });
+                    } catch (error) {
+                        // If document doesn't exist, create it
+                        await setDoc(coMemoNumberRef, { number: 0 });
+                    }
+                } else {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('nextCoMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                }
+            });
+
+            // Set up real-time listener for next Office Order number
+            const officeOrderNumberRef = doc(db, "memoNumbers", "officeOrder");
+            onSnapshot(officeOrderNumberRef, async (doc) => {
+                if (!doc.exists()) {
+                    try {
+                        await updateDoc(officeOrderNumberRef, { number: 0 });
+                    } catch (error) {
+                        await setDoc(officeOrderNumberRef, { number: 0 });
+                    }
+                } else {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('nextOfficeOrderNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                }
+            });
+
+            // Set up real-time listener for next Advisory number
+            const advisoryNumberRef = doc(db, "memoNumbers", "advisory");
+            onSnapshot(advisoryNumberRef, async (doc) => {
+                if (!doc.exists()) {
+                    try {
+                        await updateDoc(advisoryNumberRef, { number: 0 });
+                    } catch (error) {
+                        await setDoc(advisoryNumberRef, { number: 0 });
+                    }
+                } else {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('nextAdvisoryNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                }
+            });
+
+            // Set up real-time listener for next Bulletin number
+            const bulletinNumberRef = doc(db, "memoNumbers", "bulletin");
+            onSnapshot(bulletinNumberRef, async (doc) => {
+                if (!doc.exists()) {
+                    try {
+                        await updateDoc(bulletinNumberRef, { number: 0 });
+                    } catch (error) {
+                        await setDoc(bulletinNumberRef, { number: 0 });
+                    }
+                } else {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('nextBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                }
+            });
+        });
+
+        // Render memos to table
+        function renderMemos(memos) {
+            renderTableHeader();
+            console.log("renderMemos called with:", memos.length, "memos");
+            // Clear existing table rows
+            memosTableBody.innerHTML = '';
+
+            // Populate table
+            memos.forEach(memo => {
+                console.log("Rendering memo row:", memo);
+                const row = document.createElement('tr');
+                row.className = 'resizable-row';
+                if (!isActionMode && currentView === 'approved') {
+                    row.innerHTML = `
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900">
+                            ${memo.memoType}-${memo.memoNumber.split('-').pop()}
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 compressed-subject">${memo.title}</td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900">${memo.department}</td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 recipients-col">${memo.recipients}</td>
+                        <td class="px-10 py-5 text-base text-gray-900 w-48">
+                            ${memo.createdAt ? memo.createdAt.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) : ''}
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 rod-fasd-col w-48">
+                            ${memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) : `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`}
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 rod-fasd-col">
+                            ${memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) : 'Not received'}
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-500">
+                            <div class="flex space-x-4">
+                                <div id="actionTaken_${memo.id}" class="action-taken">
+                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <div class="resize-handle"></div>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
+                        <td class="px-10 py-5 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
+                                ${memo.status}
+                            </span>
+                        </td>
+                        <td class="px-10 py-5 text-sm text-gray-900 w-48">
+                            ${memo.createdAt.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
+                            ${memo.releasedToRodFasd ? 
+                                memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                }) : 
+                                `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
+                            }
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
+                            ${memo.receivedByRodFasd ? 
+                                memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                }) : 
+                                'Not received yet'
+                            }
+                        </td>
+                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-4">
+                                ${isActionMode ? `
+                                <div id="actionButtons_${memo.id}" class="action-buttons">
+                                    <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                                    <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                    <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                                </div>
+                                ` : ''}
+                                <div id="actionTaken_${memo.id}" class="action-taken ${isActionMode ? 'hidden' : ''}">
+                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <div class="resize-handle"></div>
+                    `;
+                }
+                memosTableBody.appendChild(row);
+
+                // Add resize functionality to the new row
+                const resizeHandle = row.querySelector('.resize-handle');
+                let startY, startHeight;
+
+                resizeHandle.addEventListener('mousedown', function(e) {
+                    if (!isActionMode) { // Only allow resizing in log sheet preview mode
+                        startY = e.clientY;
+                        startHeight = row.offsetHeight;
+                        resizeHandle.classList.add('active');
+
+                        function onMouseMove(e) {
+                            const newHeight = startHeight + (e.clientY - startY);
+                            if (newHeight >= 180) { // Set minimum height to 180px
+                                row.style.height = newHeight + 'px';
+                                row.style.minHeight = '180px'; // Ensure minimum height is maintained
+                            }
+                        }
+
+                        function onMouseUp() {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                            resizeHandle.classList.remove('active');
+                            
+                            // Ensure height is at least 180px after resize
+                            if (row.offsetHeight < 180) {
+                                row.style.height = '180px';
+                                row.style.minHeight = '180px';
+                            }
+                        }
+
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    }
+                });
+
+                // Add event listener to checkbox if it exists
+                const checkbox = row.querySelector('.memo-checkbox');
+                if (checkbox && !isActionMode) {
+                    checkbox.addEventListener('change', handleIndividualCheckbox);
+                }
+            });
+
+            // After rendering table rows:
+            // If log sheet preview is enabled, show routed controls and render checkboxes
+            const routedControls = document.getElementById('routedControls');
+            const routedCheckboxes = document.getElementById('routedCheckboxes');
+            if (!isActionMode && currentView === 'approved') {
+                routedControls.style.display = 'flex';
+                routedCheckboxes.innerHTML = '';
+                memos.forEach(memo => {
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'memo-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ml-1 mr-1';
+                    cb.setAttribute('data-memo-id', memo.id);
+                    cb.onclick = handleIndividualCheckbox;
+                    routedCheckboxes.appendChild(cb);
+                });
+            } else {
+                routedControls.style.display = 'none';
+                routedCheckboxes.innerHTML = '';
+            }
+        }
+
+        // Get status color class
+        function getStatusColor(status) {
+            switch (status.toLowerCase()) {
+                case 'pending':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'approved':
+                    return 'bg-green-100 text-green-800';
+                case 'rejected':
+                    return 'bg-red-100 text-red-800';
+                case 'archived':
+                    return 'bg-gray-100 text-gray-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Show delete modal
+        window.showDeleteModal = function(memoId) {
+            currentMemoId = memoId;
+            deleteModal.classList.remove('hidden');
+            deletePassword.value = '';
+            passwordError.classList.add('hidden');
+            deletePassword.focus();
+        };
+
+        // Close delete modal
+        window.closeDeleteModal = function() {
+            deleteModal.classList.add('hidden');
+            currentMemoId = null;
+            deletePassword.value = '';
+            passwordError.classList.add('hidden');
+        };
+
+        // Confirm delete
+        window.confirmDelete = async function() {
+            const password = deletePassword.value;
+            
+            if (password !== 'admintesda') {
+                passwordError.textContent = 'Incorrect password';
+                passwordError.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                
+                const memoRef = doc(db, "memos", currentMemoId);
+                await deleteDoc(memoRef);
+                
+                showSuccessToast('Memo deleted successfully');
+                closeDeleteModal();
+                
+            } catch (error) {
+                console.error('Error deleting memo:', error);
+                errorMessage.textContent = 'Error deleting memo. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Handle Enter key in password field
+        deletePassword.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmDelete();
+            }
+        });
+
+        // Handle logout
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await logoutUser();
+                localStorage.removeItem('tesdaUser');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                errorMessage.textContent = 'Error logging out. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+
+        // View memo function
+        window.viewMemo = function(memoId) {
+            window.location.href = `view-memo.html?id=${memoId}`;
+        };
+
+        // Delete memo function
+        window.deleteMemo = function(memoId) {
+            showDeleteModal(memoId);
+        };
+
+        // Search functionality
+        let searchTimeout;
+
+        function getSearchableValue(memo, field) {
+            if (!memo[field]) return '';
+            
+            // Handle special cases
+            if (field === 'createdAt' && memo[field]) {
+                return memo[field].toDate().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+            
+            // Handle memo number specially
+            if (field === 'memoNumber') {
+                return `Memo ${memo[field].split('-').pop()}`;
+            }
+            
+            // Convert to string and handle null/undefined
+            return String(memo[field]).toLowerCase();
+        }
+
+        function filterMemos(memos, searchTerm, filterField) {
+            if (!searchTerm) return memos;
+            
+            searchTerm = searchTerm.toLowerCase().trim();
+            
+            // If specific field is selected, just filter by that field
+            if (filterField !== 'all') {
+                return memos.filter(memo => 
+                    getSearchableValue(memo, filterField).includes(searchTerm)
+                );
+            }
+
+            // For "all" search, prioritize results based on field matches
+            return memos.map(memo => {
+                let score = 0;
+                const memoNumber = getSearchableValue(memo, 'memoNumber');
+                const title = getSearchableValue(memo, 'title');
+                const department = getSearchableValue(memo, 'department');
+                const recipients = getSearchableValue(memo, 'recipients');
+                const priority = getSearchableValue(memo, 'priority');
+                const status = getSearchableValue(memo, 'status');
+                const createdAt = getSearchableValue(memo, 'createdAt');
+
+                // Priority scoring (higher score = higher priority)
+                if (memoNumber.includes(searchTerm)) score += 100; // Highest priority
+                if (title.includes(searchTerm)) score += 80;
+                if (department.includes(searchTerm)) score += 60;
+                if (recipients.includes(searchTerm)) score += 40;
+                if (priority.includes(searchTerm)) score += 30;
+                if (status.includes(searchTerm)) score += 20;
+                if (createdAt.includes(searchTerm)) score += 10; // Lowest priority
+
+                // Add exact match bonus
+                if (memoNumber === searchTerm) score += 50;
+                if (title === searchTerm) score += 40;
+                if (department === searchTerm) score += 30;
+                if (recipients === searchTerm) score += 20;
+                if (priority === searchTerm) score += 15;
+                if (status === searchTerm) score += 10;
+                if (createdAt === searchTerm) score += 5;
+
+                return { memo, score };
+            })
+            .filter(item => item.score > 0) // Only include items that match
+            .sort((a, b) => b.score - a.score) // Sort by score in descending order
+            .map(item => item.memo); // Remove scores and return just the memos
+        }
+
+        function updateSearchSuggestions(memos, searchTerm) {
+            if (!searchTerm || searchTerm.length < 2) {
+                searchSuggestions.classList.add('hidden');
+                return;
+            }
+
+            const filterField = searchFilter.value;
+            const filteredMemos = filterMemos(memos, searchTerm, filterField);
+            
+            if (filteredMemos.length === 0) {
+                searchSuggestions.classList.add('hidden');
+                return;
+            }
+
+            // Show up to 5 suggestions with match indicators
+            const suggestions = filteredMemos.slice(0, 5).map(memo => {
+                let displayText = '';
+                let matchIndicator = '';
+
+                if (filterField === 'all') {
+                    // Show which field matched
+                    if (getSearchableValue(memo, 'memoNumber').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Memo #)</span>';
+                    } else if (getSearchableValue(memo, 'title').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Subject)</span>';
+                    } else if (getSearchableValue(memo, 'department').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Department)</span>';
+                    } else if (getSearchableValue(memo, 'recipients').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Recipients)</span>';
+                    } else if (getSearchableValue(memo, 'priority').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Priority)</span>';
+                    } else if (getSearchableValue(memo, 'status').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Status)</span>';
+                    } else if (getSearchableValue(memo, 'createdAt').includes(searchTerm)) {
+                        matchIndicator = '<span class="text-blue-600 text-xs">(Date)</span>';
+                    }
+                    displayText = `Memo ${memo.memoNumber.split('-').pop()} - ${memo.title}`;
+                } else {
+                    displayText = memo[filterField];
+                }
+
+                return `
+                    <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center" 
+                         onclick="selectSuggestion('${memo.id}')">
+                        <span>${displayText}</span>
+                        ${matchIndicator}
+                    </div>`;
+            }).join('');
+
+            searchSuggestions.innerHTML = suggestions;
+            searchSuggestions.classList.remove('hidden');
+        }
+
+        window.selectSuggestion = function(memoId) {
+            window.location.href = `view-memo.html?id=${memoId}`;
+        };
+
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value;
+            
+            // Show/hide clear button
+            clearSearch.classList.toggle('hidden', !searchTerm);
+            
+            // Show loading spinner
+            searchSpinner.classList.remove('hidden');
+            
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Add debounce to search
+            searchTimeout = setTimeout(() => {
+                if (!allMemos) return;
+
+                let memosToSearch;
+                if (currentView === 'all') {
+                    memosToSearch = allMemos;
+                } else if (currentView === 'approved') {
+                    memosToSearch = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+                } else if (currentView === 'archive') {
+                    memosToSearch = allMemos.filter(memo => isMemoArchived(memo));
+                } else {
+                    memosToSearch = allMemos;
+                }
+                
+                const filteredMemos = filterMemos(memosToSearch, searchTerm, searchFilter.value);
+                renderMemos(filteredMemos);
+                updateSearchSuggestions(memosToSearch, searchTerm);
+                searchSpinner.classList.add('hidden');
+
+                // Show "no results" message if needed
+                const noResultsMessage = document.getElementById('noResultsMessage');
+                if (filteredMemos.length === 0 && searchTerm) {
+                    if (!noResultsMessage) {
+                        const message = document.createElement('div');
+                        message.id = 'noResultsMessage';
+                        message.className = 'text-center py-4 text-gray-500 text-sm';
+                        message.textContent = `No memos found matching "${searchTerm}"`;
+                        memosTableBody.parentNode.insertBefore(message, memosTableBody.nextSibling);
+                    } else {
+                        noResultsMessage.textContent = `No memos found matching "${searchTerm}"`;
+                        noResultsMessage.classList.remove('hidden');
+                    }
+                } else if (noResultsMessage) {
+                    noResultsMessage.classList.add('hidden');
+                }
+            }, 300); // 300ms debounce
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                searchSuggestions.classList.add('hidden');
+            }
+        });
+
+        // Clear search
+        clearSearch.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearch.classList.add('hidden');
+            searchSpinner.classList.add('hidden');
+            searchSuggestions.classList.add('hidden');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            if (noResultsMessage) {
+                noResultsMessage.classList.add('hidden');
+            }
+            if (currentView === 'all') {
+                renderMemos(allMemos);
+            } else if (currentView === 'approved') {
+                const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+                renderMemos(approvedMemos);
+            } else if (currentView === 'archive') {
+                const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+                renderMemos(archiveMemos);
+            }
+        });
+
+        // Update search when filter changes
+        searchFilter.addEventListener('change', () => {
+            if (searchInput.value) {
+                const event = new Event('input');
+                searchInput.dispatchEvent(event);
+            }
+        });
+
+        // Status change functionality
+        const statusModal = document.getElementById('statusModal');
+        const newStatus = document.getElementById('newStatus');
+        let currentStatusMemoId = null;
+
+        // Show status modal
+        window.changeStatus = function(memoId, currentStatus) {
+            currentStatusMemoId = memoId;
+            newStatus.value = currentStatus === 'approved' ? 'pending' : 'approved';
+            statusModal.classList.remove('hidden');
+        };
+
+        // Close status modal
+        window.closeStatusModal = function() {
+            statusModal.classList.add('hidden');
+            currentStatusMemoId = null;
+        };
+
+        // Log memo activity
+        async function logMemoActivity(memoId, action, username) {
+            try {
+                const activityRef = doc(collection(db, "memoActivities"));
+                await setDoc(activityRef, {
+                    memoId: memoId,
+                    action: action,
+                    username: username,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error logging memo activity:', error);
+            }
+        }
+
+        // Confirm status change
+        window.confirmStatusChange = async function() {
+            if (!currentStatusMemoId) return;
+
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                
+                // Get current status before updating
+                const memoRef = doc(db, 'memos', currentStatusMemoId);
+                const memoDoc = await getDoc(memoRef);
+                const oldStatus = memoDoc.data().status;
+                
+                // Update memo status in Firestore
+                await updateDoc(memoRef, {
+                    status: newStatus.value,
+                    updatedAt: serverTimestamp()
+                });
+
+                // Log the status change
+                const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+                await logMemoActivity(
+                    currentStatusMemoId,
+                    `Status changed from "${oldStatus}" to "${newStatus.value}"`,
+                    userData.username
+                );
+
+                showSuccessToast(`Memo status updated to ${newStatus.value}`);
+                closeStatusModal();
+                
+            } catch (error) {
+                console.error('Error updating memo status:', error);
+                errorMessage.textContent = 'Error updating memo status. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Handle Enter key in status select
+        newStatus.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmStatusChange();
+            }
+        });
+
+        // Memo number editing functionality
+        window.editMemoNumber = function(type) {
+            let editDiv, input, currentNumber;
+            switch(type) {
+                case 'current':
+                    editDiv = document.getElementById('memoNumberEdit');
+                    input = document.getElementById('memoNumberInput');
+                    currentNumber = document.getElementById('nextMemoNumber');
+                    break;
+                case 'coCurrent':
+                    editDiv = document.getElementById('coMemoNumberEdit');
+                    input = document.getElementById('coMemoNumberInput');
+                    currentNumber = document.getElementById('nextCoMemoNumber');
+                    break;
+                case 'officeOrder':
+                    editDiv = document.getElementById('officeOrderNumberEdit');
+                    input = document.getElementById('officeOrderNumberInput');
+                    currentNumber = document.getElementById('nextOfficeOrderNumber');
+                    break;
+                case 'advisory':
+                    editDiv = document.getElementById('advisoryNumberEdit');
+                    input = document.getElementById('advisoryNumberInput');
+                    currentNumber = document.getElementById('nextAdvisoryNumber');
+                    break;
+                case 'bulletin':
+                    editDiv = document.getElementById('bulletinNumberEdit');
+                    input = document.getElementById('bulletinNumberInput');
+                    currentNumber = document.getElementById('nextBulletinNumber');
+                    break;
+                default:
+                    return;
+            }
+            input.value = parseInt(currentNumber.textContent);
+            editDiv.classList.remove('hidden');
+        };
+
+        window.cancelMemoNumberEdit = function() {
+            document.getElementById('memoNumberEdit').classList.add('hidden');
+            document.getElementById('coMemoNumberEdit').classList.add('hidden');
+            document.getElementById('officeOrderNumberEdit').classList.add('hidden');
+            document.getElementById('advisoryNumberEdit').classList.add('hidden');
+            document.getElementById('bulletinNumberEdit').classList.add('hidden');
+        };
+
+        window.saveMemoNumber = async function(type) {
+            let input, memoType, displayName;
+            switch(type) {
+                case 'current':
+                    input = document.getElementById('memoNumberInput');
+                    memoType = 'PO';
+                    break;
+                case 'coCurrent':
+                    input = document.getElementById('coMemoNumberInput');
+                    memoType = 'CO';
+                    break;
+                case 'officeOrder':
+                    input = document.getElementById('officeOrderNumberInput');
+                    memoType = 'officeOrder';
+                    break;
+                case 'advisory':
+                    input = document.getElementById('advisoryNumberInput');
+                    memoType = 'advisory';
+                    break;
+                case 'bulletin':
+                    input = document.getElementById('bulletinNumberInput');
+                    memoType = 'bulletin';
+                    break;
+                default:
+                    return;
+            }
+            const newNumber = parseInt(input.value);
+            if (isNaN(newNumber) || newNumber < 0) {
+                errorMessage.textContent = 'Please enter a valid number';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                // Get all memos to check for existing numbers
+                const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
+                const memosSnapshot = await getDocs(memosQuery);
+                // Find the highest memo number for the current type
+                let highestNumber = 0;
+                memosSnapshot.forEach((doc) => {
+                    const memo = doc.data();
+                    if ((memoType === 'PO' && memo.memoType === 'PO') ||
+                        (memoType === 'CO' && memo.memoType === 'CO') ||
+                        (memoType === 'officeOrder' && memo.memoType === 'Office Order') ||
+                        (memoType === 'advisory' && memo.memoType === 'Advisory') ||
+                        (memoType === 'bulletin' && memo.memoType === 'Bulletin')) {
+                        const memoNumber = parseInt(memo.memoNumber.split('-').pop());
+                        if (!isNaN(memoNumber) && memoNumber > highestNumber) {
+                            highestNumber = memoNumber;
+                        }
+                    }
+                });
+                if (newNumber < highestNumber) {
+                    errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
+                    errorMessage.classList.remove('hidden');
+                    loadingOverlay.classList.add('hidden');
+                    return;
+                }
+                const memoNumberRef = doc(db, "memoNumbers", type);
+                await updateDoc(memoNumberRef, { number: newNumber });
+                showSuccessToast(`Memo number updated successfully`);
+                cancelMemoNumberEdit();
+            } catch (error) {
+                console.error('Error updating memo number:', error);
+                errorMessage.textContent = 'Error updating memo number. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Add release to ROD/FASD functionality
+        window.releaseToRodFasd = async function(memoId) {
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                
+                const memoRef = doc(db, 'memos', memoId);
+                await updateDoc(memoRef, {
+                    releasedToRodFasd: serverTimestamp()
+                });
+
+                showSuccessToast('Memo released to ROD/FASD successfully');
+                
+            } catch (error) {
+                console.error('Error releasing memo to ROD/FASD:', error);
+                errorMessage.textContent = 'Error releasing memo. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Add the markAsReceived function
+        window.markAsReceived = async function(memoId) {
+            try {
+                const memoRef = doc(db, 'memos', memoId);
+                await updateDoc(memoRef, {
+                    receivedByRodFasd: serverTimestamp()
+                });
+                showSuccessToast('Memo marked as received successfully');
+            } catch (error) {
+                console.error('Error marking memo as received:', error);
+                showErrorToast('Error marking memo as received');
+            }
+        };
+
+        // Add new functions for action toggle and header editing
+        let isActionMode = true; // Actions mode ON by default (logsheet preview OFF)
+        const actionToggle = document.getElementById('actionToggle');
+        const pageHeader = document.getElementById('pageHeader');
+
+        // Toggle between Actions and Action Taken
+        actionToggle.addEventListener('change', function() {
+            isActionMode = !this.checked;
+            const actionButtons = document.querySelectorAll('.action-buttons');
+            const actionTaken = document.querySelectorAll('.action-taken');
+            const actionTakenInputContainer = document.getElementById('actionTakenInputContainer');
+            const tableCells = document.querySelectorAll('td');
+            const tableRows = document.querySelectorAll('tbody tr');
+            const table = document.querySelector('table');
+            
+            if (isActionMode) {
+                document.querySelector('th:last-child').textContent = 'Actions';
+                // Show action buttons
+                actionButtons.forEach(btn => {
+                    btn.classList.remove('hidden');
+                    btn.style.display = 'flex';
+                });
+                actionTaken.forEach(input => input.classList.add('hidden'));
+                actionTakenInputContainer.classList.add('hidden');
+                // Reset font size and row height when not in log sheet preview
+                tableCells.forEach(cell => {
+                    cell.classList.remove('text-base');
+                    cell.classList.add('text-sm');
+                });
+                table.classList.remove('log-sheet-preview');
+                // Hide checkbox column
+                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
+                // Render memos based on current view
+                if (currentView === 'all') {
+                    renderMemos(allMemos);
+                } else if (currentView === 'approved') {
+                    const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+                    renderMemos(approvedMemos);
+                } else if (currentView === 'archive') {
+                    const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+                    renderMemos(archiveMemos);
+                }
+            } else {
+                document.querySelector('th:last-child').textContent = 'Action Taken';
+                // Remove action buttons completely
+                actionButtons.forEach(btn => {
+                    btn.remove();
+                });
+                actionTaken.forEach(input => input.classList.remove('hidden'));
+                actionTakenInputContainer.classList.remove('hidden');
+                // Increase font size and set fixed row height for log sheet preview
+                tableCells.forEach(cell => {
+                    cell.classList.remove('text-sm');
+                    cell.classList.add('text-base');
+                });
+                // Add log sheet preview class to table
+                table.classList.add('log-sheet-preview');
+                // Show checkbox column
+                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.remove('hidden'));
+                // Filter and show only received memos (for approved tab only)
+                if (currentView === 'approved') {
+                    const receivedMemos = allMemos.filter(memo => 
+                        shouldShowInApprovedTab(memo) && 
+                        memo.receivedByRodFasd !== null && 
+                        memo.receivedByRodFasd !== undefined
+                    );
+                    renderMemos(receivedMemos);
+                } else {
+                    // For other views, render based on current view
+                    if (currentView === 'all') {
+                        renderMemos(allMemos);
+                    } else if (currentView === 'archive') {
+                        const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+                        renderMemos(archiveMemos);
+                    }
+                }
+            }
+        });
+
+        // Initialize the view based on default switch state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial state: logsheet preview OFF (Actions mode ON)
+            isActionMode = true;
+            actionToggle.checked = false;
+            const actionButtons = document.querySelectorAll('.action-buttons');
+            const actionTaken = document.querySelectorAll('.action-taken');
+            const actionTakenInputContainer = document.getElementById('actionTakenInputContainer');
+            const tableCells = document.querySelectorAll('td');
+            const tableRows = document.querySelectorAll('tbody tr');
+            
+            // Add event listener for select all checkbox
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', handleSelectAll);
+            }
+            
+            if (isActionMode) {
+                document.querySelector('th:last-child').textContent = 'Actions';
+                actionButtons.forEach(btn => btn.classList.remove('hidden'));
+                actionTaken.forEach(input => input.classList.add('hidden'));
+                actionTakenInputContainer.classList.add('hidden');
+                tableCells.forEach(cell => {
+                    cell.classList.remove('text-base');
+                    cell.classList.add('text-sm');
+                });
+                tableRows.forEach(row => {
+                    row.style.height = 'auto';
+                    row.style.minHeight = 'auto';
+                });
+                // Render memos based on current view
+                if (currentView === 'all') {
+                    renderMemos(allMemos);
+                } else if (currentView === 'approved') {
+                    const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+                    renderMemos(approvedMemos);
+                } else if (currentView === 'archive') {
+                    const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+                    renderMemos(archiveMemos);
+                }
+            } else {
+                document.querySelector('th:last-child').textContent = 'Action Taken';
+                actionButtons.forEach(btn => btn.classList.add('hidden'));
+                actionTaken.forEach(input => input.classList.remove('hidden'));
+                actionTakenInputContainer.classList.remove('hidden');
+                tableCells.forEach(cell => {
+                    cell.classList.remove('text-sm');
+                    cell.classList.add('text-base');
+                });
+                tableRows.forEach(row => {
+                    row.style.height = '180px';
+                    row.style.minHeight = '180px';
+                });
+                // Filter and show only received memos (for approved tab only)
+                if (currentView === 'approved') {
+                    const receivedMemos = allMemos.filter(memo => 
+                        shouldShowInApprovedTab(memo) && 
+                        memo.receivedByRodFasd !== null && 
+                        memo.receivedByRodFasd !== undefined
+                    );
+                    renderMemos(receivedMemos);
+                } else {
+                    // For other views, render based on current view
+                    if (currentView === 'all') {
+                        renderMemos(allMemos);
+                    } else if (currentView === 'archive') {
+                        const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
+                        renderMemos(archiveMemos);
+                    }
+                }
+            }
+        });
+
+        // Apply action taken to selected memos
+        window.applyActionTaken = async function() {
+            const actionTaken = document.getElementById('actionTakenInput').value;
+            if (!actionTaken) {
+                errorMessage.textContent = 'Please enter an action taken';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
+                // Get all visible memos (filtered memos)
+                const visibleMemos = Array.from(memosTableBody.children).map(row => {
+                    const memoId = row.querySelector('.action-buttons').id.split('_')[1];
+                    return memoId;
+                });
+
+                // Update all visible memos
+                const updatePromises = visibleMemos.map(memoId => {
+                    const memoRef = doc(db, 'memos', memoId);
+                    return updateDoc(memoRef, {
+                        actionTaken: actionTaken,
+                        updatedAt: serverTimestamp()
+                    });
+                });
+
+                await Promise.all(updatePromises);
+                showSuccessToast('Action taken updated for all visible memos');
+                document.getElementById('actionTakenInput').value = '';
+
+                // Keep the action taken spans empty
+                document.querySelectorAll('.action-taken span').forEach(span => {
+                    span.textContent = '';
+                });
+
+            } catch (error) {
+                console.error('Error updating action taken:', error);
+                errorMessage.textContent = 'Error updating action taken. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Handle select all checkbox functionality
+        window.handleSelectAll = function() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const memoCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox');
+            memoCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        };
+
+        // Handle individual checkbox changes
+        window.handleIndividualCheckbox = function() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const memoCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked');
+            if (checkedCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCheckboxes.length === memoCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        };
+
+        // Get selected memo IDs
+        window.getSelectedMemoIds = function() {
+            const checkedCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked');
+            return Array.from(checkedCheckboxes).map(checkbox => checkbox.getAttribute('data-memo-id'));
+        };
+
+        // Route selected memos to archive
+        window.routeSelectedMemos = async function() {
+            const selectedMemoIds = getSelectedMemoIds();
+            
+            if (selectedMemoIds.length === 0) {
+                errorMessage.textContent = 'Please select at least one memo to route';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
+                // Update all selected memos to archived status
+                const updatePromises = selectedMemoIds.map(memoId => {
+                    const memoRef = doc(db, 'memos', memoId);
+                    return updateDoc(memoRef, {
+                        status: 'archived',
+                        archivedAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+                });
+
+                await Promise.all(updatePromises);
+                
+                // Log the routing activity
+                const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+                const logPromises = selectedMemoIds.map(memoId => {
+                    return logMemoActivity(
+                        memoId,
+                        `Memo routed to archive`,
+                        userData.username
+                    );
+                });
+                await Promise.all(logPromises);
+
+                showSuccessToast(`${selectedMemoIds.length} memo(s) routed to archive successfully`);
+                
+                // Uncheck all checkboxes
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+                
+                // Clear individual checkboxes
+                document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+
+            } catch (error) {
+                console.error('Error routing memos to archive:', error);
+                errorMessage.textContent = 'Error routing memos to archive. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Replace the static table header with a dynamic one
+        // Find the table header and tbody
+        const table = document.querySelector('table.min-w-full');
+        const thead = table.querySelector('thead');
+        const tbody = document.getElementById('memosTableBody');
+
+        function renderTableHeader() {
+            const thead = document.getElementById('memosTableHead');
+            let headerHtml = `<tr>`;
+            if (!isActionMode && currentView === 'approved') {
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                // Remove status column in logsheet preview for approved tab
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
+            } else {
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">${isActionMode ? 'Actions' : 'Action Taken'}</th>`;
+            }
+            thead.innerHTML = headerHtml;
+        }
+
+        // Call renderTableHeader whenever the table needs to update
+        // ... existing code ...
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-10">
+            <p class="text-center text-sm text-gray-500">
+                © <span id="currentYear"></span> Developed by TESDA Region VII. All rights reserved. - ROD / ICT Unit
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
