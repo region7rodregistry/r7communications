@@ -145,7 +145,7 @@
                             class="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
                             placeholder="Enter memo title">
                         <div class="absolute bottom-2 right-3 text-xs text-gray-500 select-none">
-                            <span id="titleCharCount">0</span>/300 characters
+                            <span id="titleCharCount">0</span>/100 characters
                         </div>
                     </div>
                 </div>
@@ -484,12 +484,12 @@
         const titleCharCount = document.getElementById('titleCharCount');
         titleInput.addEventListener('input', function() {
             let currentLength = this.value.length;
-            if (currentLength > 300) {
-                this.value = this.value.slice(0, 300);
-                currentLength = 300;
+            if (currentLength > 100) {
+                this.value = this.value.slice(0, 100);
+                currentLength = 100;
             }
             titleCharCount.textContent = currentLength;
-            if (currentLength >= 290) {
+            if (currentLength >= 90) {
                 titleCharCount.classList.add('text-red-500');
             } else {
                 titleCharCount.classList.remove('text-red-500');

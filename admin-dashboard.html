@@ -169,18 +169,22 @@
             vertical-align: middle;
         }
         .compressed-subject {
-            max-width: 241px;
-            width: 250px;
-            white-space: nowrap;
-            overflow: hidden;
+            max-width: 300px;
+            width: 300px;
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
             text-overflow: ellipsis;
+            overflow: hidden;
         }
         .log-sheet-preview .compressed-subject {
-            max-width: 500px;
-            width: 600px;
+            max-width: 350px;
+            width: 350px;
             white-space: normal;
-            overflow: visible;
-            text-overflow: initial;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
     </style>
 </head>
