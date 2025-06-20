@@ -6,95 +6,440 @@
     <title>TESDA MBMS - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script type="module" src="firebase-config.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* Glass morphism effects */
+        .glass-card {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
+        }
+
+        /* Input focus effects */
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            border-color: rgb(96, 165, 250);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .input-error:focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+            border-color: rgb(248, 113, 113);
+        }
+
+        /* Button glow effect */
+        .btn-glow {
+            background: linear-gradient(90deg, rgb(37, 99, 235) 0%, rgb(15, 23, 42) 100%);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-glow:hover {
+            background: linear-gradient(90deg, rgb(15, 23, 42) 0%, rgb(37, 99, 235) 100%);
+            box-shadow: 0 0 32px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-glow:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.1) 60%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .btn-glow:hover:before {
+            opacity: 1;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Logo glow animation */
+        .logo-glow {
+            position: relative;
+        }
+
+        .logo-glow:before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: logoGlow 2.5s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        /* Animated background dots */
+        .dots-bg {
+            position: fixed;
+            inset: 0;
+            opacity: 0.3;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.3) 2px, transparent 40px),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.2) 2px, transparent 40px),
+                radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.2) 2px, transparent 40px);
+            background-size: 200px 200px;
+            animation: moveDots 12s linear infinite alternate;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes logoGlow {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        @keyframes moveDots {
+            0% { background-position: 0 0, 100px 100px, 200px 200px; }
+            100% { background-position: 100px 200px, 0 100px, 100px 0; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Hide/show elements */
+        .hidden {
+            display: none !important;
+        }
+
+        .show {
+            display: block !important;
+        }
+
+        /* Error state */
+        .error-border {
+            border-color: rgb(248, 113, 113) !important;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
-        <div class="text-center">
-            <i data-lucide="file-text" class="w-12 h-12 text-blue-600 mx-auto"></i>
-            <h2 class="mt-6 text-3xl font-bold text-gray-900">TESDA MBMS</h2>
-            <p class="mt-2 text-sm text-gray-600">Memo-Based Management System</p>
+<body class="min-h-screen w-full relative overflow-hidden">
+    <!-- Animated background -->
+    <div class="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-100"></div>
+    
+    <!-- Animated dots pattern -->
+    <div class="dots-bg"></div>
+
+    <!-- Main content -->
+    <div class="relative z-10 flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Glass card -->
+            <div class="glass-card rounded-2xl p-8 shadow-2xl">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div class="relative w-16 h-16 mx-auto mb-6 logo-glow">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                            <img src="icons/t7logo.png" alt="Logo" class="w-12 h-12 object-contain" />
+                        </div>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white tracking-wide mb-2">TESDA MBMS</h1>
+                    <p class="text-blue-200 text-sm">Memo-Based Management System</p>
+                </div>
+
+                <!-- Error Alert -->
+                <div id="errorAlert" class="hidden mb-6 bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <i data-lucide="alert-circle" class="h-4 w-4 mr-2"></i>
+                        <span id="errorMessage"></span>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="space-y-6">
+                    <div class="space-y-4">
+                        <!-- Email Field -->
+                        <div class="space-y-2">
+                            <label for="email" class="block text-blue-100 font-medium text-sm">
+                                Email Address
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="mail" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 h-4 w-4"></i>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    placeholder="Enter your TESDA email"
+                                    class="w-full pl-10 pr-4 py-3 bg-white/10 border border-slate-600 rounded-lg text-white placeholder:text-blue-200 input-glow transition-all duration-200 focus:outline-none"
+                                />
+                            </div>
+                            <p id="emailError" class="hidden text-red-400 text-sm flex items-center">
+                                <i data-lucide="alert-circle" class="h-3 w-3 mr-1"></i>
+                                <span></span>
+                            </p>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <label for="password" class="block text-blue-100 font-medium text-sm">
+                                Password
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 h-4 w-4"></i>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    class="w-full pl-10 pr-10 py-3 bg-white/10 border border-slate-600 rounded-lg text-white placeholder:text-blue-200 input-glow transition-all duration-200 focus:outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    id="togglePassword"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-blue-200 transition-colors focus:outline-none"
+                                >
+                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                </button>
+                            </div>
+                            <p id="passwordError" class="hidden text-red-400 text-sm flex items-center">
+                                <i data-lucide="alert-circle" class="h-3 w-3 mr-1"></i>
+                                <span></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Forgot Password Link -->
+                    <div class="text-right">
+                        <button
+                            type="button"
+                            id="forgotPassword"
+                            class="text-blue-300 hover:text-blue-200 text-sm transition-colors focus:outline-none"
+                        >
+                            Forgot your password?
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="w-full btn-glow text-white font-medium py-3 rounded-xl shadow-lg transition-all duration-300 relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                    >
+                        <span id="btnText">Sign in</span>
+                        <i id="loadingSpinner" data-lucide="loader-2" class="hidden h-4 w-4 animate-spin inline-block mr-2"></i>
+                    </button>
+                </form>
+
+                <!-- Footer -->
+                <div class="mt-8 text-center">
+                    <p class="text-blue-200/60 text-xs">© 2024 TESDA. All rights reserved.</p>
+                </div>
+            </div>
         </div>
-
-        <!-- Error Message -->
-        <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md"></div>
-
-        <form id="loginForm" class="mt-8 space-y-6">
-            <div class="space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                    <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        placeholder="Enter your TESDA email"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        required
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-            </div>
-
-            <div>
-                <button
-                    type="submit"
-                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                    Sign in
-                </button>
-            </div>
-        </form>
     </div>
 
-    <script type="module">
-        import { authenticateUser, getUserData } from './firebase-config.js';
-
+    <script>
         // Initialize Lucide icons
         lucide.createIcons();
 
-        // Handle form submission
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-            
-            try {
-                // Authenticate with Firebase
-                const user = await authenticateUser(email, password);
-                
-                // Get additional user data from Firestore
-                const userData = await getUserData(email);
-                
-                if (!userData) {
-                    throw new Error('User data not found');
-                }
+        // DOM elements
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const forgotPasswordBtn = document.getElementById('forgotPassword');
 
-                // Store user data in localStorage
-                localStorage.setItem('tesdaUser', JSON.stringify(userData));
-                
-                // Redirect based on role and department
-                if (userData.role === 'admin') {
-                    window.location.href = 'admin-dashboard.html';
-                } else if (userData.department === 'ORD') {
-                    window.location.href = 'ord-dashboard.html';
+        // State
+        let isLoading = false;
+        let showPassword = false;
+
+        // Validation functions
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const errorElement = emailError.querySelector('span');
+            
+            if (!email) {
+                errorElement.textContent = 'Email is required';
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('error-border', 'input-error');
+                return false;
+            }
+            
+            if (!emailRegex.test(email)) {
+                errorElement.textContent = 'Please enter a valid email address';
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('error-border', 'input-error');
+                return false;
+            }
+            
+            emailError.classList.add('hidden');
+            emailInput.classList.remove('error-border', 'input-error');
+            return true;
+        }
+
+        function validatePassword(password) {
+            const errorElement = passwordError.querySelector('span');
+            
+            if (!password) {
+                errorElement.textContent = 'Password is required';
+                passwordError.classList.remove('hidden');
+                passwordInput.classList.add('error-border', 'input-error');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                errorElement.textContent = 'Password must be at least 6 characters';
+                passwordError.classList.remove('hidden');
+                passwordInput.classList.add('error-border', 'input-error');
+                return false;
+            }
+            
+            passwordError.classList.add('hidden');
+            passwordInput.classList.remove('error-border', 'input-error');
+            return true;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorAlert.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function hideError() {
+            errorAlert.classList.add('hidden');
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            
+            if (loading) {
+                btnText.textContent = 'Signing in...';
+                loadingSpinner.classList.remove('hidden');
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                emailInput.disabled = true;
+                passwordInput.disabled = true;
+                togglePasswordBtn.disabled = true;
+                forgotPasswordBtn.disabled = true;
+            } else {
+                btnText.textContent = 'Sign in';
+                loadingSpinner.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                emailInput.disabled = false;
+                passwordInput.disabled = false;
+                togglePasswordBtn.disabled = false;
+                forgotPasswordBtn.disabled = false;
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Event listeners
+        togglePasswordBtn.addEventListener('click', () => {
+            showPassword = !showPassword;
+            passwordInput.type = showPassword ? 'text' : 'password';
+            
+            const icon = togglePasswordBtn.querySelector('i');
+            icon.setAttribute('data-lucide', showPassword ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        });
+
+        emailInput.addEventListener('blur', () => {
+            validateEmail(emailInput.value);
+        });
+
+        emailInput.addEventListener('input', () => {
+            if (emailError.classList.contains('hidden') === false) {
+                validateEmail(emailInput.value);
+            }
+        });
+
+        passwordInput.addEventListener('blur', () => {
+            validatePassword(passwordInput.value);
+        });
+
+        passwordInput.addEventListener('input', () => {
+            if (passwordError.classList.contains('hidden') === false) {
+                validatePassword(passwordInput.value);
+            }
+        });
+
+        forgotPasswordBtn.addEventListener('click', () => {
+            alert('Forgot password functionality would be implemented here.');
+        });
+
+        // Form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            const isEmailValid = validateEmail(email);
+            const isPasswordValid = validatePassword(password);
+
+            if (!isEmailValid || !isPasswordValid) {
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                // Simulate authentication - replace with your Firebase auth
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Mock authentication check - replace with actual Firebase authentication
+                if (email === 'admin@tesda.gov.ph' && password === 'password123') {
+                    // Mock user data - replace with actual Firebase getUserData
+                    const userData = {
+                        email,
+                        role: 'admin',
+                        department: 'ORD'
+                    };
+
+                    localStorage.setItem('tesdaUser', JSON.stringify(userData));
+
+                    // Redirect based on role
+                    if (userData.role === 'admin') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else if (userData.department === 'ORD') {
+                        window.location.href = 'ord-dashboard.html';
+                    } else {
+                        window.location.href = 'user-dashboard.html';
+                    }
                 } else {
-                    window.location.href = 'user-dashboard.html';
+                    throw new Error('Invalid credentials');
                 }
             } catch (error) {
-                errorMessage.textContent = 'Invalid email or password';
-                errorMessage.classList.remove('hidden');
+                showError('Invalid email or password. Please try again.');
+            } finally {
+                setLoading(false);
             }
+        });
+
+        // Initialize icons on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
         });
     </script>
 </body>
