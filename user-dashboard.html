@@ -148,17 +148,17 @@
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-[900px] w-full divide-y divide-gray-200 dark:divide-gray-700 text-base">
-                            <thead class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+                            <thead class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 hidden sm:table-header-group">
                                 <tr>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Memo Number</th>
-                                    <th scope="col" class="px-4 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider max-w-xs w-48 truncate">Title</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">From</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Recipients</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created At</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Released to ROD/FASD</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Received by ROD/FASD</th>
-                                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Memo Number</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider max-w-xs w-48 truncate">Title</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">From</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Recipients</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created At</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Released to ROD/FASD</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Received by ROD/FASD</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="memosTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -297,35 +297,37 @@
         function updateTable(memos) {
             memosTableBody.innerHTML = '';
             memos.forEach(memo => {
+                // Responsive card for mobile, table row for desktop
                 const row = document.createElement('tr');
+                row.className = 'hidden sm:table-row';
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.memoNumber}</td>
-                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-xs w-48 truncate" title="${memo.title}">${memo.title}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.department}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.recipients.join(', ')}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.memoNumber}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-xs w-48 truncate" title="${memo.title}">${memo.title}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.department}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.recipients.join(', ')}</td>
+                    <td class="px-2 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
                             ${memo.status}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         ${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', {
                             year: 'numeric', month: 'long', day: 'numeric'
                         }) : ''}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
                         ${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ?
                             memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not released yet'}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
                         ${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ?
                             memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not received yet'}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         <div class="flex space-x-3">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200">View</button>
                             ${memo.status.toLowerCase() === 'approved' && memo.releasedToRodFasd ?
@@ -336,6 +338,52 @@
                     </td>
                 `;
                 memosTableBody.appendChild(row);
+
+                // Card for mobile view
+                const card = document.createElement('div');
+                card.className = 'sm:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4 flex flex-col gap-2';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Memo Number:</span>
+                        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">${memo.memoNumber}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Title:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.title}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">From:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.department}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Recipients:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.recipients.join(', ')}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Status:</span>
+                        <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Created At:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</span>
+                    </div>
+                    <div class="mb-1 rod-fasd-col hidden">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Released to ROD/FASD:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not released yet'}</span>
+                    </div>
+                    <div class="mb-1 rod-fasd-col hidden">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Received by ROD/FASD:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not received yet'}</span>
+                    </div>
+                    <div class="flex space-x-3 mt-2">
+                        <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 font-semibold">View</button>
+                        ${memo.status.toLowerCase() === 'approved' && memo.releasedToRodFasd ?
+                            `<button onclick="markAsReceived('${memo.id}')" class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-200 font-semibold">Received</button>` :
+                            ''
+                        }
+                    </div>
+                `;
+                memosTableBody.appendChild(card);
             });
         }
 
