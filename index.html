@@ -249,7 +249,8 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { authenticateUser, getUserData } from './firebase-config.js';
         // Initialize Lucide icons
         lucide.createIcons();
 
@@ -405,30 +406,18 @@
             setLoading(true);
 
             try {
-                // Simulate authentication - replace with your Firebase auth
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Firebase authentication
+                await authenticateUser(email, password);
+                const userData = await getUserData(email);
+                localStorage.setItem('tesdaUser', JSON.stringify(userData));
 
-                // Mock authentication check - replace with actual Firebase authentication
-                if (email === 'admin@tesda.gov.ph' && password === 'password123') {
-                    // Mock user data - replace with actual Firebase getUserData
-                    const userData = {
-                        email,
-                        role: 'admin',
-                        department: 'ORD'
-                    };
-
-                    localStorage.setItem('tesdaUser', JSON.stringify(userData));
-
-                    // Redirect based on role
-                    if (userData.role === 'admin') {
-                        window.location.href = 'admin-dashboard.html';
-                    } else if (userData.department === 'ORD') {
-                        window.location.href = 'ord-dashboard.html';
-                    } else {
-                        window.location.href = 'user-dashboard.html';
-                    }
+                // Redirect based on role
+                if (userData.role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                } else if (userData.department === 'ORD') {
+                    window.location.href = 'ord-dashboard.html';
                 } else {
-                    throw new Error('Invalid credentials');
+                    window.location.href = 'user-dashboard.html';
                 }
             } catch (error) {
                 showError('Invalid email or password. Please try again.');
