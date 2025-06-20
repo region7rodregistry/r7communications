@@ -888,48 +888,46 @@
                 row.className = 'resizable-row';
                 if (!isActionMode && currentView === 'approved') {
                     row.innerHTML = `
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900">
-                            ${memo.memoType}-${memo.memoNumber.split('-').pop()}
-                        </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 compressed-subject">${memo.title}</td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900">${memo.department}</td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 recipients-col">${memo.recipients}</td>
-                        <td class="px-10 py-5 text-base text-gray-900 w-48">
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900\">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 compressed-subject\">${memo.title}</td>
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900\">${memo.department}</td>
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 recipients-col\">${memo.recipients}</td>
+                        <td class=\"px-2 py-2 text-sm text-gray-900 w-48\">
                             ${memo.createdAt ? memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : ''}
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 rod-fasd-col w-48">
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48\">
                             ${memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                            }) : `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`}
+                            }) : `<button onclick=\\\"releaseToRodFasd('${memo.id}')\\\" class=\\\"text-blue-600 hover:text-blue-900\\\">Release now</button>`}
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-900 rod-fasd-col">
+                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col\">
                             ${memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not received'}
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-base text-gray-500">
-                            <div class="flex space-x-4">
-                                <div id="actionTaken_${memo.id}" class="action-taken">
-                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
+                        <td class=\"px-4 py-3 whitespace-nowrap text-sm text-gray-500\">
+                            <div class=\"flex space-x-4\">
+                                <div id=\"actionTaken_${memo.id}\" class=\"action-taken\">
+                                    <span class=\"text-gray-600\">${memo.actionTaken || ''}</span>
                                 </div>
                             </div>
                         </td>
-                        <div class="resize-handle"></div>
+                        <div class=\"resize-handle\"></div>
                     `;
                 } else {
                     row.innerHTML = `
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                        <td class="px-10 py-5 whitespace-nowrap">
-                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject\">${memo.title}</td>
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">${memo.department}</td>
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col\">${memo.recipients}</td>
+                        <td class=\"px-6 py-3 whitespace-nowrap\">
+                            <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
                                 ${memo.status}
                             </span>
                         </td>
-                        <td class="px-10 py-5 text-sm text-gray-900 w-48">
+                        <td class=\"px-6 py-3 text-sm text-gray-900 w-48\">
                             ${memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
@@ -939,7 +937,7 @@
                                 hour12: true
                             })}
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48\">
                             ${memo.releasedToRodFasd ? 
                                 memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                     year: 'numeric',
@@ -949,10 +947,10 @@
                                     minute: '2-digit',
                                     hour12: true
                                 }) : 
-                                `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
+                                `<button onclick=\\\"releaseToRodFasd('${memo.id}')\\\" class=\\\"text-blue-600 hover:text-blue-900\\\">Release now</button>`
                             }
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col\">
                             ${memo.receivedByRodFasd ? 
                                 memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                     year: 'numeric',
@@ -965,21 +963,21 @@
                                 'Not received yet'
                             }
                         </td>
-                        <td class="px-10 py-5 whitespace-nowrap text-sm text-gray-500">
-                            <div class="flex space-x-4">
+                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-500\">
+                            <div class=\"flex space-x-4\">
                                 ${isActionMode ? `
-                                <div id="actionButtons_${memo.id}" class="action-buttons">
-                                    <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
-                                    <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
-                                    <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                                <div id=\"actionButtons_${memo.id}\" class=\"action-buttons\">
+                                    <button onclick=\"viewMemo('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">View</button>
+                                    <button onclick=\"changeStatus('${memo.id}', '${memo.status}')\" class=\"text-green-600 hover:text-green-900\">Status</button>
+                                    <button onclick=\"deleteMemo('${memo.id}')\" class=\"text-red-600 hover:text-red-900\">Delete</button>
                                 </div>
                                 ` : ''}
-                                <div id="actionTaken_${memo.id}" class="action-taken ${isActionMode ? 'hidden' : ''}">
-                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
+                                <div id=\"actionTaken_${memo.id}\" class=\"action-taken ${isActionMode ? 'hidden' : ''}\">
+                                    <span class=\"text-gray-600\">${memo.actionTaken || ''}</span>
                                 </div>
                             </div>
                         </td>
-                        <div class="resize-handle"></div>
+                        <div class=\"resize-handle\"></div>
                     `;
                 }
                 memosTableBody.appendChild(row);
@@ -1886,25 +1884,24 @@
             const thead = document.getElementById('memosTableHead');
             let headerHtml = `<tr>`;
             if (!isActionMode && currentView === 'approved') {
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                // Remove status column in logsheet preview for approved tab
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
             } else {
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
-                headerHtml += `<th scope="col" class="px-10 py-5 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">${isActionMode ? 'Actions' : 'Action Taken'}</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">${isActionMode ? 'Actions' : 'Action Taken'}</th>`;
             }
             thead.innerHTML = headerHtml;
         }
