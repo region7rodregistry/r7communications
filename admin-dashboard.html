@@ -497,8 +497,8 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div class="flex items-center space-x-4 w-full sm:w-auto">
                         <div class="flex space-x-2 bg-gray-100 p-2 rounded-lg">
-                            <button id="allMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
-                                All Memos
+                            <button id="pendingMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
+                                Pending Memos
                             </button>
                             <button id="approvedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
                                 Approved Memos
@@ -608,122 +608,58 @@
 
         let currentMemoId = null;
         let allMemos = []; // Store all memos for filtering
-        let currentView = 'all'; // Track current view
+        let currentView = 'pending'; // Track current view, default to 'pending'
 
         // Tab switching functionality
-        const allMemosTab = document.getElementById('allMemosTab');
+        const pendingMemosTab = document.getElementById('pendingMemosTab');
         const approvedMemosTab = document.getElementById('approvedMemosTab');
         const archiveMemosTab = document.getElementById('archiveMemosTab');
         const statsCards = document.getElementById('statsCards');
         const actionToggleContainer = document.getElementById('actionToggleContainer');
 
         function updateTabStyles() {
-            if (currentView === 'all') {
-                allMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
-                allMemosTab.classList.remove('text-gray-500');
-                approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                approvedMemosTab.classList.add('text-gray-500');
-                archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                archiveMemosTab.classList.add('text-gray-500');
-                
-                // Hide action toggle container
-                actionToggleContainer.classList.add('hidden');
-                
-                // Show stats cards with animation
-                statsCards.classList.remove('hidden');
-                statsCards.classList.add('stats-enter');
-                statsCards.classList.remove('stats-exit');
-
-                // Show priority and status columns, hide description and ROD/FASD columns
-                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.remove('hidden'));
-                document.querySelectorAll('.description-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.recipients-col').forEach(col => col.classList.remove('hidden'));
-                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
-
-                // Reset to actions view
-                isActionMode = true;
-                actionToggle.checked = true;
-                const actionButtons = document.querySelectorAll('.action-buttons');
-                const actionTaken = document.querySelectorAll('.action-taken');
-                actionButtons.forEach(btn => btn.classList.remove('hidden'));
-                actionTaken.forEach(input => input.classList.add('hidden'));
-                document.querySelector('th:last-child').textContent = 'Actions';
+            // Remove highlight from all tabs first
+            pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+            pendingMemosTab.classList.add('text-gray-500');
+            approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+            approvedMemosTab.classList.add('text-gray-500');
+            archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+            archiveMemosTab.classList.add('text-gray-500');
+            // Highlight only the active tab
+            if (currentView === 'pending') {
+                pendingMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                pendingMemosTab.classList.remove('text-gray-500');
             } else if (currentView === 'approved') {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.remove('text-gray-500');
-                allMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                allMemosTab.classList.add('text-gray-500');
-                archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                archiveMemosTab.classList.add('text-gray-500');
-                
-                // Show action toggle container
-                actionToggleContainer.classList.remove('hidden');
-                
-                // Hide stats cards with animation
-                statsCards.classList.add('stats-exit');
-                statsCards.classList.remove('stats-enter');
-                
-                // Hide priority and status columns, show description and ROD/FASD columns
-                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.description-col').forEach(col => col.classList.remove('hidden'));
-                document.querySelectorAll('.recipients-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.remove('hidden'));
-                
-                // Show checkbox column only when log sheet preview is enabled
-                if (!isActionMode) {
-                    document.querySelectorAll('.checkbox-col').forEach(col => col.classList.remove('hidden'));
-                } else {
-                    document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
-                }
-                
-                // Wait for animation to complete before hiding
-                setTimeout(() => {
-                    statsCards.classList.add('hidden');
-                }, 300); // Match this with the animation duration
             } else if (currentView === 'archive') {
                 archiveMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 archiveMemosTab.classList.remove('text-gray-500');
-                allMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                allMemosTab.classList.add('text-gray-500');
-                approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-                approvedMemosTab.classList.add('text-gray-500');
-                
-                // Hide action toggle container
-                actionToggleContainer.classList.add('hidden');
-                
-                // Hide stats cards with animation
-                statsCards.classList.add('stats-exit');
-                statsCards.classList.remove('stats-enter');
-                
-                // Use same columns as approved memos: hide priority/status, show ROD/FASD columns
-                document.querySelectorAll('.priority-status-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.description-col').forEach(col => col.classList.remove('hidden'));
-                document.querySelectorAll('.recipients-col').forEach(col => col.classList.add('hidden'));
-                document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.remove('hidden'));
-                document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
-
-                // Set to actions view for archive
-                isActionMode = true;
-                actionToggle.checked = true;
-                const actionButtons = document.querySelectorAll('.action-buttons');
-                const actionTaken = document.querySelectorAll('.action-taken');
-                actionButtons.forEach(btn => btn.classList.remove('hidden'));
-                actionTaken.forEach(input => input.classList.add('hidden'));
-                document.querySelector('th:last-child').textContent = 'Actions';
-                
-                // Set row height to 60px for archive tab
-                const tableRows = document.querySelectorAll('tbody tr');
-                tableRows.forEach(row => {
-                    row.style.height = '60px';
-                    row.style.minHeight = '60px';
-                });
-                
-                // Wait for animation to complete before hiding
-                setTimeout(() => {
-                    statsCards.classList.add('hidden');
-                }, 300);
             }
+            
+            // Hide action toggle container
+            actionToggleContainer.classList.add('hidden');
+            
+            // Show stats cards with animation
+            statsCards.classList.remove('hidden');
+            statsCards.classList.add('stats-enter');
+            statsCards.classList.remove('stats-exit');
+
+            // Show priority and status columns, hide description and ROD/FASD columns
+            document.querySelectorAll('.priority-status-col').forEach(col => col.classList.remove('hidden'));
+            document.querySelectorAll('.description-col').forEach(col => col.classList.add('hidden'));
+            document.querySelectorAll('.recipients-col').forEach(col => col.classList.remove('hidden'));
+            document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.add('hidden'));
+            document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
+
+            // Reset to actions view
+            isActionMode = true;
+            actionToggle.checked = true;
+            const actionButtons = document.querySelectorAll('.action-buttons');
+            const actionTaken = document.querySelectorAll('.action-taken');
+            actionButtons.forEach(btn => btn.classList.remove('hidden'));
+            actionTaken.forEach(input => input.classList.add('hidden'));
+            document.querySelector('th:last-child').textContent = 'Actions';
         }
 
         // Helper function to check if memo is archived
@@ -745,10 +681,10 @@
             );
         }
 
-        allMemosTab.addEventListener('click', () => {
-            currentView = 'all';
+        pendingMemosTab.addEventListener('click', () => {
+            currentView = 'pending';
             updateTabStyles();
-            renderMemos(allMemos);
+            renderMemos(allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending'));
         });
 
         approvedMemosTab.addEventListener('click', () => {
@@ -926,12 +862,13 @@
         // Render memos to table
         function renderMemos(memos) {
             renderTableHeader();
-            console.log("renderMemos called with:", memos.length, "memos");
-            // Clear existing table rows
             memosTableBody.innerHTML = '';
-
-            // Populate table
-            memos.forEach(memo => {
+            let filteredMemos = memos;
+            // Strict filter for pending tab
+            if (currentView === 'pending') {
+                filteredMemos = memos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
+            }
+            filteredMemos.forEach(memo => {
                 console.log("Rendering memo row:", memo);
                 const row = document.createElement('tr');
                 row.className = 'resizable-row';
@@ -2050,7 +1987,15 @@
         function renderTableHeader() {
             const thead = document.getElementById('memosTableHead');
             let headerHtml = `<tr>`;
-            if (!isActionMode && currentView === 'approved') {
+            if (currentView === 'pending') {
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
+            } else if (!isActionMode && currentView === 'approved') {
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     <input type="checkbox" id="memoHeaderCheckbox" class="mr-2 align-middle">
                     <span id="memoNoHeader" class="inline-block align-middle text-blue-700 font-semibold opacity-50 pointer-events-none">Memo No.</span>
@@ -2126,7 +2071,7 @@
         });
 
         // Hide archive type tabs on other main tab clicks
-        allMemosTab.addEventListener('click', () => {
+        pendingMemosTab.addEventListener('click', () => {
             archiveTypeTabs.classList.add('hidden');
         });
         approvedMemosTab.addEventListener('click', () => {
