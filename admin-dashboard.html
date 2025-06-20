@@ -294,7 +294,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-2 bg-blue-100 rounded-lg">
@@ -463,6 +463,32 @@
                     </div>
                 </div>
             </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-orange-100 rounded-lg">
+                        <i data-lucide="award" class="w-6 h-6 text-orange-600"></i>
+                    </div>
+                    <div class="ml-4 flex-grow">
+                        <p class="text-sm font-medium text-gray-600">Acknowledgment</p>
+                        <div class="flex items-center space-x-2">
+                            <p id="acknowledgmentMemos" class="text-2xl font-bold text-gray-900">0</p>
+                            <button onclick="editMemoNumber('acknowledgment')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="acknowledgmentNumberEdit" class="hidden mt-2">
+                            <input type="number" id="acknowledgmentNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('acknowledgment')" class="ml-2 text-green-600 hover:text-green-800">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Memos Table -->
@@ -481,6 +507,14 @@
                                 Archive
                             </button>
                         </div>
+                        <!-- Archive Memo Type Tabs (hidden by default, shown only on Archive tab) -->
+                        <div id="archiveTypeTabs" class="flex space-x-2 ml-4 hidden transition-all duration-300">
+                            <button data-type="CO" class="archive-type-tab px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-t-lg transition duration-200">CO</button>
+                            <button data-type="PO" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">PO</button>
+                            <button data-type="Office Order" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Office Order</button>
+                            <button data-type="Advisory" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Advisory</button>
+                            <button data-type="Bulletin" class="archive-type-tab px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-t-lg transition duration-200">Bulletin</button>
+                        </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
                         <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
                             <div class="flex items-center space-x-2">
@@ -489,7 +523,7 @@
                                     <input type="checkbox" id="actionToggle" class="sr-only peer">
                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
-                                <span class="text-sm text-gray-600">Log Sheet Preview</span>
+                                <span class="text-sm text-gray-600">Print Preview</span>
                             </div>
                             <div id="actionTakenInputContainer" class="hidden">
                                 <input type="text" 
@@ -736,15 +770,8 @@
         archiveMemosTab.addEventListener('click', () => {
             currentView = 'archive';
             updateTabStyles();
-            const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
-            renderMemos(archiveMemos);
-
-            // Set row height to 60px for archive tab
-            const tableRows = document.querySelectorAll('tbody tr');
-            tableRows.forEach(row => {
-                row.style.height = '60px';
-                row.style.minHeight = '60px';
-            });
+            archiveTypeTabs.classList.remove('hidden');
+            setActiveArchiveTypeTab('CO'); // Default to CO
         });
 
         // Show success toast
@@ -793,6 +820,7 @@
                 totalMemos.textContent = allMemos.length;
                 pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
                 approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+                acknowledgmentMemos.textContent = allMemos.filter(m => m.memoType === 'Acknowledgment').length;
 
                 // Store memos globally for search functionality
                 window.allMemos = allMemos;
@@ -808,6 +836,7 @@
                 if (doc.exists()) {
                     const currentNumber = doc.data().number;
                     document.getElementById('nextMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
 
@@ -825,6 +854,7 @@
                 } else {
                     const currentNumber = doc.data().number;
                     document.getElementById('nextCoMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextCoMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
 
@@ -840,6 +870,7 @@
                 } else {
                     const currentNumber = doc.data().number;
                     document.getElementById('nextOfficeOrderNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextOfficeOrderNumber', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
 
@@ -855,6 +886,7 @@
                 } else {
                     const currentNumber = doc.data().number;
                     document.getElementById('nextAdvisoryNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextAdvisoryNumber', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
 
@@ -870,6 +902,23 @@
                 } else {
                     const currentNumber = doc.data().number;
                     document.getElementById('nextBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextBulletinNumber', `${String(currentNumber).padStart(4, '0')}`);
+                }
+            });
+
+            // Acknowledgment
+            const acknowledgmentNumberRef = doc(db, "memoNumbers", "acknowledgment");
+            onSnapshot(acknowledgmentNumberRef, async (doc) => {
+                if (!doc.exists()) {
+                    try {
+                        await updateDoc(acknowledgmentNumberRef, { number: 0 });
+                    } catch (error) {
+                        await setDoc(acknowledgmentNumberRef, { number: 0 });
+                    }
+                } else {
+                    const currentNumber = doc.data().number;
+                    document.getElementById('acknowledgmentMemos').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_acknowledgmentMemos', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
         });
@@ -888,46 +937,49 @@
                 row.className = 'resizable-row';
                 if (!isActionMode && currentView === 'approved') {
                     row.innerHTML = `
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900\">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 compressed-subject\">${memo.title}</td>
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900\">${memo.department}</td>
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 recipients-col\">${memo.recipients}</td>
-                        <td class=\"px-2 py-2 text-sm text-gray-900 w-48\">
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <input type="checkbox" class="memo-row-checkbox mr-2 align-middle" data-memo-id="${memo.id}">
+                            <span class="align-middle">${memo.memoType}-${memo.memoNumber.split('-').pop()}</span>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
+                        <td class="px-2 py-2 text-sm text-gray-900 w-48">
                             ${memo.createdAt ? memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : ''}
                         </td>
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48\">
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
                             ${memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                            }) : `<button onclick="releaseToRodFasd('${memo.id}')" class="text-blue-600 hover:text-blue-900">Release now</button>`}
+                            }) : `<button onclick="releaseToRodFasd('${memo.id}')\" class="text-blue-600 hover:text-blue-900">Release now</button>`}
                         </td>
-                        <td class=\"px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col\">
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
                             ${memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not received'}
                         </td>
-                        <td class=\"px-4 py-3 whitespace-nowrap text-sm text-gray-500\">
-                            <div class=\"flex space-x-4\">
-                                <div id=\"actionTaken_${memo.id}\" class=\"action-taken\">
-                                    <span class=\"text-gray-600\">${memo.actionTaken || ''}</span>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-4">
+                                <div id="actionTaken_${memo.id}" class="action-taken">
+                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
                                 </div>
                             </div>
                         </td>
-                        <div class=\"resize-handle\"></div>
+                        <div class="resize-handle"></div>
                     `;
                 } else {
                     row.innerHTML = `
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject\">${memo.title}</td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">${memo.department}</td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col\">${memo.recipients}</td>
-                        <td class=\"px-6 py-3 whitespace-nowrap\">
-                            <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
+                        <td class="px-6 py-3 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
                                 ${memo.status}
                             </span>
                         </td>
-                        <td class=\"px-6 py-3 text-sm text-gray-900 w-48\">
+                        <td class="px-6 py-3 text-sm text-gray-900 w-48">
                             ${memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
@@ -937,7 +989,7 @@
                                 hour12: true
                             })}
                         </td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48\">
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
                             ${memo.releasedToRodFasd ? 
                                 memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                     year: 'numeric',
@@ -947,10 +999,10 @@
                                     minute: '2-digit',
                                     hour12: true
                                 }) : 
-                                `<button onclick="releaseToRodFasd('${memo.id}')" class="text-blue-600 hover:text-blue-900">Release now</button>`
+                                `<button onclick="releaseToRodFasd('${memo.id}')\" class="text-blue-600 hover:text-blue-900">Release now</button>`
                             }
                         </td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col\">
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
                             ${memo.receivedByRodFasd ? 
                                 memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                     year: 'numeric',
@@ -963,21 +1015,21 @@
                                 'Not received yet'
                             }
                         </td>
-                        <td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-500\">
-                            <div class=\"flex space-x-4\">
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-4">
                                 ${isActionMode ? `
-                                <div id=\"actionButtons_${memo.id}\" class=\"action-buttons\">
-                                    <button onclick=\"viewMemo('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">View</button>
-                                    <button onclick=\"changeStatus('${memo.id}', '${memo.status}')\" class=\"text-green-600 hover:text-green-900\">Status</button>
-                                    <button onclick=\"deleteMemo('${memo.id}')\" class=\"text-red-600 hover:text-red-900\">Delete</button>
+                                <div id="actionButtons_${memo.id}" class="action-buttons">
+                                    <button onclick="viewMemo('${memo.id}')\" class="text-blue-600 hover:text-blue-900">View</button>
+                                    <button onclick="changeStatus('${memo.id}', '${memo.status}')\" class="text-green-600 hover:text-green-900">Status</button>
+                                    <button onclick="deleteMemo('${memo.id}')\" class="text-red-600 hover:text-red-900">Delete</button>
                                 </div>
                                 ` : ''}
-                                <div id=\"actionTaken_${memo.id}\" class=\"action-taken ${isActionMode ? 'hidden' : ''}\">
-                                    <span class=\"text-gray-600\">${memo.actionTaken || ''}</span>
+                                <div id="actionTaken_${memo.id}" class="action-taken ${isActionMode ? 'hidden' : ''}">
+                                    <span class="text-gray-600">${memo.actionTaken || ''}</span>
                                 </div>
                             </div>
                         </td>
-                        <div class=\"resize-handle\"></div>
+                        <div class="resize-handle"></div>
                     `;
                 }
                 memosTableBody.appendChild(row);
@@ -1025,23 +1077,83 @@
             });
 
             // After rendering table rows:
-            // If log sheet preview is enabled, show routed controls and render checkboxes
-            const routedControls = document.getElementById('routedControls');
-            const routedCheckboxes = document.getElementById('routedCheckboxes');
+            // Attach modern checkbox logic
             if (!isActionMode && currentView === 'approved') {
-                routedControls.style.display = 'flex';
-                routedCheckboxes.innerHTML = '';
-                memos.forEach(memo => {
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.className = 'memo-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 ml-1 mr-1';
-                    cb.setAttribute('data-memo-id', memo.id);
-                    cb.onclick = handleIndividualCheckbox;
-                    routedCheckboxes.appendChild(cb);
-                });
-            } else {
-                routedControls.style.display = 'none';
-                routedCheckboxes.innerHTML = '';
+                setTimeout(() => {
+                    const headerCheckbox = document.getElementById('memoHeaderCheckbox');
+                    const rowCheckboxes = document.querySelectorAll('.memo-row-checkbox');
+                    const memoHeader = document.getElementById('memoNoHeader');
+                    function updateMemoHeaderState() {
+                        const anyChecked = [...rowCheckboxes].some(cb => cb.checked);
+                        if (anyChecked) {
+                            memoHeader.classList.remove('pointer-events-none', 'opacity-50');
+                            memoHeader.classList.add('cursor-pointer', 'hover:underline');
+                        } else {
+                            memoHeader.classList.add('pointer-events-none', 'opacity-50');
+                            memoHeader.classList.remove('cursor-pointer', 'hover:underline');
+                        }
+                    }
+                    if (headerCheckbox) {
+                        headerCheckbox.addEventListener('change', () => {
+                            rowCheckboxes.forEach(cb => cb.checked = headerCheckbox.checked);
+                            updateMemoHeaderState();
+                        });
+                    }
+                    rowCheckboxes.forEach(cb => {
+                        cb.addEventListener('change', () => {
+                            updateMemoHeaderState();
+                            if (headerCheckbox) headerCheckbox.checked = [...rowCheckboxes].every(cb => cb.checked);
+                        });
+                    });
+                    if (memoHeader) {
+                        memoHeader.addEventListener('click', async () => {
+                            const selectedRows = [...rowCheckboxes].filter(cb => cb.checked);
+                            if (selectedRows.length > 0) {
+                                // Show loading overlay
+                                loadingOverlay.classList.remove('hidden');
+                                errorMessage.classList.add('hidden');
+                                try {
+                                    // Get memo IDs
+                                    const selectedIds = selectedRows.map(cb => cb.getAttribute('data-memo-id'));
+                                    // Archive in Firestore
+                                    const updatePromises = selectedIds.map(memoId => {
+                                        const memoRef = doc(db, 'memos', memoId);
+                                        return updateDoc(memoRef, {
+                                            status: 'archived',
+                                            archivedAt: serverTimestamp(),
+                                            updatedAt: serverTimestamp()
+                                        });
+                                    });
+                                    await Promise.all(updatePromises);
+                                    // Show success toast
+                                    successMessage.textContent = `${selectedIds.length} memo(s) routed to archive successfully`;
+                                    successToast.classList.remove('hidden');
+                                    successToast.classList.add('toast-enter');
+                                    setTimeout(() => {
+                                        successToast.classList.add('toast-exit');
+                                        setTimeout(() => {
+                                            successToast.classList.add('hidden');
+                                            successToast.classList.remove('toast-enter', 'toast-exit');
+                                        }, 300);
+                                    }, 3000);
+                                    // Remove rows from table
+                                    selectedRows.forEach(cb => {
+                                        cb.closest('tr').remove();
+                                    });
+                                    if (headerCheckbox) headerCheckbox.checked = false;
+                                    updateMemoHeaderState();
+                                } catch (error) {
+                                    console.error('Error routing memos to archive:', error);
+                                    errorMessage.textContent = 'Error routing memos to archive. Please try again.';
+                                    errorMessage.classList.remove('hidden');
+                                } finally {
+                                    loadingOverlay.classList.add('hidden');
+                                }
+                            }
+                        });
+                    }
+                    updateMemoHeaderState();
+                }, 0);
             }
         }
 
@@ -1461,6 +1573,11 @@
                     input = document.getElementById('bulletinNumberInput');
                     currentNumber = document.getElementById('nextBulletinNumber');
                     break;
+                case 'acknowledgment':
+                    editDiv = document.getElementById('acknowledgmentNumberEdit');
+                    input = document.getElementById('acknowledgmentNumberInput');
+                    currentNumber = document.getElementById('acknowledgmentMemos');
+                    break;
                 default:
                     return;
             }
@@ -1474,6 +1591,7 @@
             document.getElementById('officeOrderNumberEdit').classList.add('hidden');
             document.getElementById('advisoryNumberEdit').classList.add('hidden');
             document.getElementById('bulletinNumberEdit').classList.add('hidden');
+            document.getElementById('acknowledgmentNumberEdit').classList.add('hidden');
         };
 
         window.saveMemoNumber = async function(type) {
@@ -1498,6 +1616,10 @@
                 case 'bulletin':
                     input = document.getElementById('bulletinNumberInput');
                     memoType = 'bulletin';
+                    break;
+                case 'acknowledgment':
+                    input = document.getElementById('acknowledgmentNumberInput');
+                    memoType = 'acknowledgment';
                     break;
                 default:
                     return;
@@ -1536,7 +1658,15 @@
                     return;
                 }
                 const memoNumberRef = doc(db, "memoNumbers", type);
-                await updateDoc(memoNumberRef, { number: newNumber });
+                try {
+                    await updateDoc(memoNumberRef, { number: newNumber });
+                } catch (error) {
+                    if (error.code === "not-found" || error.message.includes("No document to update")) {
+                        await setDoc(memoNumberRef, { number: newNumber });
+                    } else {
+                        throw error;
+                    }
+                }
                 showSuccessToast(`Memo number updated successfully`);
                 cancelMemoNumberEdit();
             } catch (error) {
@@ -1820,17 +1950,19 @@
         // Handle select all checkbox functionality
         window.handleSelectAll = function() {
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const memoCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox');
+            const memoCheckboxes = document.querySelectorAll('#memosTableBody .memo-checkbox');
             memoCheckboxes.forEach(checkbox => {
                 checkbox.checked = selectAllCheckbox.checked;
+                // Trigger change event for each checkbox to update header state
+                checkbox.dispatchEvent(new Event('change'));
             });
         };
 
         // Handle individual checkbox changes
         window.handleIndividualCheckbox = function() {
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const memoCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox');
-            const checkedCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked');
+            const memoCheckboxes = document.querySelectorAll('#memosTableBody .memo-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('#memosTableBody .memo-checkbox:checked');
             if (checkedCheckboxes.length === 0) {
                 selectAllCheckbox.checked = false;
                 selectAllCheckbox.indeterminate = false;
@@ -1845,7 +1977,7 @@
 
         // Get selected memo IDs
         window.getSelectedMemoIds = function() {
-            const checkedCheckboxes = document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked');
+            const checkedCheckboxes = document.querySelectorAll('#memosTableBody .memo-checkbox:checked');
             return Array.from(checkedCheckboxes).map(checkbox => checkbox.getAttribute('data-memo-id'));
         };
 
@@ -1896,7 +2028,7 @@
                 }
                 
                 // Clear individual checkboxes
-                document.querySelectorAll('#routedCheckboxes .memo-checkbox:checked').forEach(checkbox => {
+                document.querySelectorAll('#memosTableBody .memo-checkbox:checked').forEach(checkbox => {
                     checkbox.checked = false;
                 });
 
@@ -1919,7 +2051,10 @@
             const thead = document.getElementById('memosTableHead');
             let headerHtml = `<tr>`;
             if (!isActionMode && currentView === 'approved') {
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    <input type="checkbox" id="memoHeaderCheckbox" class="mr-2 align-middle">
+                    <span id="memoNoHeader" class="inline-block align-middle text-blue-700 font-semibold opacity-50 pointer-events-none">Memo No.</span>
+                </th>`;
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
@@ -1943,6 +2078,64 @@
 
         // Call renderTableHeader whenever the table needs to update
         // ... existing code ...
+
+        // ... inside <script type="module">, after let currentView = 'all'; ...
+        let currentArchiveType = 'CO'; // Default archive type tab
+        const archiveTypeTabs = document.getElementById('archiveTypeTabs');
+
+        // Helper: filter archived memos by type
+        function filterArchivedMemosByType(type) {
+            return allMemos.filter(memo => isMemoArchived(memo) && memo.memoType === type);
+        }
+
+        // Tab switching for archive type tabs
+        function setActiveArchiveTypeTab(type) {
+            currentArchiveType = type;
+            // Update tab styles
+            document.querySelectorAll('.archive-type-tab').forEach(tab => {
+                if (tab.getAttribute('data-type') === type) {
+                    tab.classList.add('bg-blue-600', 'text-white');
+                    tab.classList.remove('bg-gray-100', 'text-gray-700');
+                } else {
+                    tab.classList.remove('bg-blue-600', 'text-white');
+                    tab.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            });
+            // Animate table fade out/in
+            const tableDiv = document.querySelector('.overflow-x-auto');
+            tableDiv.classList.add('transition', 'duration-300', 'opacity-0');
+            setTimeout(() => {
+                renderMemos(filterArchivedMemosByType(type));
+                tableDiv.classList.remove('opacity-0');
+            }, 200);
+        }
+
+        // Add event listeners to archive type tabs
+        archiveTypeTabs.querySelectorAll('.archive-type-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                setActiveArchiveTypeTab(this.getAttribute('data-type'));
+            });
+        });
+
+        // Show/hide archive type tabs on Archive tab click
+        archiveMemosTab.addEventListener('click', () => {
+            currentView = 'archive';
+            updateTabStyles();
+            archiveTypeTabs.classList.remove('hidden');
+            setActiveArchiveTypeTab('CO'); // Default to CO
+        });
+
+        // Hide archive type tabs on other main tab clicks
+        allMemosTab.addEventListener('click', () => {
+            archiveTypeTabs.classList.add('hidden');
+        });
+        approvedMemosTab.addEventListener('click', () => {
+            archiveTypeTabs.classList.add('hidden');
+        });
+
+        // Responsive: stack archive type tabs on mobile
+        archiveTypeTabs.classList.add('flex-wrap');
+        archiveTypeTabs.classList.add('sm:flex-row', 'flex-col');
     </script>
 
     <!-- Footer -->

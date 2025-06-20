@@ -118,6 +118,7 @@
                             <option value="Office Order">Office Order</option>
                             <option value="Advisory">Advisory</option>
                             <option value="Bulletin">Bulletin</option>
+                            <option value="Acknowledgment">Acknowledgment</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
@@ -258,89 +259,42 @@
         let poUnsubscribe = null;
         let coUnsubscribe = null;
 
-        // Function to update memo number based on type
-        function updateMemoNumber(type) {
-            // Unsubscribe from previous listeners
-            if (poUnsubscribe) poUnsubscribe();
-            if (coUnsubscribe) coUnsubscribe();
-            if (window.officeOrderUnsubscribe) window.officeOrderUnsubscribe();
-            if (window.advisoryUnsubscribe) window.advisoryUnsubscribe();
-            if (window.bulletinUnsubscribe) window.bulletinUnsubscribe();
+        // Map memoType to Firestore doc IDs
+        const memoTypeToDocId = {
+            'PO': 'current',
+            'CO': 'coCurrent',
+            'Office Order': 'officeOrder',
+            'Advisory': 'advisory',
+            'Bulletin': 'bulletin',
+            'Acknowledgment': 'acknowledgment',
+        };
 
-            // Reset the display first
-            assignedMemoNumber.textContent = 'Select memo type first';
+        let unsubscribeMemoNumber = null;
 
-            if (type === 'PO') {
-                poNumberRef = doc(db, "memoNumbers", "current");
-                poUnsubscribe = onSnapshot(poNumberRef, (doc) => {
-                    if (doc.exists()) {
-                        const currentNumber = doc.data().number;
-                        assignedMemoNumber.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    }
-                });
-            } else if (type === 'CO') {
-                coNumberRef = doc(db, "memoNumbers", "coCurrent");
-                coUnsubscribe = onSnapshot(coNumberRef, async (doc) => {
-                    if (!doc.exists()) {
-                        try {
-                            await updateDoc(coNumberRef, { number: 0 });
-                        } catch (error) {
-                            await setDoc(coNumberRef, { number: 0 });
-                        }
-                    } else {
-                        const currentNumber = doc.data().number;
-                        assignedMemoNumber.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    }
-                });
-            } else if (type === 'Office Order') {
-                const officeOrderRef = doc(db, "memoNumbers", "officeOrder");
-                window.officeOrderUnsubscribe = onSnapshot(officeOrderRef, async (doc) => {
-                    if (!doc.exists()) {
-                        try {
-                            await updateDoc(officeOrderRef, { number: 0 });
-                        } catch (error) {
-                            await setDoc(officeOrderRef, { number: 0 });
-                        }
-                    } else {
-                        const currentNumber = doc.data().number;
-                        assignedMemoNumber.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    }
-                });
-            } else if (type === 'Advisory') {
-                const advisoryRef = doc(db, "memoNumbers", "advisory");
-                window.advisoryUnsubscribe = onSnapshot(advisoryRef, async (doc) => {
-                    if (!doc.exists()) {
-                        try {
-                            await updateDoc(advisoryRef, { number: 0 });
-                        } catch (error) {
-                            await setDoc(advisoryRef, { number: 0 });
-                        }
-                    } else {
-                        const currentNumber = doc.data().number;
-                        assignedMemoNumber.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    }
-                });
-            } else if (type === 'Bulletin') {
-                const bulletinRef = doc(db, "memoNumbers", "bulletin");
-                window.bulletinUnsubscribe = onSnapshot(bulletinRef, async (doc) => {
-                    if (!doc.exists()) {
-                        try {
-                            await updateDoc(bulletinRef, { number: 0 });
-                        } catch (error) {
-                            await setDoc(bulletinRef, { number: 0 });
-                        }
-                    } else {
-                        const currentNumber = doc.data().number;
-                        assignedMemoNumber.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    }
-                });
+        function updateMemoNumberFromFirebase() {
+            if (unsubscribeMemoNumber) {
+                unsubscribeMemoNumber();
+                unsubscribeMemoNumber = null;
             }
+            const type = memoTypeSelect.value;
+            if (!type || !memoTypeToDocId[type]) {
+                assignedMemoNumber.textContent = 'Select memo type first';
+                return;
+            }
+            const docId = memoTypeToDocId[type];
+            const memoNumberRef = doc(db, 'memoNumbers', docId);
+            unsubscribeMemoNumber = onSnapshot(memoNumberRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const number = docSnap.data().number;
+                    assignedMemoNumber.textContent = String(number).padStart(4, '0');
+                } else {
+                    assignedMemoNumber.textContent = 'Not available';
+                }
+            });
         }
 
-        // Listen for memo type changes
-        memoTypeSelect.addEventListener('change', (e) => {
-            updateMemoNumber(e.target.value);
-        });
+        memoTypeSelect.addEventListener('change', updateMemoNumberFromFirebase);
+        window.addEventListener('DOMContentLoaded', updateMemoNumberFromFirebase);
 
         // Handle form submission
         memoForm.addEventListener('submit', async (e) => {
@@ -365,7 +319,7 @@
                     throw new Error('User data not found');
                 }
 
-                // Get the next memo number
+                // Get the next memo number (but do NOT increment yet)
                 const memoType = formData.get('memoType');
                 let memoNumberKey;
                 switch (memoType) {
@@ -384,23 +338,19 @@
                     case 'Bulletin':
                         memoNumberKey = 'bulletin';
                         break;
+                    case 'Acknowledgment':
+                        memoNumberKey = 'acknowledgment';
+                        break;
                     default:
                         throw new Error('Unknown memo type');
                 }
                 const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
-                const memoNumberDoc = await runTransaction(db, async (transaction) => {
-                    const doc = await transaction.get(memoNumberRef);
-                    if (!doc.exists()) {
-                        transaction.set(memoNumberRef, { number: 1 });
-                        return { number: 1 };
-                    }
-                    const currentNumber = doc.data().number;
-                    // Increment the number
-                    const nextNumber = currentNumber + 1;
-                    transaction.update(memoNumberRef, { number: nextNumber });
-                    return { number: nextNumber };
-                });
-
+                // Get the current number (do not increment yet)
+                const memoNumberSnap = await memoNumberRef.get ? await memoNumberRef.get() : await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js').then(m => m.getDoc(memoNumberRef));
+                let currentNumber = 1;
+                if (memoNumberSnap.exists()) {
+                    currentNumber = memoNumberSnap.data().number;
+                }
                 // Get department code (first 3 letters of department)
                 const departmentCode = userData.department.substring(0, 3).toUpperCase();
                 const currentYear = new Date().getFullYear();
@@ -415,11 +365,14 @@
                     signatory: formData.get('signatory'),
                     createdBy: userData.username,
                     memoType: memoType,
-                    memoNumber: `${memoType}-${currentYear}-${departmentCode}-${String(memoNumberDoc.number).padStart(4, '0')}`
+                    memoNumber: `${memoType}-${currentYear}-${departmentCode}-${String(currentNumber).padStart(4, '0')}`
                 };
 
                 // Create memo
                 const memoRef = await createMemo(memoData);
+                
+                // After successful creation, increment the number in Firestore
+                await updateDoc(memoNumberRef, { number: currentNumber + 1 });
                 
                 // Log the memo creation
                 await logMemoActivity(

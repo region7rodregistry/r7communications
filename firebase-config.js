@@ -51,6 +51,9 @@ async function createMemo(memoData) {
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
                 break;
+            case 'Acknowledgment':
+                memoNumberKey = 'acknowledgment';
+                break;
             default:
                 throw new Error('Unknown memo type');
         }
@@ -145,6 +148,9 @@ async function getNextMemoNumber(memoType = 'PO') {
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
                 break;
+            case 'Acknowledgment':
+                memoNumberKey = 'acknowledgment';
+                break;
             default:
                 throw new Error('Unknown memo type');
         }
@@ -184,6 +190,9 @@ async function getCurrentMemoNumber(memoType = 'PO') {
                 break;
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
+                break;
+            case 'Acknowledgment':
+                memoNumberKey = 'acknowledgment';
                 break;
             default:
                 throw new Error('Unknown memo type');
