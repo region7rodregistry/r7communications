@@ -73,26 +73,34 @@
             background-clip: text;
         }
 
-        /* Custom hover effects */
-        .card-hover:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+        /* Custom hover effects - disabled on mobile for better touch experience */
+        @media (hover: hover) {
+            .card-hover:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+            }
+
+            .card-hover:hover .profile-glow {
+                opacity: 1;
+            }
+
+            .card-hover:hover .neon-glow {
+                opacity: 1;
+            }
+
+            .card-hover:hover .profile-image {
+                transform: scale(1.1);
+            }
+
+            .card-hover:hover .tech-corner {
+                border-color: rgba(34, 211, 238, 0.6);
+            }
         }
 
-        .card-hover:hover .profile-glow {
-            opacity: 1;
-        }
-
-        .card-hover:hover .neon-glow {
-            opacity: 1;
-        }
-
-        .card-hover:hover .profile-image {
-            transform: scale(1.1);
-        }
-
-        .card-hover:hover .tech-corner {
-            border-color: rgba(34, 211, 238, 0.6);
+        /* Touch-friendly active states for mobile */
+        .card-hover:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
         }
 
         /* Neon glow effect */
@@ -120,7 +128,7 @@
             filter: blur(8px);
         }
 
-        /* Tech corners */
+        /* Tech corners - hidden on mobile for cleaner look */
         .tech-corner-tl {
             position: absolute;
             top: 1rem;
@@ -143,6 +151,14 @@
             transition: border-color 0.3s ease;
         }
 
+        /* Hide tech corners on mobile */
+        @media (max-width: 768px) {
+            .tech-corner-tl,
+            .tech-corner-br {
+                display: none;
+            }
+        }
+
         /* Grid pattern */
         .grid-pattern {
             background-image: 
@@ -152,7 +168,15 @@
             opacity: 0.2;
         }
 
-        /* Particle animations */
+        /* Smaller grid on mobile */
+        @media (max-width: 768px) {
+            .grid-pattern {
+                background-size: 30px 30px;
+                opacity: 0.15;
+            }
+        }
+
+        /* Particle animations - reduced on mobile for better performance */
         .particle {
             position: absolute;
             border-radius: 50%;
@@ -217,6 +241,53 @@
             animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
             opacity: 0.5;
         }
+
+        /* Hide some particles on mobile for better performance */
+        @media (max-width: 768px) {
+            .particle-2,
+            .particle-4,
+            .particle-6 {
+                display: none;
+            }
+        }
+
+        /* Mobile-specific improvements */
+        @media (max-width: 640px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            /* Better touch targets */
+            .card-hover {
+                min-height: 280px;
+                cursor: pointer;
+            }
+            
+            /* Improved text sizing for mobile */
+            .mobile-text-lg {
+                font-size: 1.125rem;
+                line-height: 1.75rem;
+            }
+            
+            .mobile-text-sm {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+            }
+        }
+
+        /* Extra small mobile improvements */
+        @media (max-width: 480px) {
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            .card-hover {
+                min-height: 260px;
+                padding: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-black via-blue-950 to-slate-900 relative overflow-hidden">
@@ -233,31 +304,31 @@
     <!-- Grid Pattern Overlay -->
     <div class="absolute inset-0 grid-pattern"></div>
 
-    <div class="relative z-10 container mx-auto px-4 py-8 min-h-screen flex flex-col">
+    <div class="relative z-10 container mx-auto px-4 sm:px-6 py-4 sm:py-8 min-h-screen flex flex-col">
         <!-- Header -->
-        <header class="text-center mb-16 pt-8">
-            <h1 class="fade-element text-4xl md:text-6xl lg:text-7xl font-black gradient-text animate-fade-in-up" 
+        <header class="text-center mb-8 sm:mb-12 lg:mb-16 pt-4 sm:pt-8">
+            <h1 class="fade-element text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black gradient-text animate-fade-in-up leading-tight" 
                 style="letter-spacing: -0.02em;">
                 ICT UNIT
             </h1>
             <div class="fade-element animate-fade-in animate-delay-300">
-                <p class="text-xl md:text-2xl text-blue-200 font-light tracking-wider mt-4">TESDA REGION VII</p>
-                <div class="w-32 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mt-4 rounded-full"></div>
+                <p class="text-lg sm:text-xl md:text-2xl text-blue-200 font-light tracking-wider mt-3 sm:mt-4">TESDA REGION VII</p>
+                <div class="w-24 sm:w-32 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mt-3 sm:mt-4 rounded-full"></div>
             </div>
         </header>
 
         <!-- Team Cards -->
-        <main class="flex-1 flex items-center justify-center">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full">
+        <main class="flex-1 flex items-start justify-center py-4 sm:py-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl w-full">
                 <!-- Card 1 -->
                 <div class="fade-element animate-fade-in-up animate-delay-600">
-                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
+                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
                         <!-- Neon Glow Effect -->
                         <div class="neon-glow"></div>
 
                         <!-- Profile Image -->
-                        <div class="relative mb-6 flex justify-center">
-                            <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                        <div class="relative mb-4 sm:mb-6 flex justify-center">
+                            <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                                 <img src="icons/kane.jpg" 
                                      alt="Jan Kane T. Reroma" 
                                      class="profile-image w-full h-full object-cover transition-transform duration-300">
@@ -267,12 +338,12 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="relative z-10 text-center space-y-3">
-                            <h3 class="text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300">
+                        <div class="relative z-10 text-center space-y-2 sm:space-y-3">
+                            <h3 class="text-lg sm:text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300 leading-tight">
                                 Jan Kane T. Reroma
                             </h3>
-                            <p class="text-blue-300 font-medium text-sm uppercase tracking-wider">ICT Support Staff</p>
-                            <p class="text-slate-300 text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
+                            <p class="text-blue-300 font-medium text-xs sm:text-sm uppercase tracking-wider">ICT Support Staff</p>
+                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
                                 NTTC Support & Software Developer
                             </p>
                         </div>
@@ -285,13 +356,13 @@
 
                 <!-- Card 2 -->
                 <div class="fade-element animate-fade-in-up animate-delay-900">
-                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
+                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
                         <!-- Neon Glow Effect -->
                         <div class="neon-glow"></div>
 
                         <!-- Profile Image -->
-                        <div class="relative mb-6 flex justify-center">
-                            <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                        <div class="relative mb-4 sm:mb-6 flex justify-center">
+                            <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                                 <img src="icons/gerard.jpg" 
                                      alt="Gerard Randolf G. Tecson" 
                                      class="profile-image w-full h-full object-cover transition-transform duration-300">
@@ -301,12 +372,12 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="relative z-10 text-center space-y-3">
-                            <h3 class="text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300">
+                        <div class="relative z-10 text-center space-y-2 sm:space-y-3">
+                            <h3 class="text-lg sm:text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300 leading-tight">
                                 Gerard Randolf G. Tecson
                             </h3>
-                            <p class="text-blue-300 font-medium text-sm uppercase tracking-wider">Information Technology Officer I</p>
-                            <p class="text-slate-300 text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
+                            <p class="text-blue-300 font-medium text-xs sm:text-sm uppercase tracking-wider">Information Technology Officer I</p>
+                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
                                 IT Infrastructure & Project Management
                             </p>
                         </div>
@@ -318,14 +389,14 @@
                 </div>
 
                 <!-- Card 3 -->
-                <div class="fade-element animate-fade-in-up animate-delay-1200">
-                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
+                <div class="fade-element animate-fade-in-up animate-delay-1200 md:col-span-2 lg:col-span-1">
+                    <div class="card-hover relative bg-gradient-to-br from-slate-900/80 to-blue-950/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-blue-500/30 hover:border-cyan-400/60 transition-all duration-300">
                         <!-- Neon Glow Effect -->
                         <div class="neon-glow"></div>
 
                         <!-- Profile Image -->
-                        <div class="relative mb-6 flex justify-center">
-                            <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                        <div class="relative mb-4 sm:mb-6 flex justify-center">
+                            <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-blue-400/50 hover:border-cyan-400 transition-colors duration-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                                 <img src="icons/aljohn.jpg" 
                                      alt="Aljohn T. Rosales" 
                                      class="profile-image w-full h-full object-cover transition-transform duration-300">
@@ -335,12 +406,12 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="relative z-10 text-center space-y-3">
-                            <h3 class="text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300">
+                        <div class="relative z-10 text-center space-y-2 sm:space-y-3">
+                            <h3 class="text-lg sm:text-xl font-bold text-white hover:text-cyan-100 transition-colors duration-300 leading-tight">
                                 Aljohn T. Rosales
                             </h3>
-                            <p class="text-blue-300 font-medium text-sm uppercase tracking-wider">ICT Support Staff</p>
-                            <p class="text-slate-300 text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
+                            <p class="text-blue-300 font-medium text-xs sm:text-sm uppercase tracking-wider">ICT Support Staff</p>
+                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed hover:text-slate-200 transition-colors duration-300">
                                 Network Administrator & User Assistance
                             </p>
                         </div>
@@ -354,19 +425,19 @@
         </main>
 
         <!-- Footer -->
-        <footer class="fade-element text-center py-8 animate-fade-in animate-delay-1200">
-            <div class="border-t border-blue-500/20 pt-8">
-                <p class="text-slate-400 text-sm">
+        <footer class="fade-element text-center py-6 sm:py-8 animate-fade-in animate-delay-1200">
+            <div class="border-t border-blue-500/20 pt-6 sm:pt-8">
+                <p class="text-slate-400 text-xs sm:text-sm px-4">
                     <span class="text-cyan-400 font-medium">ICT Unit</span> — Powered by Innovation | © 2025
-                    <a href="https://www.facebook.com/tesdasietecentralvisayas" class="text-blue-300">TESDA Region VII</a>
+                    <a href="https://www.facebook.com/tesdasietecentralvisayas" class="text-blue-300 hover:text-blue-200 transition-colors">TESDA Region VII</a>
                 </p>
             </div>
         </footer>
     </div>
 
-    <!-- Additional Glow Effects -->
-    <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl"></div>
+    <!-- Additional Glow Effects - reduced on mobile -->
+    <div class="absolute top-0 left-1/4 w-48 sm:w-96 h-48 sm:h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-1/4 w-48 sm:w-96 h-48 sm:h-96 bg-cyan-400/10 rounded-full blur-3xl"></div>
 
     <script>
         // Trigger animations on page load
@@ -374,6 +445,21 @@
             const fadeElements = document.querySelectorAll('.fade-element');
             fadeElements.forEach(element => {
                 element.style.opacity = '1';
+            });
+        });
+
+        // Add touch feedback for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card-hover');
+            
+            cards.forEach(card => {
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                card.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
             });
         });
     </script>
