@@ -201,7 +201,7 @@
             memos.forEach(memo => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.memoNumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.memoNumber.split('-').pop()}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.title}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${memo.recipients.join(', ')}</td>
@@ -268,7 +268,7 @@
 
             const filteredMemos = allMemos.filter(memo => {
                 return (
-                    memo.memoNumber.toLowerCase().includes(searchTerm) ||
+                    memo.memoNumber.split('-').pop().toLowerCase().includes(searchTerm) ||
                     memo.title.toLowerCase().includes(searchTerm) ||
                     memo.department.toLowerCase().includes(searchTerm) ||
                     memo.recipients.some(r => r.toLowerCase().includes(searchTerm)) ||

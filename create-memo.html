@@ -57,7 +57,7 @@
         <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
-                <img src="icons/both.png" alt="TESDA Logo" class="h-12 w-auto sm:h-16">
+                <img src="icons/tlogo.png" alt="TESDA Logo" class="h-12 w-auto sm:h-16">
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Create New Memo</h1>
                     <p class="mt-1 text-sm text-gray-500">Fill out the form below to create a new memo</p>
@@ -106,6 +106,53 @@
         <!-- Memo Form -->
         <form id="memoForm" class="bg-white shadow-md rounded-lg p-4 sm:p-6 md:p-8 m-4 space-y-4 transition-all duration-300 hover:shadow-lg">
             <div class="flex flex-col space-y-4">
+                <!-- Antedation Section -->
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="calendar" class="h-5 w-5 text-gray-400"></i>
+                            <label class="text-sm font-medium text-gray-700">Antedation</label>
+                        </div>
+                        <div class="flex items-center">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="isAntedated" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="antedationDateContainer" class="hidden">
+                        <div class="relative">
+                            <label for="antedationDate" class="block text-sm font-medium text-gray-700 mb-1">Antedation Date <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="calendar-days" class="h-4 w-4 text-gray-400"></i>
+                                </div>
+                                <input type="date" id="antedationDate" name="antedationDate" 
+                                    class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base"
+                                    max="">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <span class="text-xs text-gray-500">Past date only</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="info" class="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                                <div class="text-xs text-blue-700">
+                                    <p class="font-medium mb-1">Antedation Information:</p>
+                                    <ul class="space-y-1">
+                                        <li>• Memo will be dated with the selected past date</li>
+                                        <li>• Memo number will include a suffix (A, B, C, etc.)</li>
+                                        <li>• Example: If last memo on that date was 1405, this becomes 1405-A</li>
+                                        <li>• Normal memos continue with sequential numbering</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Memo Type -->
                 <div class="relative">
                     <label for="memoType" class="block text-sm font-medium text-gray-700 mb-1">Document Type <span class="text-red-500">*</span></label>
@@ -132,6 +179,9 @@
                     <div class="flex items-center border border-gray-300 rounded-lg shadow-md py-2.5 px-3 bg-gray-50">
                         <i data-lucide="hash" class="h-4 w-4 text-gray-400 mr-2"></i>
                         <span id="assignedMemoNumber" class="text-gray-700 font-medium">Select memo type first</span>
+                        <div id="antedationIndicator" class="hidden ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                            Antedated
+                        </div>
                     </div>
                 </div>
 
@@ -240,7 +290,7 @@
 
     <script type="module">
         import { createMemo, auth } from './firebase-config.js';
-        import { doc, onSnapshot, updateDoc, setDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, onSnapshot, updateDoc, setDoc, runTransaction, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
         // Initialize Lucide icons
@@ -253,6 +303,14 @@
         const successMessage = document.getElementById('successMessage');
         const assignedMemoNumber = document.getElementById('assignedMemoNumber');
         const memoTypeSelect = document.getElementById('memoType');
+        const isAntedatedToggle = document.getElementById('isAntedated');
+        const antedationDateContainer = document.getElementById('antedationDateContainer');
+        const antedationDateInput = document.getElementById('antedationDate');
+        const antedationIndicator = document.getElementById('antedationIndicator');
+
+        // Antedation state variables
+        let isAntedated = false;
+        let antedationDate = null;
 
         let poNumberRef = null;
         let coNumberRef = null;
@@ -293,8 +351,248 @@
             });
         }
 
-        memoTypeSelect.addEventListener('change', updateMemoNumberFromFirebase);
-        window.addEventListener('DOMContentLoaded', updateMemoNumberFromFirebase);
+        memoTypeSelect.addEventListener('change', function() {
+            if (isAntedated) {
+                // If antedation is enabled, check if we have both type and date
+                if (antedationDate) {
+                    updateMemoNumberDisplay();
+                } else {
+                    assignedMemoNumber.textContent = 'Select antedation date';
+                }
+            } else {
+                // Normal memo number logic
+                updateMemoNumberDisplay();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', function() {
+            if (isAntedated) {
+                assignedMemoNumber.textContent = 'Select memo type first';
+            } else {
+                updateMemoNumberDisplay();
+            }
+        });
+
+        // Antedation event listeners
+        isAntedatedToggle.addEventListener('change', function() {
+            isAntedated = this.checked;
+            if (isAntedated) {
+                antedationDateContainer.classList.remove('hidden');
+                antedationDateInput.setAttribute('required', 'required');
+                antedationIndicator.classList.remove('hidden');
+                // Set max date to yesterday
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                antedationDateInput.max = yesterday.toISOString().split('T')[0];
+                
+                // Set initial memo number display
+                if (memoTypeSelect.value) {
+                    assignedMemoNumber.textContent = 'Select antedation date';
+                } else {
+                    assignedMemoNumber.textContent = 'Select memo type first';
+                }
+            } else {
+                antedationDateContainer.classList.add('hidden');
+                antedationDateInput.removeAttribute('required');
+                antedationDateInput.value = '';
+                antedationDate = null;
+                antedationIndicator.classList.add('hidden');
+                
+                // Return to normal memo number display
+                updateMemoNumberDisplay();
+            }
+        });
+
+        antedationDateInput.addEventListener('change', function() {
+            antedationDate = this.value;
+            
+            // Validate that the date is not in the future
+            const selectedDate = new Date(antedationDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate >= today) {
+                errorMessage.querySelector('p').textContent = 'Antedation date must be in the past';
+                errorMessage.classList.remove('hidden');
+                this.value = '';
+                antedationDate = null;
+                assignedMemoNumber.textContent = 'Select antedation date';
+                return;
+            }
+            
+            errorMessage.classList.add('hidden');
+            
+            // Only generate memo number if both type and date are selected
+            if (memoTypeSelect.value) {
+                updateMemoNumberDisplay();
+            } else {
+                assignedMemoNumber.textContent = 'Select memo type first';
+            }
+        });
+
+        // Helper function to generate A-Z suffixes
+        function generateSuffix(index) {
+            if (index < 26) {
+                return String.fromCharCode(65 + index); // A-Z
+            } else {
+                // For AA, AB, etc. (index 26 = AA, 27 = AB, etc.)
+                const firstChar = String.fromCharCode(65 + Math.floor((index - 26) / 26));
+                const secondChar = String.fromCharCode(65 + ((index - 26) % 26));
+                return firstChar + secondChar;
+            }
+        }
+
+        // Function to get the next antedated memo number
+        async function getNextAntedatedMemoNumber(memoType, selectedDate) {
+            try {
+                const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
+                const year = new Date(selectedDate).getFullYear();
+                
+                // Query memos for the specific memo type (simplified to avoid index requirement)
+                const q = query(
+                    collection(db, "memos"),
+                    where("memoType", "==", memoType)
+                );
+
+                const querySnapshot = await getDocs(q);
+                
+                // Filter memos for the specific date AND memo type, then sort by memo number in memory
+                const memosForDate = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(memo => {
+                        // Only include memos of the same type AND same date
+                        const memoDate = memo.antedationDate || memo.createdAt.toDate().toISOString().split('T')[0];
+                        return memoDate === selectedDate && memo.memoType === memoType;
+                    })
+                    .sort((a, b) => {
+                        // Sort by memo number (extract the numeric part for proper sorting)
+                        const aNum = parseInt(a.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
+                        const bNum = parseInt(b.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
+                        if (aNum !== bNum) return bNum - aNum;
+                        
+                        // If same number, sort by suffix (A < B < C, etc.)
+                        const aSuffix = a.memoNumber.split('-').pop().replace(/\d/g, '') || '';
+                        const bSuffix = b.memoNumber.split('-').pop().replace(/\d/g, '') || '';
+                        return bSuffix.localeCompare(aSuffix);
+                    });
+                
+                if (memosForDate.length === 0) {
+                    // No memos found for this specific date AND memo type
+                    // Get the last memo number from the last memo of the same type before this date
+                    const baseQuery = query(
+                        collection(db, "memos"),
+                        where("memoType", "==", memoType)
+                    );
+                    
+                    const baseSnapshot = await getDocs(baseQuery);
+                    if (baseSnapshot.empty) {
+                        // No previous memos of this type at all, start with 0001
+                        return `${memoType}-${year}-${departmentCode}-0001`;
+                    } else {
+                        // Find the last memo of the same type before the selected date
+                        const memosBeforeDate = baseSnapshot.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() }))
+                            .filter(memo => {
+                                // Only include memos of the same type AND before the selected date
+                                const memoDate = memo.antedationDate || memo.createdAt.toDate().toISOString().split('T')[0];
+                                return memoDate < selectedDate && memo.memoType === memoType;
+                            })
+                            .sort((a, b) => {
+                                const aDate = a.antedationDate || a.createdAt.toDate().toISOString().split('T')[0];
+                                const bDate = b.antedationDate || b.createdAt.toDate().toISOString().split('T')[0];
+                                return bDate.localeCompare(aDate);
+                            });
+                        
+                        if (memosBeforeDate.length === 0) {
+                            // No previous memos of this type, start with 0001
+                            return `${memoType}-${year}-${departmentCode}-0001`;
+                        } else {
+                            // Use the last memo number from the last memo of the same type before this date
+                            const lastMemo = memosBeforeDate[0];
+                            const lastNumber = parseInt(lastMemo.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
+                            return `${memoType}-${year}-${departmentCode}-${String(lastNumber).padStart(4, '0')}`;
+                        }
+                    }
+                } else {
+                    // Found memos for this specific date AND memo type
+                    // Use the last memo number from this date and type (highest number)
+                    const lastMemo = memosForDate[0];
+                    const memoNumber = lastMemo.memoNumber;
+                    
+                    // Check if the memo number already has a suffix (A, B, C, etc.)
+                    const hasSuffix = /-[A-Z]+$/.test(memoNumber);
+                    
+                    if (hasSuffix) {
+                        // Extract the base number and suffix
+                        const match = memoNumber.match(/^(.+?)-([A-Z]+)$/);
+                        if (match) {
+                            const baseNumber = match[1];
+                            const suffix = match[2];
+                            
+                            // Convert suffix to index (A=0, B=1, ..., Z=25, AA=26, etc.)
+                            let suffixIndex;
+                            if (suffix.length === 1) {
+                                suffixIndex = suffix.charCodeAt(0) - 65; // A=0, B=1, etc.
+                            } else {
+                                // Handle AA, AB, etc. (AA=26, AB=27, etc.)
+                                suffixIndex = 26 + (suffix.charCodeAt(0) - 65) * 26 + (suffix.charCodeAt(1) - 65);
+                            }
+                            
+                            const nextSuffix = generateSuffix(suffixIndex + 1);
+                            return `${baseNumber}-${nextSuffix}`;
+                        }
+                    } else {
+                        // No suffix, add 'A' to the last memo number from this date and type
+                        return `${memoNumber}-A`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting next antedated memo number:', error);
+                throw error;
+            }
+        }
+
+        // Update memo number display based on antedation state
+        async function updateMemoNumberDisplay() {
+            if (isAntedated && antedationDate && memoTypeSelect.value) {
+                try {
+                    // Show loading state for antedated memo number
+                    assignedMemoNumber.innerHTML = '<span class="text-gray-500">Calculating...</span>';
+                    
+                    const generatedMemoNo = await getNextAntedatedMemoNumber(memoTypeSelect.value, antedationDate);
+                    const memoNumberPart = generatedMemoNo.split('-').pop();
+                    
+                    // Check if it has a suffix (A, B, C, etc.)
+                    const hasSuffix = /[A-Z]+$/.test(memoNumberPart);
+                    
+                    if (hasSuffix) {
+                        // Split the number and suffix for better display
+                        const match = memoNumberPart.match(/^(\d+)([A-Z]+)$/);
+                        if (match) {
+                            const number = match[1];
+                            const suffix = match[2];
+                            assignedMemoNumber.innerHTML = `${number}<span class="text-primary-600 font-bold">-${suffix}</span>`;
+                        } else {
+                            assignedMemoNumber.textContent = memoNumberPart;
+                        }
+                    } else {
+                        assignedMemoNumber.textContent = memoNumberPart;
+                    }
+                } catch (error) {
+                    console.error('Error updating antedated memo number:', error);
+                    assignedMemoNumber.innerHTML = '<span class="text-red-500">Error calculating number</span>';
+                }
+            } else if (isAntedated && !antedationDate) {
+                // Antedation is enabled but no date selected yet
+                assignedMemoNumber.innerHTML = '<span class="text-gray-500">Select antedation date</span>';
+            } else if (isAntedated && !memoTypeSelect.value) {
+                // Antedation is enabled but no memo type selected yet
+                assignedMemoNumber.innerHTML = '<span class="text-gray-500">Select memo type first</span>';
+            } else {
+                // Use normal memo number logic
+                updateMemoNumberFromFirebase();
+            }
+        }
 
         // Handle form submission
         memoForm.addEventListener('submit', async (e) => {
@@ -305,6 +603,11 @@
                 loadingOverlay.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 successMessage.classList.add('hidden');
+
+                // Validate antedation
+                if (isAntedated && !antedationDate) {
+                    throw new Error('Please select an antedation date');
+                }
 
                 // Get current user
                 const currentUser = auth.currentUser;
@@ -319,41 +622,50 @@
                     throw new Error('User data not found');
                 }
 
-                // Get the next memo number (but do NOT increment yet)
+                // Get memo type and generate memo number
                 const memoType = formData.get('memoType');
-                let memoNumberKey;
-                switch (memoType) {
-                    case 'PO':
-                        memoNumberKey = 'current';
-                        break;
-                    case 'CO':
-                        memoNumberKey = 'coCurrent';
-                        break;
-                    case 'Office Order':
-                        memoNumberKey = 'officeOrder';
-                        break;
-                    case 'Advisory':
-                        memoNumberKey = 'advisory';
-                        break;
-                    case 'Bulletin':
-                        memoNumberKey = 'bulletin';
-                        break;
-                    case 'Acknowledgment':
-                        memoNumberKey = 'acknowledgment';
-                        break;
-                    default:
-                        throw new Error('Unknown memo type');
+                let generatedMemoNo;
+
+                if (isAntedated && antedationDate) {
+                    // Generate antedated memo number
+                    generatedMemoNo = await getNextAntedatedMemoNumber(memoType, antedationDate);
+                } else {
+                    // Get the next normal memo number (but do NOT increment yet)
+                    let memoNumberKey;
+                    switch (memoType) {
+                        case 'PO':
+                            memoNumberKey = 'current';
+                            break;
+                        case 'CO':
+                            memoNumberKey = 'coCurrent';
+                            break;
+                        case 'Office Order':
+                            memoNumberKey = 'officeOrder';
+                            break;
+                        case 'Advisory':
+                            memoNumberKey = 'advisory';
+                            break;
+                        case 'Bulletin':
+                            memoNumberKey = 'bulletin';
+                            break;
+                        case 'Acknowledgment':
+                            memoNumberKey = 'acknowledgment';
+                            break;
+                        default:
+                            throw new Error('Unknown memo type');
+                    }
+                    const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
+                    // Get the current number (do not increment yet)
+                    const memoNumberSnap = await memoNumberRef.get ? await memoNumberRef.get() : await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js').then(m => m.getDoc(memoNumberRef));
+                    let currentNumber = 1;
+                    if (memoNumberSnap.exists()) {
+                        currentNumber = memoNumberSnap.data().number;
+                    }
+                    // Get department code (first 3 letters of department)
+                    const departmentCode = userData.department.substring(0, 3).toUpperCase();
+                    const currentYear = new Date().getFullYear();
+                    generatedMemoNo = `${memoType}-${currentYear}-${departmentCode}-${String(currentNumber).padStart(4, '0')}`;
                 }
-                const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
-                // Get the current number (do not increment yet)
-                const memoNumberSnap = await memoNumberRef.get ? await memoNumberRef.get() : await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js').then(m => m.getDoc(memoNumberRef));
-                let currentNumber = 1;
-                if (memoNumberSnap.exists()) {
-                    currentNumber = memoNumberSnap.data().number;
-                }
-                // Get department code (first 3 letters of department)
-                const departmentCode = userData.department.substring(0, 3).toUpperCase();
-                const currentYear = new Date().getFullYear();
 
                 // Create memo data object with the assigned number
                 const memoData = {
@@ -365,28 +677,69 @@
                     signatory: formData.get('signatory'),
                     createdBy: userData.username,
                     memoType: memoType,
-                    memoNumber: `${memoType}-${currentYear}-${departmentCode}-${String(currentNumber).padStart(4, '0')}`
+                    memoNumber: generatedMemoNo,
+                    isAntedated: isAntedated,
+                    antedationDate: isAntedated ? antedationDate : null,
+                    createdAt: isAntedated ? new Date(antedationDate + 'T12:00:00') : new Date()
                 };
 
                 // Create memo
                 const memoRef = await createMemo(memoData);
                 
-                // After successful creation, increment the number in Firestore
-                await updateDoc(memoNumberRef, { number: currentNumber + 1 });
+                // Only increment the normal memo number counter if this is NOT an antedated memo
+                if (!isAntedated) {
+                    // Get the memo number key for normal memos
+                    let memoNumberKey;
+                    switch (memoType) {
+                        case 'PO':
+                            memoNumberKey = 'current';
+                            break;
+                        case 'CO':
+                            memoNumberKey = 'coCurrent';
+                            break;
+                        case 'Office Order':
+                            memoNumberKey = 'officeOrder';
+                            break;
+                        case 'Advisory':
+                            memoNumberKey = 'advisory';
+                            break;
+                        case 'Bulletin':
+                            memoNumberKey = 'bulletin';
+                            break;
+                        case 'Acknowledgment':
+                            memoNumberKey = 'acknowledgment';
+                            break;
+                        default:
+                            throw new Error('Unknown memo type');
+                    }
+                    const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
+                    const currentNumber = parseInt(generatedMemoNo.split('-').pop());
+                    await updateDoc(memoNumberRef, { number: currentNumber + 1 });
+                }
                 
                 // Log the memo creation
+                const actionText = isAntedated ? 
+                    `Created Antedated Memo ${generatedMemoNo} (dated ${antedationDate})` : 
+                    `Created Memo ${generatedMemoNo}`;
                 await logMemoActivity(
                     memoRef.id,
-                    `Created Memo ${memoData.memoNumber}`,
+                    actionText,
                     userData.username
                 );
 
                 // Show success message
-                successMessage.querySelector('p').textContent = 'Memo created successfully!';
+                const successText = isAntedated ? 
+                    `Antedated memo created successfully! (dated ${antedationDate})` : 
+                    'Memo created successfully!';
+                successMessage.querySelector('p').textContent = successText;
                 successMessage.classList.remove('hidden');
 
                 // Reset form
                 memoForm.reset();
+                isAntedated = false;
+                antedationDate = null;
+                antedationDateContainer.classList.add('hidden');
+                antedationIndicator.classList.add('hidden');
                 assignedMemoNumber.textContent = 'Select memo type first';
 
                 // Redirect after 2 seconds
@@ -396,7 +749,7 @@
 
             } catch (error) {
                 console.error('Error creating memo:', error);
-                errorMessage.querySelector('p').textContent = 'Error creating memo. Please try again.';
+                errorMessage.querySelector('p').textContent = error.message || 'Error creating memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
                 loadingOverlay.classList.add('hidden');

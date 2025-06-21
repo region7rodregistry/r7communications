@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard - TESDA MBMS</title>
+    <link rel="icon" type="image/png" href="icons/t7logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script>
@@ -41,6 +42,9 @@
                 <a href="#" id="viewDraftsBtnSidebar" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
                     <i data-lucide="file" class="w-5 h-5 mr-3"></i> View Drafts
                 </a>
+                <a href="ictunit.html" id="viewDraftsBtnSidebar" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+                    <i data-lucide="file" class="w-5 h-5 mr-3"></i> ICTeam
+                </a>
             </nav>
         </aside>
         <!-- Main Content -->
@@ -55,7 +59,7 @@
                     <span class="text-lg font-bold text-primary dark:text-white">TESDA MBMS</span>
                 </div>
                 <div class="flex-1 flex items-center justify-center md:justify-start">
-                    <h1 class="text-2xl font-extrabold text-primary dark:text-white hidden md:block tracking-tight">User Dashboard</h1>
+                    <h1 id="welcomeMessage" class="text-2xl font-extrabold text-primary dark:text-white hidden md:block tracking-tight">User Dashboard</h1>
                 </div>
                 <div class="flex items-center space-x-2">
                     <span id="userInfo" class="text-xs sm:text-sm text-gray-700 dark:text-gray-200 font-medium"></span>
@@ -89,7 +93,7 @@
                 </div>
             </div>
             <!-- Main Content Area -->
-            <main class="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-10 transition-colors duration-300">
+            <main class="flex-1 w-full max-w-full mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-10 transition-colors duration-300">
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 flex items-center space-x-5 transition-colors duration-300 hover:shadow-2xl hover:scale-[1.03] transform-gpu cursor-pointer">
@@ -147,18 +151,19 @@
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Recent Memos</h2>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-[900px] w-full divide-y divide-gray-200 dark:divide-gray-700 text-base">
+                        <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 text-base">
                             <thead class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 hidden sm:table-header-group">
                                 <tr>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Memo Number</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider max-w-xs w-48 truncate">Title</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">From</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Recipients</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created At</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Released to ROD/FASD</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden">Received by ROD/FASD</th>
-                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">Memo Number</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">Title</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">From</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Recipients</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Status</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Created At</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Antedation Date</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden w-40">Released to ROD/FASD</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider rod-fasd-col hidden w-40">Received by ROD/FASD</th>
+                                    <th scope="col" class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="memosTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -264,12 +269,40 @@
             const userData = JSON.parse(localStorage.getItem('tesdaUser'));
             if (userData) {
                 userInfo.textContent = `${userData.username} (${userData.department})`;
+                // Update welcome message based on department
+                updateWelcomeMessage(userData.department);
             }
             // Load memos
             await loadMemos();
             // Add search input event listener
             searchInput.addEventListener('input', filterMemos);
         });
+
+        // Function to update welcome message based on department
+        function updateWelcomeMessage(department) {
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            let message = 'User Dashboard';
+            
+            switch (department) {
+                case 'FASD':
+                    message = 'Welcome to the Dashboard FASD Officer';
+                    break;
+                case 'ROD':
+                    message = 'Welcome to the Dashboard ROD Officer';
+                    break;
+                case 'ORD':
+                    message = 'Welcome to the Dashboard ORD Officer';
+                    break;
+                case 'Administration':
+                    message = 'Welcome to the Dashboard Administrator';
+                    break;
+                default:
+                    message = `Welcome to the Dashboard ${department} Officer`;
+                    break;
+            }
+            
+            welcomeMessage.textContent = message;
+        }
 
         // Filter memos based on search input
         function filterMemos() {
@@ -282,7 +315,9 @@
                     memo.recipients.some(recipient => recipient.toLowerCase().includes(searchTerm)) ||
                     (memo.category && memo.category.toLowerCase().includes(searchTerm)) ||
                     (memo.priority && memo.priority.toLowerCase().includes(searchTerm)) ||
-                    memo.status.toLowerCase().includes(searchTerm)
+                    memo.status.toLowerCase().includes(searchTerm) ||
+                    (memo.isAntedated && 'antedated'.includes(searchTerm)) ||
+                    (memo.antedationDate && memo.antedationDate.toLowerCase().includes(searchTerm))
                 );
             });
             // Update stats with filtered results
@@ -293,6 +328,31 @@
             updateTable(filteredMemos);
         }
 
+        // Helper function to format memo number for display
+        function formatMemoNumberForDisplay(memoNumber, isAntedated) {
+            if (!memoNumber) return '';
+            
+            // Extract the series number (last part before any suffix)
+            const parts = memoNumber.split('-');
+            const lastPart = parts[parts.length - 1];
+            
+            // Check if it has a suffix (A, B, C, etc.)
+            const hasSuffix = /[A-Z]+$/.test(lastPart);
+            
+            if (hasSuffix) {
+                // Split the number and suffix for better display
+                const match = lastPart.match(/^(\d+)([A-Z]+)$/);
+                if (match) {
+                    const number = match[1];
+                    const suffix = match[2];
+                    return `${number}<span class="text-blue-600 font-bold">-${suffix}</span>`;
+                }
+            }
+            
+            // For normal memos, show the full memo number
+            return memoNumber;
+        }
+
         // Update table with provided memos
         function updateTable(memos) {
             memosTableBody.innerHTML = '';
@@ -301,33 +361,41 @@
                 const row = document.createElement('tr');
                 row.className = 'hidden sm:table-row';
                 row.innerHTML = `
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.memoNumber}</td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-xs w-48 truncate" title="${memo.title}">${memo.title}</td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.department}</td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${memo.recipients.join(', ')}</td>
-                    <td class="px-2 py-4 whitespace-nowrap">
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <span>${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                    </td>
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="${memo.title}">${memo.title}</td>
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">${memo.department}</td>
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="${memo.recipients.join(', ')}">${memo.recipients.join(', ')}</td>
+                    <td class="px-2 py-4">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
                             ${memo.status}
                         </span>
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
                         ${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', {
                             year: 'numeric', month: 'long', day: 'numeric'
                         }) : ''}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        ${memo.isAntedated && memo.antedationDate ? 
+                            `<span class="text-blue-600 font-semibold">${new Date(memo.antedationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>` : 
+                            'N/A'
+                        }
+                    </td>
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
                         ${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ?
                             memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not released yet'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
+                    <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 rod-fasd-col hidden">
                         ${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ?
                             memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                             }) : 'Not received yet'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td class="px-2 py-4 text-sm text-gray-500 dark:text-gray-300">
                         <div class="flex space-x-3">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200">View</button>
                             ${memo.status.toLowerCase() === 'approved' && memo.releasedToRodFasd ?
@@ -343,9 +411,9 @@
                 const card = document.createElement('div');
                 card.className = 'sm:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4 flex flex-col gap-2';
                 card.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Memo Number:</span>
-                        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">${memo.memoNumber}</span>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Memo Number:</span>
+                        <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
                     </div>
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Title:</span>
@@ -366,6 +434,13 @@
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Created At:</span>
                         <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</span>
+                    </div>
+                    <div class="mb-1">
+                        <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Antedation Date:</span>
+                        <span class="block text-sm text-gray-900 dark:text-gray-100">${memo.isAntedated && memo.antedationDate ? 
+                            `<span class="text-blue-600 font-semibold">${new Date(memo.antedationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>` : 
+                            'N/A'
+                        }</span>
                     </div>
                     <div class="mb-1 rod-fasd-col hidden">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Released to ROD/FASD:</span>

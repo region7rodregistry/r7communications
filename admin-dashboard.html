@@ -6,6 +6,8 @@
     <title>Admin Dashboard - TESDA MBMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="icon" type="image/png" href="icons/t7logo.png">
     <script type="module" src="firebase-config.js"></script>
     <style>
         @keyframes slideIn {
@@ -188,7 +190,7 @@
         }
         /* Archive tab active state */
         .archive-tab-active {
-            background-color: #2563eb !important;
+            background-color: #18009e !important;
             color: #fff !important;
             font-weight: 700;
         }
@@ -221,6 +223,39 @@
                 padding-top: 0.75rem;
                 padding-bottom: 0.75rem;
             }
+        }
+        
+        /* Table alignment fixes */
+        table.min-w-full {
+            table-layout: fixed;
+        }
+        
+        table.min-w-full th,
+        table.min-w-full td {
+            vertical-align: top;
+            text-align: left;
+        }
+        
+        /* Ensure consistent padding across all table cells */
+        table.min-w-full th {
+            padding: 1rem 1.5rem;
+        }
+        
+        table.min-w-full td {
+            padding: 0.75rem 1.5rem;
+        }
+        
+        /* Specific alignment for pending tab */
+        .pending-tab-active table.min-w-full th,
+        .pending-tab-active table.min-w-full td {
+            padding: 0.75rem 1.5rem;
+        }
+        
+        /* Ensure action buttons are properly aligned */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
         }
     </style>
 </head>
@@ -363,6 +398,18 @@
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Approved Memos</p>
                         <p id="approvedMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-2 bg-gray-100 rounded-lg">
+                        <i data-lucide="archive" class="w-6 h-6 text-gray-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Archived Memos</p>
+                        <p id="archivedMemos" class="text-2xl font-bold text-gray-900">0</p>
                     </div>
                 </div>
             </div>
@@ -543,15 +590,6 @@
                                 Archive
                             </button>
                         </div>
-                        <!-- Archive Memo Type Tabs (hidden by default, shown only on Archive tab) -->
-                        <div id="archiveTypeTabs" class="w-full overflow-x-auto whitespace-nowrap py-2 px-1 bg-gray-50 rounded-lg shadow-sm mb-4 ml-0 sm:ml-4 hidden transition-all duration-300 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
-                            <button data-type="CO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-blue-600 text-white archive-tab-active">CO</button>
-                            <button data-type="PO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">PO</button>
-                            <button data-type="Office Order" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Office Order</button>
-                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory</button>
-                            <button data-type="Bulletin" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Bulletin</button>
-                            <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
-                        </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
                         <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
                             <div class="flex items-center space-x-2">
@@ -603,6 +641,28 @@
                         </div>
                     </div>
                 </div>
+                <!-- Archive Memo Type Tabs (hidden by default, shown only on Archive tab) -->
+                <div id="archiveTypeTabs" class="w-full overflow-x-auto whitespace-nowrap py-2 px-1 bg-gray-50 rounded-lg shadow-sm mt-4 hidden transition-all duration-300 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
+                    <div class="flex justify-between items-center">
+                        <div class="flex">
+                            <button data-type="All" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-blue-600 text-white archive-tab-active">All</button>
+                            <button data-type="CO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">CO</button>
+                            <button data-type="PO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">PO</button>
+                            <button data-type="Office Order" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Office Order</button>
+                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory</button>
+                            <button data-type="Bulletin" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Bulletin</button>
+                            <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="copyArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Copy
+                            </button>
+                            <button onclick="exportArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 hidden sm:table">
@@ -639,6 +699,7 @@
         const totalMemos = document.getElementById('totalMemos');
         const pendingMemos = document.getElementById('pendingMemos');
         const approvedMemos = document.getElementById('approvedMemos');
+        const archivedMemos = document.getElementById('archivedMemos');
         const searchInput = document.getElementById('searchInput');
         const searchFilter = document.getElementById('searchFilter');
         const searchSpinner = document.getElementById('searchSpinner');
@@ -661,12 +722,16 @@
             if (currentView === 'approved') {
                 statsCards.classList.add('hidden');
                 actionToggleContainer.classList.remove('hidden');
+            } else if (currentView === 'archive') {
+                statsCards.classList.add('hidden');
+                actionToggleContainer.classList.add('hidden');
             } else {
                 statsCards.classList.remove('hidden');
                 statsCards.classList.add('stats-enter');
                 statsCards.classList.remove('stats-exit');
                 actionToggleContainer.classList.add('hidden');
             }
+            
             // Remove highlight from all tabs first
             pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
             pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
@@ -687,6 +752,19 @@
                 archiveMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             }
 
+            // Add/remove table container classes for styling
+            const tableContainer = document.querySelector('.overflow-x-auto');
+            if (tableContainer) {
+                tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active');
+                if (currentView === 'pending') {
+                    tableContainer.classList.add('pending-tab-active');
+                } else if (currentView === 'approved') {
+                    tableContainer.classList.add('approved-tab-active');
+                } else if (currentView === 'archive') {
+                    tableContainer.classList.add('archive-tab-active');
+                }
+            }
+
             // Show priority and status columns, hide description and ROD/FASD columns
             document.querySelectorAll('.priority-status-col').forEach(col => col.classList.remove('hidden'));
             document.querySelectorAll('.description-col').forEach(col => col.classList.add('hidden'));
@@ -694,14 +772,17 @@
             document.querySelectorAll('.rod-fasd-col').forEach(col => col.classList.add('hidden'));
             document.querySelectorAll('.checkbox-col').forEach(col => col.classList.add('hidden'));
 
-            // Reset to actions view
-            isActionMode = true;
-            actionToggle.checked = true;
-            const actionButtons = document.querySelectorAll('.action-buttons');
-            const actionTaken = document.querySelectorAll('.action-taken');
-            actionButtons.forEach(btn => btn.classList.remove('hidden'));
-            actionTaken.forEach(input => input.classList.add('hidden'));
-            document.querySelector('th:last-child').textContent = 'Actions';
+            // Reset to actions view only if not in approved tab
+            if (currentView !== 'approved') {
+                isActionMode = true;
+                if (actionToggle) actionToggle.checked = false;
+                const actionButtons = document.querySelectorAll('.action-buttons');
+                const actionTaken = document.querySelectorAll('.action-taken');
+                actionButtons.forEach(btn => btn.classList.remove('hidden'));
+                actionTaken.forEach(input => input.classList.add('hidden'));
+                const lastHeader = document.querySelector('th:last-child');
+                if (lastHeader) lastHeader.textContent = 'Actions';
+            }
         }
 
         // Helper function to check if memo is archived
@@ -723,16 +804,33 @@
             );
         }
 
+        // Helper function to get filtered memos based on current view
+        function getFilteredMemosForCurrentView() {
+            if (!allMemos) return [];
+            
+            if (currentView === 'pending') {
+                return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
+            } else if (currentView === 'approved') {
+                return allMemos.filter(memo => shouldShowInApprovedTab(memo));
+            } else if (currentView === 'archive') {
+                return allMemos.filter(memo => isMemoArchived(memo));
+            } else {
+                return allMemos; // Default to all memos
+            }
+        }
+
         pendingMemosTab.addEventListener('click', () => {
             currentView = 'pending';
             updateTabStyles();
-            renderMemos(allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending'));
+            renderTableHeader();
+            renderMemos(getFilteredMemosForCurrentView());
         });
 
         approvedMemosTab.addEventListener('click', () => {
             currentView = 'approved';
             updateTabStyles();
-            const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
+            renderTableHeader();
+            const approvedMemos = getFilteredMemosForCurrentView();
             renderMemos(approvedMemos);
 
             // Set row height based on log sheet preview state
@@ -748,8 +846,9 @@
         archiveMemosTab.addEventListener('click', () => {
             currentView = 'archive';
             updateTabStyles();
+            renderTableHeader();
             archiveTypeTabs.classList.remove('hidden');
-            setActiveArchiveTypeTab('CO'); // Default to CO
+            setActiveArchiveTypeTab('All'); // Default to All
         });
 
         // Show success toast
@@ -798,14 +897,15 @@
                 totalMemos.textContent = allMemos.length;
                 pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
                 approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+                archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
                 acknowledgmentMemos.textContent = allMemos.filter(m => m.memoType === 'Acknowledgment').length;
 
                 // Store memos globally for search functionality
                 window.allMemos = allMemos;
 
                 console.log("Rendering memos:", allMemos.length, "memos");
-                // Render memos
-                renderMemos(allMemos);
+                // Render memos based on current view
+                renderMemos(getFilteredMemosForCurrentView());
             });
 
             // Set up real-time listener for next memo number
@@ -901,17 +1001,41 @@
             });
         });
 
+        // Helper function to format memo number for display
+        function formatMemoNumberForDisplay(memoNumber, isAntedated) {
+            if (!memoNumber) return '';
+            
+            if (isAntedated) {
+                // For antedated memos, show the last two parts of the series
+                const parts = memoNumber.split('-');
+                if (parts.length >= 2) {
+                    const lastTwoParts = parts.slice(-2).join('-');
+                    return lastTwoParts;
+                }
+            }
+            
+            // For normal memos, show just the last part
+            return memoNumber.split('-').pop();
+        }
+
         // Render memos to table and cards
         function renderMemos(memos) {
             renderTableHeader();
             memosTableBody.innerHTML = '';
             const memosCardBody = document.getElementById('memosCardBody');
             if (memosCardBody) memosCardBody.innerHTML = '';
+            
+            // Apply additional filtering based on current view and action mode
             let filteredMemos = memos;
-            // Strict filter for pending tab
-            if (currentView === 'pending') {
-                filteredMemos = memos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
+            
+            // For approved tab in log sheet preview mode, only show received memos
+            if (currentView === 'approved' && !isActionMode) {
+                filteredMemos = memos.filter(memo => 
+                    memo.receivedByRodFasd !== null && 
+                    memo.receivedByRodFasd !== undefined
+                );
             }
+            
             filteredMemos.forEach(memo => {
                 // --- DESKTOP TABLE ROW (unchanged) ---
                 const row = document.createElement('tr');
@@ -920,7 +1044,7 @@
                     row.innerHTML = `
                         <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900">
                             <input type="checkbox" class="memo-row-checkbox mr-2 align-middle" data-memo-id="${memo.id}">
-                            <span class="align-middle">${memo.memoType}-${memo.memoNumber.split('-').pop()}</span>
+                            <span class="align-middle">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
                         </td>
                         <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
@@ -951,7 +1075,7 @@
                     `;
                 } else {
                     row.innerHTML = `
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
@@ -1063,7 +1187,7 @@
                     card.innerHTML = `
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
-                            <span class="text-sm font-semibold text-gray-900">${memo.memoType}-${memo.memoNumber.split('-').pop()}</span>
+                            <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
@@ -1384,7 +1508,7 @@
                     } else if (getSearchableValue(memo, 'createdAt').includes(searchTerm)) {
                         matchIndicator = '<span class="text-blue-600 text-xs">(Date)</span>';
                     }
-                    displayText = `Memo ${memo.memoNumber.split('-').pop()} - ${memo.title}`;
+                    displayText = `Memo ${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)} - ${memo.title}`;
                 } else {
                     displayText = memo[filterField];
                 }
@@ -1421,17 +1545,7 @@
             searchTimeout = setTimeout(() => {
                 if (!allMemos) return;
 
-                let memosToSearch;
-                if (currentView === 'all') {
-                    memosToSearch = allMemos;
-                } else if (currentView === 'approved') {
-                    memosToSearch = allMemos.filter(memo => shouldShowInApprovedTab(memo));
-                } else if (currentView === 'archive') {
-                    memosToSearch = allMemos.filter(memo => isMemoArchived(memo));
-                } else {
-                    memosToSearch = allMemos;
-                }
-                
+                const memosToSearch = getFilteredMemosForCurrentView();
                 const filteredMemos = filterMemos(memosToSearch, searchTerm, searchFilter.value);
                 renderMemos(filteredMemos);
                 updateSearchSuggestions(memosToSearch, searchTerm);
@@ -1473,15 +1587,7 @@
             if (noResultsMessage) {
                 noResultsMessage.classList.add('hidden');
             }
-            if (currentView === 'all') {
-                renderMemos(allMemos);
-            } else if (currentView === 'approved') {
-                const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
-                renderMemos(approvedMemos);
-            } else if (currentView === 'archive') {
-                const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
-                renderMemos(archiveMemos);
-            }
+            renderMemos(getFilteredMemosForCurrentView());
         });
 
         // Update search when filter changes
@@ -1672,7 +1778,7 @@
                         (memoType === 'officeOrder' && memo.memoType === 'Office Order') ||
                         (memoType === 'advisory' && memo.memoType === 'Advisory') ||
                         (memoType === 'bulletin' && memo.memoType === 'Bulletin')) {
-                        const memoNumber = parseInt(memo.memoNumber.split('-').pop());
+                        const memoNumber = parseInt(formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated).replace(/[A-Z]/g, ''));
                         if (!isNaN(memoNumber) && memoNumber > highestNumber) {
                             highestNumber = memoNumber;
                         }
@@ -1823,23 +1929,8 @@
                 table.classList.add('log-sheet-preview');
                 // Show checkbox column
                 document.querySelectorAll('.checkbox-col').forEach(col => col.classList.remove('hidden'));
-                // Filter and show only received memos (for approved tab only)
-                if (currentView === 'approved') {
-                    const receivedMemos = allMemos.filter(memo => 
-                        shouldShowInApprovedTab(memo) && 
-                        memo.receivedByRodFasd !== null && 
-                        memo.receivedByRodFasd !== undefined
-                    );
-                    renderMemos(receivedMemos);
-                } else {
-                    // For other views, render based on current view
-                    if (currentView === 'all') {
-                        renderMemos(allMemos);
-                    } else if (currentView === 'archive') {
-                        const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
-                        renderMemos(archiveMemos);
-                    }
-                }
+                // Render memos based on current view with additional filtering for approved tab
+                renderMemos(getFilteredMemosForCurrentView());
             }
         });
 
@@ -1848,6 +1939,11 @@
             // Set initial state: logsheet preview OFF (Actions mode ON)
             isActionMode = true;
             actionToggle.checked = false;
+            
+            // Ensure pending tab is active by default
+            currentView = 'pending';
+            updateTabStyles();
+            
             const actionButtons = document.querySelectorAll('.action-buttons');
             const actionTaken = document.querySelectorAll('.action-taken');
             const actionTakenInputContainer = document.getElementById('actionTakenInputContainer');
@@ -1874,15 +1970,7 @@
                     row.style.minHeight = 'auto';
                 });
                 // Render memos based on current view
-                if (currentView === 'all') {
-                    renderMemos(allMemos);
-                } else if (currentView === 'approved') {
-                    const approvedMemos = allMemos.filter(memo => shouldShowInApprovedTab(memo));
-                    renderMemos(approvedMemos);
-                } else if (currentView === 'archive') {
-                    const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
-                    renderMemos(archiveMemos);
-                }
+                renderMemos(getFilteredMemosForCurrentView());
             } else {
                 document.querySelector('th:last-child').textContent = 'Action Taken';
                 actionButtons.forEach(btn => btn.classList.add('hidden'));
@@ -1896,23 +1984,8 @@
                     row.style.height = '180px';
                     row.style.minHeight = '180px';
                 });
-                // Filter and show only received memos (for approved tab only)
-                if (currentView === 'approved') {
-                    const receivedMemos = allMemos.filter(memo => 
-                        shouldShowInApprovedTab(memo) && 
-                        memo.receivedByRodFasd !== null && 
-                        memo.receivedByRodFasd !== undefined
-                    );
-                    renderMemos(receivedMemos);
-                } else {
-                    // For other views, render based on current view
-                    if (currentView === 'all') {
-                        renderMemos(allMemos);
-                    } else if (currentView === 'archive') {
-                        const archiveMemos = allMemos.filter(memo => isMemoArchived(memo));
-                        renderMemos(archiveMemos);
-                    }
-                }
+                // Render memos based on current view with additional filtering for approved tab
+                renderMemos(getFilteredMemosForCurrentView());
             }
         });
 
@@ -2078,13 +2151,15 @@
             const thead = document.getElementById('memosTableHead');
             let headerHtml = `<tr>`;
             if (currentView === 'pending') {
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
             } else if (!isActionMode && currentView === 'approved') {
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     <input type="checkbox" id="memoHeaderCheckbox" class="mr-2 align-middle">
@@ -2098,15 +2173,15 @@
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
                 headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
             } else {
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">${isActionMode ? 'Actions' : 'Action Taken'}</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">${isActionMode ? 'Actions' : 'Action Taken'}</th>`;
             }
             thead.innerHTML = headerHtml;
         }
@@ -2115,11 +2190,14 @@
         // ... existing code ...
 
         // ... inside <script type="module">, after let currentView = 'all'; ...
-        let currentArchiveType = 'CO'; // Default archive type tab
+        let currentArchiveType = 'All'; // Default archive type tab
         const archiveTypeTabs = document.getElementById('archiveTypeTabs');
 
         // Helper: filter archived memos by type
         function filterArchivedMemosByType(type) {
+            if (type === 'All') {
+                return allMemos.filter(memo => isMemoArchived(memo));
+            }
             return allMemos.filter(memo => isMemoArchived(memo) && memo.memoType === type);
         }
 
@@ -2133,13 +2211,10 @@
                     tab.classList.add('archive-tab-active');
                 }
             });
-            // Animate table fade out/in
-            const tableDiv = document.querySelector('.overflow-x-auto');
-            tableDiv.classList.add('transition', 'duration-300', 'opacity-0');
-            setTimeout(() => {
-                renderMemos(filterArchivedMemosByType(type));
-                tableDiv.classList.remove('opacity-0');
-            }, 200);
+            // Direct tab switch without animation
+            renderTableHeader();
+            const filteredMemos = filterArchivedMemosByType(type);
+            renderMemos(filteredMemos);
         }
 
         // Add event listeners to archive type tabs
@@ -2154,7 +2229,7 @@
             currentView = 'archive';
             updateTabStyles();
             archiveTypeTabs.classList.remove('hidden');
-            setActiveArchiveTypeTab('CO'); // Default to CO
+            setActiveArchiveTypeTab('All'); // Default to All
         });
 
         // Hide archive type tabs on other main tab clicks
@@ -2168,6 +2243,189 @@
         // Responsive: stack archive type tabs on mobile
         archiveTypeTabs.classList.add('flex-wrap');
         archiveTypeTabs.classList.add('sm:flex-row', 'flex-col');
+
+        // Copy archive data function
+        window.copyArchiveData = function() {
+            try {
+                // Get only the visible table rows (what's currently displayed in the table)
+                const visibleRows = Array.from(memosTableBody.querySelectorAll('tr')).filter(row => !row.classList.contains('hidden'));
+                
+                if (visibleRows.length === 0) {
+                    showSuccessToast('No data to copy');
+                    return;
+                }
+
+                // Create TSV-like data without headers (only the actual data rows)
+                const tsvData = [];
+                
+                visibleRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0) {
+                        // Get the full memo number from the original data instead of displayed text
+                        const memoId = row.querySelector('.action-buttons')?.id?.split('_')[1] || 
+                                      row.querySelector('.action-taken')?.id?.split('_')[1];
+                        const memo = allMemos.find(m => m.id === memoId);
+                        const memoNumber = memo ? formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated) : cells[0]?.textContent?.trim() || '';
+                        
+                        const subject = cells[1]?.textContent?.trim() || '';
+                        const department = cells[2]?.textContent?.trim() || '';
+                        const recipients = cells[3]?.textContent?.trim() || '';
+                        const status = cells[4]?.textContent?.trim() || '';
+                        const createdAt = cells[5]?.textContent?.trim() || '';
+                        const releasedTo = cells[6]?.textContent?.trim() || '';
+                        const receivedBy = cells[7]?.textContent?.trim() || '';
+                        // Skip the last column (action buttons) - only copy data columns
+                        
+                        const rowData = [
+                            memoNumber,
+                            subject,
+                            department,
+                            recipients,
+                            status,
+                            createdAt,
+                            releasedTo,
+                            receivedBy
+                        ];
+                        tsvData.push(rowData.join('\t'));
+                    }
+                });
+
+                const dataToCopy = tsvData.join('\n');
+                navigator.clipboard.writeText(dataToCopy).then(() => {
+                    showSuccessToast(`${visibleRows.length} memo(s) copied to clipboard`);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = dataToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showSuccessToast(`${visibleRows.length} memo(s) copied to clipboard`);
+                });
+            } catch (error) {
+                console.error('Error copying archive data:', error);
+                errorMessage.textContent = 'Error copying data. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+        };
+
+        // Export archive data function
+        window.exportArchiveData = function() {
+            try {
+                const currentArchiveMemos = filterArchivedMemosByType(currentArchiveType);
+                if (currentArchiveMemos.length === 0) {
+                    showSuccessToast('No data to export');
+                    return;
+                }
+
+                // Load the template file
+                const templateUrl = './New Communications Template.xlsx';
+                
+                fetch(templateUrl)
+                    .then(response => response.arrayBuffer())
+                    .then(arrayBuffer => {
+                        // Read the template workbook
+                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        
+                        // Map archive type to sheet name
+                        let sheetName;
+                        switch(currentArchiveType) {
+                            case 'All':
+                                sheetName = 'All Archive';
+                                break;
+                            case 'CO':
+                                sheetName = 'CO';
+                                break;
+                            case 'PO':
+                                sheetName = 'PO';
+                                break;
+                            case 'Office Order':
+                                sheetName = 'Office Order';
+                                break;
+                            case 'Advisory':
+                                sheetName = 'Advisory';
+                                break;
+                            case 'Bulletin':
+                                sheetName = 'Bulletin';
+                                break;
+                            case 'Acknowledgment':
+                                sheetName = 'Acknowledgment';
+                                break;
+                            default:
+                                sheetName = workbook.SheetNames[0]; // Fallback to first sheet
+                        }
+                        
+                        // Check if the sheet exists in the template
+                        if (!workbook.SheetNames.includes(sheetName)) {
+                            errorMessage.textContent = `Sheet "${sheetName}" not found in template. Available sheets: ${workbook.SheetNames.join(', ')}`;
+                            errorMessage.classList.remove('hidden');
+                            return;
+                        }
+                        
+                        // Get the worksheet based on the active tab
+                        const worksheet = workbook.Sheets[sheetName];
+                        
+                        // Prepare data starting from row 3 (index 2)
+                        const startRow = 2; // 0-based index, so row 3 = index 2
+                        
+                        currentArchiveMemos.forEach((memo, index) => {
+                            const rowIndex = startRow + index;
+                            
+                            // Insert data into the template
+                            // Adjust column positions based on your template structure
+                            const rowData = [
+                                memo.memoNumber,
+                                memo.title,
+                                memo.department,
+                                memo.recipients,
+                                memo.status,
+                                memo.createdAt ? memo.createdAt.toDate().toLocaleDateString() : '',
+                                memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString() : '',
+                                memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString() : '',
+                                memo.actionTaken || ''
+                            ];
+                            
+                            // Insert each cell in the row while preserving existing formatting
+                            rowData.forEach((value, colIndex) => {
+                                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+                                
+                                // Check if cell already exists to preserve formatting
+                                if (worksheet[cellAddress]) {
+                                    // Preserve existing cell properties and only update the value
+                                    worksheet[cellAddress].v = value;
+                                } else {
+                                    // Create new cell with value only
+                                    worksheet[cellAddress] = { v: value };
+                                }
+                            });
+                        });
+                        
+                        // Generate XLSX file with template
+                        const currentDate = new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                        }).replace(/\//g, '-');
+                        
+                        const archiveTypeName = currentArchiveType === 'All' ? 'All_Archive' : currentArchiveType.replace(/\s+/g, '_');
+                        const fileName = `TESDA_Region_VII_${archiveTypeName}_${currentDate}.xlsx`;
+                        XLSX.writeFile(workbook, fileName);
+                        
+                        showSuccessToast(`${currentArchiveMemos.length} memo(s) exported to ${sheetName} sheet successfully`);
+                    })
+                    .catch(error => {
+                        console.error('Error loading template:', error);
+                        errorMessage.textContent = 'Error loading template file. Please ensure "New Communications Template.xlsx" exists in the same directory.';
+                        errorMessage.classList.remove('hidden');
+                    });
+                    
+            } catch (error) {
+                console.error('Error exporting archive data:', error);
+                errorMessage.textContent = 'Error exporting data. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+        };
     </script>
 
     <!-- Footer -->

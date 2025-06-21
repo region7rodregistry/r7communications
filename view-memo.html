@@ -335,7 +335,7 @@
                 const memo = memoDoc.data();
 
                 // Update UI with memo details
-                document.getElementById('memoNumber').textContent = memo.memoNumber;
+                document.getElementById('memoNumber').textContent = memo.memoNumber.split('-').pop();
                 document.getElementById('title').textContent = memo.title;
                 document.getElementById('department').textContent = memo.department;
                 document.getElementById('signatory').textContent = memo.signatory;

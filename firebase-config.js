@@ -22,45 +22,47 @@ const auth = getAuth(app);
 // Memo Functions
 async function createMemo(memoData) {
     try {
-        // Add timestamp
+        // Add timestamp - preserve createdAt if it's an antedated memo
         const memoWithTimestamp = {
             ...memoData,
-            createdAt: new Date(),
+            createdAt: memoData.createdAt || new Date(),
             status: 'pending'
         };
 
         // Add to memos collection
         const docRef = await addDoc(collection(db, "memos"), memoWithTimestamp);
 
-        // Update the memo number counter after successful creation
-        const memoType = memoData.memoType;
-        let memoNumberKey;
-        switch (memoType) {
-            case 'PO':
-                memoNumberKey = 'current';
-                break;
-            case 'CO':
-                memoNumberKey = 'coCurrent';
-                break;
-            case 'Office Order':
-                memoNumberKey = 'officeOrder';
-                break;
-            case 'Advisory':
-                memoNumberKey = 'advisory';
-                break;
-            case 'Bulletin':
-                memoNumberKey = 'bulletin';
-                break;
-            case 'Acknowledgment':
-                memoNumberKey = 'acknowledgment';
-                break;
-            default:
-                throw new Error('Unknown memo type');
+        // Only update the memo number counter for non-antedated memos
+        if (!memoData.isAntedated) {
+            const memoType = memoData.memoType;
+            let memoNumberKey;
+            switch (memoType) {
+                case 'PO':
+                    memoNumberKey = 'current';
+                    break;
+                case 'CO':
+                    memoNumberKey = 'coCurrent';
+                    break;
+                case 'Office Order':
+                    memoNumberKey = 'officeOrder';
+                    break;
+                case 'Advisory':
+                    memoNumberKey = 'advisory';
+                    break;
+                case 'Bulletin':
+                    memoNumberKey = 'bulletin';
+                    break;
+                case 'Acknowledgment':
+                    memoNumberKey = 'acknowledgment';
+                    break;
+                default:
+                    throw new Error('Unknown memo type');
+            }
+            const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
+            // Get the last part of the memo number which is the sequential number
+            const currentNumber = parseInt(memoData.memoNumber.split('-').pop());
+            await updateDoc(memoNumberRef, { number: currentNumber });
         }
-        const memoNumberRef = doc(db, "memoNumbers", memoNumberKey);
-        // Get the last part of the memo number which is the sequential number
-        const currentNumber = parseInt(memoData.memoNumber.split('-').pop());
-        await updateDoc(memoNumberRef, { number: currentNumber });
 
         return docRef.id;
     } catch (error) {
