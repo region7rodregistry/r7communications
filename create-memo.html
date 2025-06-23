@@ -192,11 +192,11 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="file-text" class="h-4 w-4 text-gray-400"></i>
                         </div>
-                        <input type="text" id="title" name="title" required maxlength="100"
+                        <input type="text" id="title" name="title" required maxlength="200"
                             class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base"
                             placeholder="Enter memo title">
                         <div class="absolute bottom-2 right-3 text-xs text-gray-500 select-none">
-                            <span id="titleCharCount">0</span>/100 characters
+                            <span id="titleCharCount">0</span>/200 characters
                         </div>
                     </div>
                 </div>
@@ -248,6 +248,8 @@
                             <option value="ROD">Regional Operations Division</option>
                             <option value="FASD">Finance and Administrative Services Division</option>
                             <option value="CO">Central Office</option>
+                            <option value="AOUs">All Operating Units</option>
+                            <option value="APOs">All Provincial Offices</option>
                             <option value="PO">Provincial Office - Cebu</option>
                             <option value="PO">Provincial Office - Bohol</option>
                             <option value="PO">Provincial Office - Siquijor</option>
@@ -789,12 +791,12 @@
         const titleCharCount = document.getElementById('titleCharCount');
         titleInput.addEventListener('input', function() {
             let currentLength = this.value.length;
-            if (currentLength > 100) {
-                this.value = this.value.slice(0, 100);
-                currentLength = 100;
+            if (currentLength > 200) {
+                this.value = this.value.slice(0, 200);
+                currentLength = 200;
             }
             titleCharCount.textContent = currentLength;
-            if (currentLength >= 90) {
+            if (currentLength >= 190) {
                 titleCharCount.classList.add('text-red-500');
             } else {
                 titleCharCount.classList.remove('text-red-500');
