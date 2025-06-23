@@ -191,6 +191,17 @@
     </div>
     <!-- Error Message -->
     <div id="errorMessage" class="hidden fixed top-6 right-6 p-5 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-200 rounded-xl shadow-2xl z-50 text-base font-semibold"></div>
+    <!-- Receive Modal -->
+    <div id="receiveModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 w-full max-w-xs mx-auto flex flex-col items-center">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Enter Your Name</h3>
+        <input id="receiveNameInput" type="text" class="w-full px-4 py-2 mb-4 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="Your name...">
+        <div class="flex w-full justify-between gap-2">
+          <button id="receiveCancelBtn" class="flex-1 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
+          <button id="receiveSubmitBtn" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Submit</button>
+        </div>
+      </div>
+    </div>
     <script>
         // Set current year in footer
         document.getElementById('currentYear').textContent = new Date().getFullYear();
@@ -508,19 +519,57 @@
             window.location.href = `view-memo.html?id=${memoId}`;
         };
 
-        // Mark as received
+        // Modal logic
+        const receiveModalOverlay = document.getElementById('receiveModalOverlay');
+        const receiveNameInput = document.getElementById('receiveNameInput');
+        const receiveCancelBtn = document.getElementById('receiveCancelBtn');
+        const receiveSubmitBtn = document.getElementById('receiveSubmitBtn');
+        let receiveModalResolve = null;
+
+        function showReceiveModal() {
+          return new Promise((resolve) => {
+            receiveModalOverlay.classList.remove('hidden');
+            receiveNameInput.value = '';
+            receiveNameInput.focus();
+            receiveModalResolve = resolve;
+          });
+        }
+        function closeReceiveModal() {
+          receiveModalOverlay.classList.add('hidden');
+          receiveModalResolve = null;
+        }
+        receiveCancelBtn.addEventListener('click', () => {
+          closeReceiveModal();
+        });
+        receiveSubmitBtn.addEventListener('click', () => {
+          if (receiveNameInput.value.trim() !== '' && receiveModalResolve) {
+            receiveModalResolve(receiveNameInput.value.trim());
+            closeReceiveModal();
+          } else {
+            receiveNameInput.focus();
+          }
+        });
+        receiveNameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            receiveSubmitBtn.click();
+          }
+        });
+        // Patch markAsReceived to use modal
         window.markAsReceived = async function(memoId) {
-            try {
-                const memoRef = doc(db, 'memos', memoId);
-                await updateDoc(memoRef, {
-                    receivedByRodFasd: serverTimestamp(),
-                    status: 'Received'
-                });
-                showSuccessToast('Memo marked as received successfully');
-            } catch (error) {
-                console.error('Error marking memo as received:', error);
-                showErrorToast('Error marking memo as received');
-            }
+          try {
+            const name = await showReceiveModal();
+            if (!name) return;
+            const memoRef = doc(db, 'memos', memoId);
+            await updateDoc(memoRef, {
+              receivedByRodFasd: serverTimestamp(),
+              status: 'Received',
+              receivedByName: name
+            });
+            showSuccessToast('Memo marked as received successfully');
+          } catch (error) {
+            console.error('Error marking memo as received:', error);
+            showErrorToast('Error marking memo as received');
+          }
         };
 
         // Toasts
