@@ -244,7 +244,7 @@
 
                 <!-- Footer -->
                 <div class="mt-8 text-center">
-                    <p class="text-blue-200/60 text-xs">© 2024 TESDA. All rights reserved.</p>
+                    <p class="text-blue-200/60 text-xs">© <span id="currentYear"></span> TESDA. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -430,6 +430,11 @@
         // Initialize icons on page load
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            // Set current year in footer
+            const yearSpan = document.getElementById('currentYear');
+            if (yearSpan) {
+                yearSpan.textContent = new Date().getFullYear();
+            }
         });
     </script>
 </body>
