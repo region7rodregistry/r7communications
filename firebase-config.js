@@ -122,10 +122,94 @@ async function updateMemoStatus(memoId, status) {
 
 async function deleteMemoFromFirestore(memoId) {
     try {
+        // First, delete all related activity logs for this memo
+        const activityLogsQuery = query(
+            collection(db, "memoActivities"),
+            where("memoId", "==", memoId)
+        );
+        
+        const activityLogsSnapshot = await getDocs(activityLogsQuery);
+        
+        // Delete all activity logs in parallel
+        const deleteActivityLogsPromises = activityLogsSnapshot.docs.map(doc => 
+            deleteDoc(doc.ref)
+        );
+        
+        // Wait for all activity logs to be deleted
+        await Promise.all(deleteActivityLogsPromises);
+        
+        // Then delete the memo itself
         const memoRef = doc(db, "memos", memoId);
         await deleteDoc(memoRef);
+        
+        console.log(`Successfully deleted memo ${memoId} and ${activityLogsSnapshot.size} related activity logs`);
     } catch (error) {
-        console.error("Error deleting memo: ", error);
+        console.error("Error deleting memo and related activity logs: ", error);
+        throw error;
+    }
+}
+
+// Bulk delete activity logs for multiple memos
+async function deleteActivityLogsForMemos(memoIds) {
+    try {
+        if (!memoIds || memoIds.length === 0) {
+            return;
+        }
+        
+        // Query for all activity logs that match any of the memo IDs
+        const activityLogsQuery = query(
+            collection(db, "memoActivities"),
+            where("memoId", "in", memoIds)
+        );
+        
+        const activityLogsSnapshot = await getDocs(activityLogsQuery);
+        
+        // Delete all activity logs in parallel
+        const deleteActivityLogsPromises = activityLogsSnapshot.docs.map(doc => 
+            deleteDoc(doc.ref)
+        );
+        
+        // Wait for all activity logs to be deleted
+        await Promise.all(deleteActivityLogsPromises);
+        
+        console.log(`Successfully deleted ${activityLogsSnapshot.size} activity logs for ${memoIds.length} memos`);
+    } catch (error) {
+        console.error("Error deleting activity logs for memos: ", error);
+        throw error;
+    }
+}
+
+// Clean up orphaned activity logs (logs that reference non-existent memos)
+async function cleanupOrphanedActivityLogs() {
+    try {
+        // Get all activity logs
+        const activityLogsQuery = query(collection(db, "memoActivities"));
+        const activityLogsSnapshot = await getDocs(activityLogsQuery);
+        
+        // Get all memo IDs
+        const memosQuery = query(collection(db, "memos"));
+        const memosSnapshot = await getDocs(memosQuery);
+        const existingMemoIds = new Set(memosSnapshot.docs.map(doc => doc.id));
+        
+        // Find orphaned activity logs
+        const orphanedLogs = activityLogsSnapshot.docs.filter(doc => {
+            const logData = doc.data();
+            return !existingMemoIds.has(logData.memoId);
+        });
+        
+        if (orphanedLogs.length === 0) {
+            console.log('No orphaned activity logs found');
+            return 0;
+        }
+        
+        // Delete orphaned logs in parallel
+        const deletePromises = orphanedLogs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        console.log(`Successfully cleaned up ${orphanedLogs.length} orphaned activity logs`);
+        return orphanedLogs.length;
+    } catch (error) {
+        console.error("Error cleaning up orphaned activity logs: ", error);
         throw error;
     }
 }
@@ -331,6 +415,8 @@ export {
     getAllMemos,
     updateMemoStatus,
     deleteMemoFromFirestore,
+    deleteActivityLogsForMemos,
+    cleanupOrphanedActivityLogs,
     authenticateUser,
     getUserData,
     logoutUser,

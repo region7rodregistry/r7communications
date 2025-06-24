@@ -665,7 +665,7 @@
     </div>
 
     <script type="module">
-        import { logoutUser, auth, deleteMemoFromFirestore } from './firebase-config.js';
+        import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
         import { doc, updateDoc, serverTimestamp, onSnapshot, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
@@ -1355,10 +1355,10 @@
                 loadingOverlay.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
-                const memoRef = doc(db, "memos", currentMemoId);
-                await deleteDoc(memoRef);
+                // Use the enhanced delete function that handles cascading delete of activity logs
+                await deleteMemoFromFirestore(currentMemoId);
                 
-                showSuccessToast('Memo deleted successfully');
+                showSuccessToast('Memo and related activity logs deleted successfully');
                 closeDeleteModal();
                 
             } catch (error) {
@@ -1398,6 +1398,29 @@
         // Delete memo function
         window.deleteMemo = function(memoId) {
             showDeleteModal(memoId);
+        };
+
+        // Cleanup function for orphaned activity logs (admin only)
+        window.cleanupOrphanedLogs = async function() {
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                
+                const cleanedCount = await cleanupOrphanedActivityLogs();
+                
+                if (cleanedCount > 0) {
+                    showSuccessToast(`Successfully cleaned up ${cleanedCount} orphaned activity logs`);
+                } else {
+                    showSuccessToast('No orphaned activity logs found');
+                }
+                
+            } catch (error) {
+                console.error('Error cleaning up orphaned logs:', error);
+                errorMessage.textContent = 'Error cleaning up orphaned logs. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
         };
 
         // Search functionality
@@ -2274,6 +2297,57 @@
             } catch (error) {
                 console.error('Error routing memos to archive:', error);
                 errorMessage.textContent = 'Error routing memos to archive. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+        // Bulk delete selected memos and their activity logs
+        window.bulkDeleteSelectedMemos = async function() {
+            const selectedMemoIds = getSelectedMemoIds();
+            
+            if (selectedMemoIds.length === 0) {
+                errorMessage.textContent = 'Please select at least one memo to delete';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Show confirmation dialog
+            const confirmed = confirm(`Are you sure you want to permanently delete ${selectedMemoIds.length} memo(s) and all their activity logs? This action cannot be undone.`);
+            
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                loadingOverlay.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
+                // Delete all selected memos and their activity logs
+                const deletePromises = selectedMemoIds.map(memoId => 
+                    deleteMemoFromFirestore(memoId)
+                );
+
+                await Promise.all(deletePromises);
+
+                showSuccessToast(`${selectedMemoIds.length} memo(s) and their activity logs deleted successfully`);
+                
+                // Uncheck all checkboxes
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+                
+                // Clear individual checkboxes
+                document.querySelectorAll('#memosTableBody .memo-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+
+            } catch (error) {
+                console.error('Error bulk deleting memos:', error);
+                errorMessage.textContent = 'Error deleting memos. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
                 loadingOverlay.classList.add('hidden');
