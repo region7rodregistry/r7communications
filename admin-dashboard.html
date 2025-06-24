@@ -542,7 +542,7 @@
                     <div class="ml-4 flex-grow">
                         <p class="text-sm font-medium text-gray-600">Acknowledgment</p>
                         <div class="flex items-center space-x-2">
-                            <p id="acknowledgmentMemos" class="text-2xl font-bold text-gray-900">0</p>
+                            <p id="nextAcknowledgmentNumber" class="text-2xl font-bold text-gray-900">0000</p>
                             <button onclick="editMemoNumber('acknowledgment')" class="text-blue-600 hover:text-blue-800">
                                 <i data-lucide="edit-2" class="w-4 h-4"></i>
                             </button>
@@ -707,31 +707,39 @@
         function updateTabStyles() {
             // Show/hide stats cards and logsheet preview toggle based on tab
             if (currentView === 'approved') {
-                statsCards.classList.add('hidden');
-                actionToggleContainer.classList.remove('hidden');
+                if (statsCards) statsCards.classList.add('hidden');
+                if (actionToggleContainer) actionToggleContainer.classList.remove('hidden');
             } else if (currentView === 'archive') {
-                statsCards.classList.add('hidden');
-                actionToggleContainer.classList.add('hidden');
+                if (statsCards) statsCards.classList.add('hidden');
+                if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
             } else {
-                statsCards.classList.remove('hidden');
-                statsCards.classList.add('stats-enter');
-                statsCards.classList.remove('stats-exit');
-                actionToggleContainer.classList.add('hidden');
+                if (statsCards) {
+                    statsCards.classList.remove('hidden');
+                    statsCards.classList.add('stats-enter');
+                    statsCards.classList.remove('stats-exit');
+                }
+                if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
             }
             
             // Remove highlight from all tabs first
-            pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
-            approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            approvedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
-            archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
-            archiveMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            if (pendingMemosTab) {
+                pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
+            if (approvedMemosTab) {
+                approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                approvedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
+            if (archiveMemosTab) {
+                archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                archiveMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
 
             // Add highlight to the active tab
-            if (currentView === 'pending') {
+            if (currentView === 'pending' && pendingMemosTab) {
                 pendingMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 pendingMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
-            } else if (currentView === 'approved') {
+            } else if (currentView === 'approved' && approvedMemosTab) {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             } else if (currentView === 'archive') {
@@ -834,7 +842,7 @@
             currentView = 'archive';
             updateTabStyles();
             renderTableHeader();
-            archiveTypeTabs.classList.remove('hidden');
+            if (archiveTypeTabs) archiveTypeTabs.classList.remove('hidden');
             setActiveArchiveTypeTab('All'); // Default to All
         });
 
@@ -881,11 +889,10 @@
                 });
 
                 // Update stats
-                totalMemos.textContent = allMemos.length;
-                pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
-                archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
-                acknowledgmentMemos.textContent = allMemos.filter(m => m.memoType === 'Acknowledgment').length;
+                if (totalMemos) totalMemos.textContent = allMemos.length;
+                if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+                if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
 
                 // Store memos globally for search functionality
                 window.allMemos = allMemos;
@@ -900,8 +907,11 @@
             onSnapshot(memoNumberRef, (doc) => {
                 if (doc.exists()) {
                     const currentNumber = doc.data().number;
-                    document.getElementById('nextMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
+                    const nextMemoNumberElement = document.getElementById('nextMemoNumber');
+                    if (nextMemoNumberElement) {
+                        nextMemoNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
+                        localStorage.setItem('dashboard_nextMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
+                    }
                 }
             });
 
@@ -982,8 +992,11 @@
                     }
                 } else {
                     const currentNumber = doc.data().number;
-                    document.getElementById('acknowledgmentMemos').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_acknowledgmentMemos', `${String(currentNumber).padStart(4, '0')}`);
+                    const nextAcknowledgmentNumberElement = document.getElementById('nextAcknowledgmentNumber');
+                    if (nextAcknowledgmentNumberElement) {
+                        nextAcknowledgmentNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
+                        localStorage.setItem('dashboard_nextAcknowledgmentNumber', `${String(currentNumber).padStart(4, '0')}`);
+                    }
                 }
             });
         });
@@ -1666,13 +1679,25 @@
 
         // Memo number editing functionality
         window.editMemoNumber = function(type) {
+            console.log('editMemoNumber called with type:', type);
+            
             if (type === 'advisoryBulletin') {
                 const editDiv = document.getElementById('advisoryBulletinNumberEdit');
                 const advisoryInput = document.getElementById('advisoryNumberInput');
                 const bulletinInput = document.getElementById('bulletinNumberInput');
-                advisoryInput.value = parseInt(document.getElementById('nextAdvisoryNumber').textContent);
-                bulletinInput.value = parseInt(document.getElementById('nextBulletinNumber').textContent);
-                editDiv.classList.remove('hidden');
+                const nextAdvisoryNumber = document.getElementById('nextAdvisoryNumber');
+                const nextBulletinNumber = document.getElementById('nextBulletinNumber');
+                
+                console.log('Advisory/Bulletin elements:', { editDiv, advisoryInput, bulletinInput, nextAdvisoryNumber, nextBulletinNumber });
+                
+                if (editDiv && advisoryInput && bulletinInput && nextAdvisoryNumber && nextBulletinNumber) {
+                    const advisoryValue = nextAdvisoryNumber.textContent.replace(/^0+/, '') || '0';
+                    const bulletinValue = nextBulletinNumber.textContent.replace(/^0+/, '') || '0';
+                    advisoryInput.value = parseInt(advisoryValue);
+                    bulletinInput.value = parseInt(bulletinValue);
+                    editDiv.classList.remove('hidden');
+                    console.log('Set advisory/bulletin input values:', { advisoryValue, bulletinValue });
+                }
             } else {
                 let editDiv, input, currentNumber;
                 switch(type) {
@@ -1695,41 +1720,70 @@
                         editDiv = document.getElementById('advisoryNumberEdit');
                         input = document.getElementById('advisoryNumberInput');
                         currentNumber = document.getElementById('nextAdvisoryNumber');
-                        input.value = parseInt(currentNumber.textContent);
                         break;
                     case 'bulletin':
                         editDiv = document.getElementById('bulletinNumberEdit');
                         input = document.getElementById('bulletinNumberInput');
                         currentNumber = document.getElementById('nextBulletinNumber');
-                        input.value = parseInt(currentNumber.textContent);
                         break;
                     case 'acknowledgment':
                         editDiv = document.getElementById('acknowledgmentNumberEdit');
                         input = document.getElementById('acknowledgmentNumberInput');
-                        currentNumber = document.getElementById('acknowledgmentMemos');
+                        currentNumber = document.getElementById('nextAcknowledgmentNumber');
                         break;
                     default:
                         return;
                 }
-                editDiv.classList.remove('hidden');
+                
+                console.log('Elements found:', { editDiv, input, currentNumber, type });
+                
+                // Set the input value and show the edit div
+                if (editDiv && input && currentNumber) {
+                    const currentValue = currentNumber.textContent.replace(/^0+/, '') || '0';
+                    input.value = parseInt(currentValue);
+                    editDiv.classList.remove('hidden');
+                    console.log('Set input value:', { currentValue, inputValue: input.value, type });
+                } else {
+                    console.log('Missing elements for type:', type);
+                }
             }
         };
 
         window.cancelMemoNumberEdit = function() {
-            document.getElementById('memoNumberEdit').classList.add('hidden');
-            document.getElementById('coMemoNumberEdit').classList.add('hidden');
-            document.getElementById('officeOrderNumberEdit').classList.add('hidden');
-            document.getElementById('advisoryNumberEdit').classList.add('hidden');
-            document.getElementById('bulletinNumberEdit').classList.add('hidden');
-            document.getElementById('acknowledgmentNumberEdit').classList.add('hidden');
+            const memoNumberEdit = document.getElementById('memoNumberEdit');
+            const coMemoNumberEdit = document.getElementById('coMemoNumberEdit');
+            const officeOrderNumberEdit = document.getElementById('officeOrderNumberEdit');
+            const advisoryNumberEdit = document.getElementById('advisoryNumberEdit');
+            const bulletinNumberEdit = document.getElementById('bulletinNumberEdit');
+            const acknowledgmentNumberEdit = document.getElementById('acknowledgmentNumberEdit');
+            const advisoryBulletinNumberEdit = document.getElementById('advisoryBulletinNumberEdit');
+            
+            if (memoNumberEdit) memoNumberEdit.classList.add('hidden');
+            if (coMemoNumberEdit) coMemoNumberEdit.classList.add('hidden');
+            if (officeOrderNumberEdit) officeOrderNumberEdit.classList.add('hidden');
+            if (advisoryNumberEdit) advisoryNumberEdit.classList.add('hidden');
+            if (bulletinNumberEdit) bulletinNumberEdit.classList.add('hidden');
+            if (acknowledgmentNumberEdit) acknowledgmentNumberEdit.classList.add('hidden');
+            if (advisoryBulletinNumberEdit) advisoryBulletinNumberEdit.classList.add('hidden');
         };
 
         window.saveMemoNumber = async function(type) {
+            console.log('saveMemoNumber called with type:', type);
+            
             if (type === 'advisoryBulletin') {
                 const advisoryInput = document.getElementById('advisoryNumberInput');
                 const bulletinInput = document.getElementById('bulletinNumberInput');
+                
+                if (!advisoryInput || !bulletinInput) {
+                    errorMessage.textContent = 'Input elements not found';
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+                
                 const newAdvisory = parseInt(advisoryInput.value);
                 const newBulletin = parseInt(bulletinInput.value);
+                console.log('Advisory/Bulletin values:', { newAdvisory, newBulletin });
+                
                 if (isNaN(newAdvisory) || newAdvisory < 0 || isNaN(newBulletin) || newBulletin < 0) {
                     errorMessage.textContent = 'Please enter valid numbers';
                     errorMessage.classList.remove('hidden');
@@ -1753,6 +1807,8 @@
                             if (!isNaN(memoNumber) && memoNumber > highestBulletin) highestBulletin = memoNumber;
                         }
                     });
+                    console.log('Highest numbers:', { highestAdvisory, highestBulletin });
+                    
                     if (newAdvisory < highestAdvisory || newBulletin < highestBulletin) {
                         errorMessage.textContent = `Numbers must be greater than or equal to their current highest values`;
                         errorMessage.classList.remove('hidden');
@@ -1762,6 +1818,7 @@
                     // Update both numbers
                     const advisoryRef = doc(db, "memoNumbers", "advisory");
                     const bulletinRef = doc(db, "memoNumbers", "bulletin");
+                    console.log('Updating Firestore documents...');
                     await Promise.all([
                         updateDoc(advisoryRef, { number: newAdvisory }).catch(async (error) => {
                             if (error.code === "not-found" || error.message.includes("No document to update")) {
@@ -1774,6 +1831,7 @@
                             } else { throw error; }
                         })
                     ]);
+                    console.log('Successfully updated advisory/bulletin numbers');
                     showSuccessToast(`Memo numbers updated successfully`);
                     cancelMemoNumberEdit();
                 } catch (error) {
@@ -1788,11 +1846,11 @@
                 switch(type) {
                     case 'current':
                         input = document.getElementById('memoNumberInput');
-                        memoType = 'PO';
+                        memoType = 'current';
                         break;
                     case 'coCurrent':
                         input = document.getElementById('coMemoNumberInput');
-                        memoType = 'CO';
+                        memoType = 'coCurrent';
                         break;
                     case 'officeOrder':
                         input = document.getElementById('officeOrderNumberInput');
@@ -1813,7 +1871,16 @@
                     default:
                         return;
                 }
+                
+                if (!input) {
+                    errorMessage.textContent = 'Input element not found';
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+                
                 const newNumber = parseInt(input.value);
+                console.log('Input value and parsed number:', { inputValue: input.value, newNumber, memoType });
+                
                 if (isNaN(newNumber) || newNumber < 0) {
                     errorMessage.textContent = 'Please enter a valid number';
                     errorMessage.classList.remove('hidden');
@@ -1835,6 +1902,8 @@
                             }
                         }
                     });
+                    console.log('Highest number for validation:', highestNumber);
+                    
                     if (newNumber < highestNumber) {
                         errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
@@ -1842,11 +1911,14 @@
                         return;
                     }
                     const memoNumberRef = doc(db, "memoNumbers", memoType);
+                    console.log('Updating Firestore document:', memoType, 'with number:', newNumber);
                     try {
                         await updateDoc(memoNumberRef, { number: newNumber });
+                        console.log('Successfully updated memo number');
                     } catch (error) {
                         if (error.code === "not-found" || error.message.includes("No document to update")) {
                             await setDoc(memoNumberRef, { number: newNumber });
+                            console.log('Created new memo number document');
                         } else {
                             throw error;
                         }
@@ -1949,7 +2021,8 @@
             const table = document.querySelector('table');
             
             if (isActionMode) {
-                document.querySelector('th:last-child').textContent = 'Actions';
+                const lastHeader = document.querySelector('th:last-child');
+                if (lastHeader) lastHeader.textContent = 'Actions';
                 // Show action buttons
                 actionButtons.forEach(btn => {
                     btn.classList.remove('hidden');
@@ -1976,7 +2049,8 @@
                     renderMemos(archiveMemos);
                 }
             } else {
-                document.querySelector('th:last-child').textContent = 'Action Taken';
+                const lastHeader = document.querySelector('th:last-child');
+                if (lastHeader) lastHeader.textContent = 'Action Taken';
                 // Remove action buttons completely
                 actionButtons.forEach(btn => {
                     btn.remove();
@@ -2020,7 +2094,8 @@
             }
             
             if (isActionMode) {
-                document.querySelector('th:last-child').textContent = 'Actions';
+                const lastHeader = document.querySelector('th:last-child');
+                if (lastHeader) lastHeader.textContent = 'Actions';
                 actionButtons.forEach(btn => btn.classList.remove('hidden'));
                 actionTaken.forEach(input => input.classList.add('hidden'));
                 actionTakenInputContainer.classList.add('hidden');
@@ -2035,7 +2110,8 @@
                 // Render memos based on current view
                 renderMemos(getFilteredMemosForCurrentView());
             } else {
-                document.querySelector('th:last-child').textContent = 'Action Taken';
+                const lastHeader = document.querySelector('th:last-child');
+                if (lastHeader) lastHeader.textContent = 'Action Taken';
                 actionButtons.forEach(btn => btn.classList.add('hidden'));
                 actionTaken.forEach(input => input.classList.remove('hidden'));
                 actionTakenInputContainer.classList.remove('hidden');
@@ -2305,31 +2381,35 @@
         }
 
         // Add event listeners to archive type tabs
-        archiveTypeTabs.querySelectorAll('.archive-type-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                setActiveArchiveTypeTab(this.getAttribute('data-type'));
+        if (archiveTypeTabs) {
+            archiveTypeTabs.querySelectorAll('.archive-type-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    setActiveArchiveTypeTab(this.getAttribute('data-type'));
+                });
             });
-        });
+        }
 
         // Show/hide archive type tabs on Archive tab click
         archiveMemosTab.addEventListener('click', () => {
             currentView = 'archive';
             updateTabStyles();
-            archiveTypeTabs.classList.remove('hidden');
+            if (archiveTypeTabs) archiveTypeTabs.classList.remove('hidden');
             setActiveArchiveTypeTab('All'); // Default to All
         });
 
         // Hide archive type tabs on other main tab clicks
         pendingMemosTab.addEventListener('click', () => {
-            archiveTypeTabs.classList.add('hidden');
+            if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
         });
         approvedMemosTab.addEventListener('click', () => {
-            archiveTypeTabs.classList.add('hidden');
+            if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
         });
 
         // Responsive: stack archive type tabs on mobile
-        archiveTypeTabs.classList.add('flex-wrap');
-        archiveTypeTabs.classList.add('sm:flex-row', 'flex-col');
+        if (archiveTypeTabs) {
+            archiveTypeTabs.classList.add('flex-wrap');
+            archiveTypeTabs.classList.add('sm:flex-row', 'flex-col');
+        }
 
         // Copy archive data function
         window.copyArchiveData = function() {
