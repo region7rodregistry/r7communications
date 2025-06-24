@@ -236,7 +236,7 @@
                 </div>
 
                 <!-- Recipients -->
-                <div class="relative">
+                <div class="relative" id="recipients-container">
                     <label for="recipients" class="block text-sm font-medium text-gray-700 mb-1">Recipients <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -260,6 +260,7 @@
                             <option value="RTC">Regional Training Center VII</option>
                             <option value="Others">Other (Please specify on Description)</option>
                         </select>
+                        <input type="text" id="recipients-other" name="recipients-other" placeholder="Enter custom recipient" class="hidden block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -314,6 +315,9 @@
         const antedationDateContainer = document.getElementById('antedationDateContainer');
         const antedationDateInput = document.getElementById('antedationDate');
         const antedationIndicator = document.getElementById('antedationIndicator');
+        const recipientsSelect = document.getElementById('recipients');
+        const recipientsOtherInput = document.getElementById('recipients-other');
+        const recipientsContainer = document.getElementById('recipients-container');
 
         // Antedation state variables
         let isAntedated = false;
@@ -674,12 +678,20 @@
                     generatedMemoNo = `${memoType}-${currentYear}-${departmentCode}-${String(currentNumber).padStart(4, '0')}`;
                 }
 
+                // Determine recipients value
+                let recipientsValue = '';
+                if (!recipientsSelect.classList.contains('hidden')) {
+                    recipientsValue = formData.get('recipients');
+                } else {
+                    recipientsValue = recipientsOtherInput.value.trim();
+                }
+
                 // Create memo data object with the assigned number
                 const memoData = {
                     title: formData.get('title'),
                     description: formData.get('description'),
                     department: userData.department,
-                    recipients: formData.get('recipients').split(',').map(r => r.trim()),
+                    recipients: recipientsValue ? [recipientsValue] : [],
                     priority: formData.get('priority'),
                     signatory: formData.get('signatory'),
                     createdBy: userData.username,
@@ -822,6 +834,29 @@
                 console.error('Error logging memo activity:', error);
             }
         }
+
+        recipientsSelect.addEventListener('change', function() {
+            if (this.value === 'Others') {
+                recipientsSelect.classList.add('hidden');
+                recipientsOtherInput.classList.remove('hidden');
+                recipientsOtherInput.setAttribute('required', 'required');
+                recipientsOtherInput.focus();
+            } else {
+                recipientsOtherInput.classList.add('hidden');
+                recipientsOtherInput.removeAttribute('required');
+                recipientsSelect.classList.remove('hidden');
+            }
+        });
+
+        // If user focuses out of the input and it's empty, revert to dropdown
+        recipientsOtherInput.addEventListener('blur', function() {
+            if (recipientsOtherInput.value.trim() === '') {
+                recipientsOtherInput.classList.add('hidden');
+                recipientsOtherInput.removeAttribute('required');
+                recipientsSelect.classList.remove('hidden');
+                recipientsSelect.value = '';
+            }
+        });
     </script>
 </body>
 </html>
