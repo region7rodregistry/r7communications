@@ -35,6 +35,100 @@
         }
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* Custom modal animations */
+        .modal-enter {
+            animation: modalEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-exit {
+            animation: modalExit 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalEnter {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes modalExit {
+            0% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+        }
+
+        /* Success icon animation */
+        .success-icon {
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Memo number glow effect */
+        .memo-number-glow {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            animation: memoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes memoGlow {
+            0% {
+                text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
+            }
+        }
+
+        /* Countdown animation */
+        .countdown-pulse {
+            animation: countdownPulse 1s ease-in-out;
+        }
+
+        @keyframes countdownPulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Button hover effects */
+        .btn-hover-glow:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Glass morphism effects */
         /* Custom scrollbar for select elements */
         select {
             scrollbar-width: thin;
@@ -78,6 +172,52 @@
             <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mb-4"></div>
                 <p class="text-gray-700 font-medium">Processing...</p>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 border border-blue-500/20 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform scale-95 opacity-0 transition-all duration-500 ease-in-out">
+                <!-- Success Icon -->
+                <div class="flex justify-center mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg success-icon">
+                        <i data-lucide="check" class="h-8 w-8 text-white"></i>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-white mb-2">Memo Created Successfully!</h3>
+                    <p class="text-blue-200 text-sm mb-4">Your document has been created and saved to the system.</p>
+                    
+                    <!-- Memo Number Display -->
+                    <div class="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg p-4 mb-6">
+                        <p class="text-blue-200 text-sm mb-2">Generated Memo Number:</p>
+                        <p id="modalMemoNumber" class="text-2xl font-bold text-white tracking-wider memo-number-glow"></p>
+                    </div>
+
+                    <!-- Auto-redirect countdown -->
+                    <div class="flex items-center justify-center text-blue-300 text-sm">
+                        <i data-lucide="clock" class="h-4 w-4 mr-2"></i>
+                        <span>Redirecting in <span id="countdown" class="font-bold">10</span> seconds...</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button
+                        id="continueBtn"
+                        class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 btn-hover-glow"
+                    >
+                        Continue
+                    </button>
+                    <button
+                        id="createAnotherBtn"
+                        class="flex-1 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 btn-hover-glow"
+                    >
+                        Create Another
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -318,6 +458,13 @@
         const recipientsSelect = document.getElementById('recipients');
         const recipientsOtherInput = document.getElementById('recipients-other');
         const recipientsContainer = document.getElementById('recipients-container');
+        
+        // Modal elements
+        const successModal = document.getElementById('successModal');
+        const modalMemoNumber = document.getElementById('modalMemoNumber');
+        const countdownElement = document.getElementById('countdown');
+        const continueBtn = document.getElementById('continueBtn');
+        const createAnotherBtn = document.getElementById('createAnotherBtn');
 
         // Antedation state variables
         let isAntedated = false;
@@ -746,12 +893,8 @@
                     userData.username
                 );
 
-                // Show success message
-                const successText = isAntedated ? 
-                    `Antedated memo created successfully! (dated ${antedationDate})` : 
-                    'Memo created successfully!';
-                successMessage.querySelector('p').textContent = successText;
-                successMessage.classList.remove('hidden');
+                // Show success modal with memo number
+                showSuccessModal(generatedMemoNo, userData.department);
 
                 // Reset form
                 memoForm.reset();
@@ -761,17 +904,106 @@
                 antedationIndicator.classList.add('hidden');
                 assignedMemoNumber.textContent = 'Select memo type first';
 
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    window.location.href = userData.department === 'ORD' ? 'ord-dashboard.html' : 'user-dashboard.html';
-                }, 2000);
-
             } catch (error) {
                 console.error('Error creating memo:', error);
                 errorMessage.querySelector('p').textContent = error.message || 'Error creating memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
                 loadingOverlay.classList.add('hidden');
+            }
+        });
+
+        // Success Modal Functions
+        let countdownInterval;
+        let redirectTimeout;
+
+        function showSuccessModal(memoNumber, userDepartment) {
+            const modalContent = successModal.querySelector('div');
+            
+            // Set memo number
+            modalMemoNumber.textContent = memoNumber;
+            
+            // Show modal with animation
+            successModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            // Start countdown
+            let countdown = 10;
+            countdownElement.textContent = countdown;
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = countdown;
+                
+                // Add pulse animation to countdown
+                countdownElement.classList.add('countdown-pulse');
+                setTimeout(() => {
+                    countdownElement.classList.remove('countdown-pulse');
+                }, 1000);
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    redirectToDashboard(userDepartment);
+                }
+            }, 1000);
+            
+            // Set auto-redirect timeout
+            redirectTimeout = setTimeout(() => {
+                redirectToDashboard(userDepartment);
+            }, 10000);
+        }
+
+        function hideSuccessModal() {
+            const modalContent = successModal.querySelector('div');
+            
+            // Hide modal with animation
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                successModal.classList.add('hidden');
+            }, 300);
+            
+            // Clear timers
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            if (redirectTimeout) {
+                clearTimeout(redirectTimeout);
+            }
+        }
+
+        function redirectToDashboard(userDepartment) {
+            hideSuccessModal();
+            window.location.href = userDepartment === 'ORD' ? 'ord-dashboard.html' : 'user-dashboard.html';
+        }
+
+        // Modal event listeners
+        continueBtn.addEventListener('click', () => {
+            const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+            redirectToDashboard(userData.department);
+        });
+
+        createAnotherBtn.addEventListener('click', () => {
+            hideSuccessModal();
+            // Form is already reset, just scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Keyboard support for modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !successModal.classList.contains('hidden')) {
+                hideSuccessModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        successModal.addEventListener('click', (e) => {
+            if (e.target === successModal) {
+                hideSuccessModal();
             }
         });
 
