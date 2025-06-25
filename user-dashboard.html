@@ -114,13 +114,13 @@
                             <p id="pendingMemos" class="text-3xl font-extrabold text-gray-900 dark:text-white">0</p>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 flex items-center space-x-5 transition-colors duration-300 hover:shadow-2xl hover:scale-[1.03] transform-gpu cursor-pointer">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 flex items-center space-x-5 transition-colors duration-300 hover:shadow-2xl hover:scale-[1.03] transform-gpu cursor-pointer" id="approvedArchivedCard">
                         <div class="p-4 bg-gradient-to-br from-green-100 via-green-200 to-green-300 dark:from-green-900 dark:via-green-800 dark:to-green-700 rounded-2xl shadow-md">
                             <i data-lucide="check-circle" class="w-8 h-8 text-green-700 dark:text-green-200"></i>
                         </div>
                         <div>
-                            <p class="text-base font-semibold text-gray-600 dark:text-gray-300">Approved Memos</p>
-                            <p id="approvedMemos" class="text-3xl font-extrabold text-gray-900 dark:text-white">0</p>
+                            <p class="text-base font-semibold text-gray-600 dark:text-gray-300">Approved and Archived</p>
+                            <p id="approvedArchivedMemos" class="text-3xl font-extrabold text-gray-900 dark:text-white">0</p>
                         </div>
                     </div>
                 </div>
@@ -265,10 +265,12 @@
         const userInfo = document.getElementById('userInfo');
         const totalMemos = document.getElementById('totalMemos');
         const pendingMemos = document.getElementById('pendingMemos');
-        const approvedMemos = document.getElementById('approvedMemos');
+        const approvedArchivedMemos = document.getElementById('approvedArchivedMemos');
+        const approvedArchivedCard = document.getElementById('approvedArchivedCard');
         const searchInput = document.getElementById('searchInput');
 
         let allMemos = [];
+        let currentFilter = null;
 
         // Check authentication and load memos
         auth.onAuthStateChanged(async (user) => {
@@ -318,7 +320,7 @@
         // Filter memos based on search input
         function filterMemos() {
             const searchTerm = searchInput.value.toLowerCase();
-            const filteredMemos = allMemos.filter(memo => {
+            let filteredMemos = allMemos.filter(memo => {
                 return (
                     memo.memoNumber.toLowerCase().includes(searchTerm) ||
                     memo.title.toLowerCase().includes(searchTerm) ||
@@ -331,10 +333,14 @@
                     (memo.antedationDate && memo.antedationDate.toLowerCase().includes(searchTerm))
                 );
             });
+            // If a status filter is active, apply it
+            if (currentFilter === 'approvedArchived') {
+                filteredMemos = filteredMemos.filter(m => m.status === 'approved' || m.status === 'archived');
+            }
             // Update stats with filtered results
             totalMemos.textContent = filteredMemos.length;
             pendingMemos.textContent = filteredMemos.filter(m => m.status === 'pending').length;
-            approvedMemos.textContent = filteredMemos.filter(m => m.status === 'approved').length;
+            approvedArchivedMemos.textContent = filteredMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
             // Update table with filtered results
             updateTable(filteredMemos);
         }
@@ -380,7 +386,7 @@
                     <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="${memo.recipients.join(', ')}">${memo.recipients.join(', ')}</td>
                     <td class="px-2 py-4">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
-                            ${memo.status}
+                            ${(memo.status === 'approved') ? 'Approved' : (memo.status === 'archived') ? 'Archived' : memo.status.charAt(0).toUpperCase() + memo.status.slice(1)}
                         </span>
                     </td>
                     <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
@@ -440,7 +446,7 @@
                     </div>
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Status:</span>
-                        <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
+                        <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${(memo.status === 'approved') ? 'Approved' : (memo.status === 'archived') ? 'Archived' : memo.status.charAt(0).toUpperCase() + memo.status.slice(1)}</span>
                     </div>
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Created At:</span>
@@ -488,7 +494,7 @@
                     // Update stats and table
                     totalMemos.textContent = allMemos.length;
                     pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                    approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+                    approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
                     updateTable(allMemos);
                 });
             } catch (error) {
@@ -507,6 +513,8 @@
                     return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
                 case 'approved':
                     return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                case 'archived':
+                    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
                 case 'rejected':
                     return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
                 default:
@@ -593,6 +601,19 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
+
+        // Add click event to the Approved and Archived card to filter table
+        approvedArchivedCard.addEventListener('click', () => {
+            currentFilter = 'approvedArchived';
+            filterMemos();
+        });
+
+        // Optionally, reset filter when search is cleared
+        searchInput.addEventListener('input', () => {
+            if (!searchInput.value) {
+                currentFilter = null;
+            }
+        });
     </script>
     <script>
         let unsubscribeMemos = null; // Store the unsubscribe function for Firestore
