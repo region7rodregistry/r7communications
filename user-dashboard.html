@@ -336,12 +336,10 @@
             // If a status filter is active, apply it
             if (currentFilter === 'approvedArchived') {
                 filteredMemos = filteredMemos.filter(m => m.status === 'approved' || m.status === 'archived');
+            } else if (currentFilter === 'pending') {
+                filteredMemos = filteredMemos.filter(m => m.status === 'pending');
             }
-            // Update stats with filtered results
-            totalMemos.textContent = filteredMemos.length;
-            pendingMemos.textContent = filteredMemos.filter(m => m.status === 'pending').length;
-            approvedArchivedMemos.textContent = filteredMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
-            // Update table with filtered results
+            // Only update the table, not the card stats
             updateTable(filteredMemos);
         }
 
@@ -614,6 +612,25 @@
                 currentFilter = null;
             }
         });
+
+        // Add click event to Total Memos card to show all memos
+        const totalMemosCard = document.querySelector('p#totalMemos').closest('.cursor-pointer');
+        if (totalMemosCard) {
+            totalMemosCard.addEventListener('click', () => {
+                currentFilter = null;
+                searchInput.value = '';
+                filterMemos();
+            });
+        }
+        // Add click event to Pending Memos card to filter table
+        const pendingMemosCard = document.querySelector('p#pendingMemos').closest('.cursor-pointer');
+        if (pendingMemosCard) {
+            pendingMemosCard.addEventListener('click', () => {
+                currentFilter = 'pending';
+                searchInput.value = '';
+                filterMemos();
+            });
+        }
     </script>
     <script>
         let unsubscribeMemos = null; // Store the unsubscribe function for Firestore
