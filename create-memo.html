@@ -351,7 +351,12 @@
                             <option value="Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.">Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.</option>
                             <option value="Jocelyn V. Cabahug">Jocelyn V. Cabahug</option>
                             <option value="Ivy Michelle T. Vasquez">Ivy Michelle T. Vasquez</option>
+                            <option value="Others">Other (Please specify)</option>
                         </select>
+                        <div id="signatory-other-wrapper" class="hidden relative">
+                            <input type="text" id="signatory-other" name="signatory-other" placeholder="Enter custom signatory" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <button type="button" id="signatory-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
+                        </div>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -400,7 +405,10 @@
                             <option value="RTC">Regional Training Center VII</option>
                             <option value="Others">Other (Please specify on Description)</option>
                         </select>
-                        <input type="text" id="recipients-other" name="recipients-other" placeholder="Enter custom recipient" class="hidden block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                        <div id="recipients-other-wrapper" class="hidden relative">
+                            <input type="text" id="recipients-other" name="recipients-other" placeholder="Enter custom recipient" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <button type="button" id="recipients-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
+                        </div>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -458,6 +466,8 @@
         const recipientsSelect = document.getElementById('recipients');
         const recipientsOtherInput = document.getElementById('recipients-other');
         const recipientsContainer = document.getElementById('recipients-container');
+        const recipientsOtherWrapper = document.getElementById('recipients-other-wrapper');
+        const recipientsBackBtn = document.getElementById('recipients-back-btn');
         
         // Modal elements
         const successModal = document.getElementById('successModal');
@@ -833,6 +843,14 @@
                     recipientsValue = recipientsOtherInput.value.trim();
                 }
 
+                // Determine signatory value
+                let signatoryValue = '';
+                if (!signatorySelect.classList.contains('hidden')) {
+                    signatoryValue = formData.get('signatory');
+                } else {
+                    signatoryValue = signatoryOtherInput.value.trim();
+                }
+
                 // Create memo data object with the assigned number
                 const memoData = {
                     title: formData.get('title'),
@@ -840,7 +858,7 @@
                     department: userData.department,
                     recipients: recipientsValue ? [recipientsValue] : [],
                     priority: formData.get('priority'),
-                    signatory: formData.get('signatory'),
+                    signatory: signatoryValue,
                     createdBy: userData.username,
                     memoType: memoType,
                     memoNumber: generatedMemoNo,
@@ -1070,24 +1088,78 @@
         recipientsSelect.addEventListener('change', function() {
             if (this.value === 'Others') {
                 recipientsSelect.classList.add('hidden');
-                recipientsOtherInput.classList.remove('hidden');
+                recipientsOtherWrapper.classList.remove('hidden');
                 recipientsOtherInput.setAttribute('required', 'required');
                 recipientsOtherInput.focus();
             } else {
                 recipientsOtherInput.classList.add('hidden');
                 recipientsOtherInput.removeAttribute('required');
+                recipientsOtherWrapper.classList.add('hidden');
                 recipientsSelect.classList.remove('hidden');
             }
         });
 
         // If user focuses out of the input and it's empty, revert to dropdown
         recipientsOtherInput.addEventListener('blur', function() {
-            if (recipientsOtherInput.value.trim() === '') {
-                recipientsOtherInput.classList.add('hidden');
-                recipientsOtherInput.removeAttribute('required');
-                recipientsSelect.classList.remove('hidden');
-                recipientsSelect.value = '';
+            setTimeout(() => { // Delay to allow button click
+                if (recipientsOtherInput.value.trim() === '') {
+                    recipientsOtherInput.classList.add('hidden');
+                    recipientsOtherInput.removeAttribute('required');
+                    recipientsOtherWrapper.classList.add('hidden');
+                    recipientsSelect.classList.remove('hidden');
+                    recipientsSelect.value = '';
+                }
+            }, 100);
+        });
+
+        // Back to Select button
+        recipientsBackBtn.addEventListener('click', function() {
+            recipientsOtherInput.classList.add('hidden');
+            recipientsOtherInput.removeAttribute('required');
+            recipientsOtherWrapper.classList.add('hidden');
+            recipientsSelect.classList.remove('hidden');
+            recipientsSelect.value = '';
+            recipientsSelect.focus();
+        });
+
+        const signatorySelect = document.getElementById('signatory');
+        const signatoryOtherInput = document.getElementById('signatory-other');
+        const signatoryOtherWrapper = document.getElementById('signatory-other-wrapper');
+        const signatoryBackBtn = document.getElementById('signatory-back-btn');
+
+        signatorySelect.addEventListener('change', function() {
+            if (this.value === 'Others') {
+                signatorySelect.classList.add('hidden');
+                signatoryOtherWrapper.classList.remove('hidden');
+                signatoryOtherInput.setAttribute('required', 'required');
+                signatoryOtherInput.focus();
+            } else {
+                signatoryOtherInput.classList.add('hidden');
+                signatoryOtherInput.removeAttribute('required');
+                signatoryOtherWrapper.classList.add('hidden');
+                signatorySelect.classList.remove('hidden');
             }
+        });
+
+        signatoryOtherInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (signatoryOtherInput.value.trim() === '') {
+                    signatoryOtherInput.classList.add('hidden');
+                    signatoryOtherInput.removeAttribute('required');
+                    signatoryOtherWrapper.classList.add('hidden');
+                    signatorySelect.classList.remove('hidden');
+                    signatorySelect.value = '';
+                }
+            }, 100);
+        });
+
+        signatoryBackBtn.addEventListener('click', function() {
+            signatoryOtherInput.classList.add('hidden');
+            signatoryOtherInput.removeAttribute('required');
+            signatoryOtherWrapper.classList.add('hidden');
+            signatorySelect.classList.remove('hidden');
+            signatorySelect.value = '';
+            signatorySelect.focus();
         });
     </script>
 </body>
