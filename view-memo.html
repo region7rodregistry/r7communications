@@ -368,19 +368,28 @@
                 memoIdGlobal = memoId;
 
                 // Update UI with memo details
-                document.getElementById('memoNumber').textContent = memo.memoNumber.split('-').pop();
-                document.getElementById('title').textContent = memo.title;
-                document.getElementById('department').textContent = memo.department;
-                document.getElementById('signatory').textContent = memo.signatory;
-                document.getElementById('priority').textContent = memo.priority;
-                document.getElementById('status').textContent = memo.status;
-                document.getElementById('createdAt').textContent = memo.createdAt.toDate().toLocaleDateString('en-US', {
+                let el = document.getElementById('memoNumber');
+                if (el) el.textContent = memo.memoNumber.split('-').pop();
+                el = document.getElementById('title');
+                if (el) el.textContent = memo.title;
+                el = document.getElementById('department');
+                if (el) el.textContent = memo.department;
+                el = document.getElementById('signatory');
+                if (el) el.textContent = memo.signatory;
+                el = document.getElementById('priority');
+                if (el) el.textContent = memo.priority;
+                el = document.getElementById('status');
+                if (el) el.textContent = memo.status;
+                el = document.getElementById('createdAt');
+                if (el) el.textContent = memo.createdAt.toDate().toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                 });
-                document.getElementById('recipients').textContent = memo.recipients.join(', ');
-                document.getElementById('description').textContent = memo.description;
+                el = document.getElementById('recipients');
+                if (el) el.textContent = memo.recipients.join(', ');
+                el = document.getElementById('description');
+                if (el) el.textContent = memo.description;
 
                 // Disable editing if archived
                 const isArchived = memo.status && memo.status.toLowerCase() === 'archived';
