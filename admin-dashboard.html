@@ -1066,7 +1066,7 @@
                     currentMonthMemos = grouped[0].memos;
                     foldersToShow = grouped.slice(1);
                 }
-                // If there are current month memos, show normal table header
+                // Show current month memos as individual rows (with Actions)
                 if (currentMonthMemos.length > 0) {
                     renderTableHeader('normal');
                     currentMonthMemos.forEach(memo => {
@@ -1099,8 +1099,10 @@
                             </td>
                             <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                                 <div class="flex space-x-4">
-                                    <div id="actionTaken_${memo.id}" class="action-taken">
-                                        <span class="text-gray-600">${memo.actionTaken || ''}</span>
+                                    <div id="actionButtons_${memo.id}" class="action-buttons">
+                                        <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                                        <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                        <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
                                     </div>
                                 </div>
                             </td>
@@ -1110,7 +1112,7 @@
                 } else {
                     renderTableHeader('folder');
                 }
-                // Render the rest as folders
+                // Render the rest as folders (with Action Taken column)
                 foldersToShow.forEach(group => {
                     const tr = document.createElement('tr');
                     tr.className = `cursor-pointer hover:bg-blue-50 transition bg-white`;
@@ -1132,6 +1134,7 @@
                     });
                     memosTableBody.appendChild(tr);
                     if (expandedFolderKey === (group.year + '-' + String(group.rawMonth).padStart(2, '0'))) {
+                        renderTableHeader('folder-entries');
                         group.memos.forEach(memo => {
                             const row = document.createElement('tr');
                             row.className = 'bg-gray-50';
@@ -2532,22 +2535,37 @@
             const thead = document.getElementById('memosTableHead');
             let headerHtml = `<tr>`;
             if (currentView === 'archive' && mode === 'folder') {
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-lg font-bold text-gray-700 uppercase tracking-wider\">Folder</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-lg font-bold text-gray-700 uppercase tracking-wider">Folder</th>`;
                 headerHtml += `</tr>`;
                 thead.innerHTML = headerHtml;
                 return;
             }
-            // Use normal columns for current month
+            // Use normal columns for current month (with Actions)
             if (currentView === 'archive' && mode === 'normal') {
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider\">Memo No.</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject\">Subject</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider\">From</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col\">Recipients</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider\">Status</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48\">Created At</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48\">Released to</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col\">Received by (Date + Name)</th>`;
-                headerHtml += `<th scope=\"col\" class=\"px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider\">Action Taken</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
+                headerHtml += `</tr>`;
+                thead.innerHTML = headerHtml;
+                return;
+            }
+            // For folder entries, show Action Taken
+            if (currentView === 'archive' && mode === 'folder-entries') {
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
                 headerHtml += `</tr>`;
                 thead.innerHTML = headerHtml;
                 return;
