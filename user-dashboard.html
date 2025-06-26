@@ -171,6 +171,8 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Controls -->
+                    <div id="paginationControls" class="flex justify-center items-center py-4"></div>
                 </div>
             </main>
             <!-- Footer -->
@@ -271,6 +273,9 @@
 
         let allMemos = [];
         let currentFilter = null;
+        let currentPage = 1;
+        const rowsPerPage = 15;
+        let filteredMemosCache = [];
 
         // Check authentication and load memos
         auth.onAuthStateChanged(async (user) => {
@@ -339,7 +344,8 @@
             } else if (currentFilter === 'pending') {
                 filteredMemos = filteredMemos.filter(m => m.status === 'pending');
             }
-            // Only update the table, not the card stats
+            filteredMemosCache = filteredMemos;
+            currentPage = 1;
             updateTable(filteredMemos);
         }
 
@@ -368,10 +374,18 @@
             return memoNumber;
         }
 
-        // Update table with provided memos
+        // Update table with provided memos (with pagination)
         function updateTable(memos) {
+            // Pagination logic
+            const paginationControls = document.getElementById('paginationControls');
+            let pagedMemos = memos;
+            if (memos.length > rowsPerPage) {
+                const startIdx = (currentPage - 1) * rowsPerPage;
+                const endIdx = startIdx + rowsPerPage;
+                pagedMemos = memos.slice(startIdx, endIdx);
+            }
             memosTableBody.innerHTML = '';
-            memos.forEach(memo => {
+            pagedMemos.forEach(memo => {
                 // Responsive card for mobile, table row for desktop
                 const row = document.createElement('tr');
                 row.className = 'hidden sm:table-row';
@@ -475,6 +489,70 @@
                 `;
                 memosTableBody.appendChild(card);
             });
+            // Render pagination controls
+            renderPagination(memos.length);
+        }
+
+        function renderPagination(totalRows) {
+            const paginationControls = document.getElementById('paginationControls');
+            if (totalRows <= rowsPerPage) {
+                paginationControls.innerHTML = '';
+                return;
+            }
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            let html = '<nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">';
+            // Prev button
+            html += `<button class="px-3 py-1 mx-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold transition hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}" ${currentPage === 1 ? 'disabled' : ''} id="paginationPrev">Prev</button>`;
+            // Page numbers (show up to 5 pages, with ellipsis if needed)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            }
+            if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+            if (startPage > 1) {
+                html += `<button class="px-3 py-1 mx-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold transition hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none hover:scale-105 active:scale-95" data-page="1">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="px-2 py-1 text-gray-400 dark:text-gray-500">...</span>`;
+                }
+            }
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="px-3 py-1 mx-1 rounded-lg border border-gray-300 dark:border-gray-700 ${i === currentPage ? 'bg-blue-600 text-white font-bold shadow-md scale-105' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900 hover:scale-105 active:scale-95'} transition focus:outline-none" data-page="${i}">${i}</button>`;
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="px-2 py-1 text-gray-400 dark:text-gray-500">...</span>`;
+                }
+                html += `<button class="px-3 py-1 mx-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold transition hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none hover:scale-105 active:scale-95" data-page="${totalPages}">${totalPages}</button>`;
+            }
+            // Next button
+            html += `<button class="px-3 py-1 mx-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold transition hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}" ${currentPage === totalPages ? 'disabled' : ''} id="paginationNext">Next</button>`;
+            html += '</nav>';
+            paginationControls.innerHTML = html;
+            // Add event listeners
+            document.getElementById('paginationPrev')?.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTable(filteredMemosCache.length ? filteredMemosCache : allMemos);
+                }
+            });
+            document.getElementById('paginationNext')?.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateTable(filteredMemosCache.length ? filteredMemosCache : allMemos);
+                }
+            });
+            Array.from(paginationControls.querySelectorAll('button[data-page]')).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const page = parseInt(btn.getAttribute('data-page'));
+                    if (page !== currentPage) {
+                        currentPage = page;
+                        updateTable(filteredMemosCache.length ? filteredMemosCache : allMemos);
+                    }
+                });
+            });
         }
 
         // Load memos from Firestore
@@ -493,6 +571,8 @@
                     totalMemos.textContent = allMemos.length;
                     pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
                     approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
+                    filteredMemosCache = allMemos;
+                    currentPage = 1;
                     updateTable(allMemos);
                 });
             } catch (error) {
@@ -603,6 +683,7 @@
         // Add click event to the Approved and Archived card to filter table
         approvedArchivedCard.addEventListener('click', () => {
             currentFilter = 'approvedArchived';
+            currentPage = 1;
             filterMemos();
         });
 
@@ -619,6 +700,7 @@
             totalMemosCard.addEventListener('click', () => {
                 currentFilter = null;
                 searchInput.value = '';
+                currentPage = 1;
                 filterMemos();
             });
         }
@@ -628,6 +710,7 @@
             pendingMemosCard.addEventListener('click', () => {
                 currentFilter = 'pending';
                 searchInput.value = '';
+                currentPage = 1;
                 filterMemos();
             });
         }
