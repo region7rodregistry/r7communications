@@ -78,17 +78,27 @@
         <div class="relative">
             <!-- Left Side Info -->
             <div class="absolute -left-64 top-0 w-60 space-y-6">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <p class="text-sm text-gray-500">Signatory:</p>
-                    <p id="signatory" class="text-lg text-gray-900"></p>
+                <div class="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Signatory:</p>
+                        <span id="signatory" class="text-lg text-gray-900 inline-block"></span>
+                    </div>
+                    <button id="edit-signatory" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Signatory">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <p class="text-sm text-gray-500">Priority:</p>
-                    <p id="priority" class="text-lg text-gray-900"></p>
+                <div class="bg-white p-4 rounded-lg shadow flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Priority:</p>
+                        <span id="priority" class="text-lg text-gray-900 inline-block"></span>
+                    </div>
+                    <button id="edit-priority" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Priority">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow">
                     <p class="text-sm text-gray-500">Status:</p>
-                    <p id="status" class="text-lg text-gray-900"></p>
+                    <span id="status" class="text-lg text-gray-900"></span>
                 </div>
             </div>
 
@@ -109,26 +119,46 @@
                 </div>
 
                 <!-- From -->
-                <div class="mb-8">
-                    <p class="text-sm text-gray-500">From:</p>
-                    <p id="department" class="text-lg text-gray-900"></p>
+                <div class="mb-8 flex items-center">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">From:</p>
+                        <span id="department" class="text-lg text-gray-900 inline-block"></span>
+                    </div>
+                    <button id="edit-department" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit From">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
 
                 <!-- To -->
-                <div class="mb-8">
-                    <p class="text-sm text-gray-500">To:</p>
-                    <p id="recipients" class="text-lg text-gray-900"></p>
+                <div class="mb-8 flex items-center">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">To:</p>
+                        <span id="recipients" class="text-lg text-gray-900 inline-block"></span>
+                    </div>
+                    <button id="edit-recipients" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit To">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
 
-                <div class="mb-8">
-                    <p class="text-sm text-gray-500">Subject:</p>
-                    <p id="title" class="text-lg font-semibold text-gray-900"></p>
+                <div class="mb-8 flex items-center">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">Subject:</p>
+                        <span id="title" class="text-lg font-semibold text-gray-900 inline-block"></span>
+                    </div>
+                    <button id="edit-title" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Subject">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
 
                 <!-- Description -->
-                <div class="mb-8">
-                    <p class="text-sm text-gray-500">Description:</p>
-                    <div id="description" class="mt-2 text-lg text-gray-900 whitespace-pre-wrap border-t border-gray-200 pt-4"></div>
+                <div class="mb-8 flex items-center">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">Description:</p>
+                        <span id="description" class="mt-2 text-lg text-gray-900 whitespace-pre-wrap border-t border-gray-200 pt-4 inline-block"></span>
+                    </div>
+                    <button id="edit-description" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Description">
+                        <i data-lucide="pen" class="w-4 h-4"></i>
+                    </button>
                 </div>
 
                 <!-- Footer with Logo -->
@@ -143,9 +173,12 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Released To</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Received By (Date + Name)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                                 </tr>
                             </thead>
                             <tbody id="activityLogBody" class="bg-white divide-y divide-gray-200">
@@ -160,7 +193,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Initialize Lucide icons
         lucide.createIcons();
@@ -169,6 +202,9 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const errorMessage = document.getElementById('errorMessage');
         const activityLogBody = document.getElementById('activityLogBody');
+
+        let memoGlobal = null;
+        let memoIdGlobal = null;
 
         // Helper function to log memo activity
         async function logMemoActivity(memoId, action, user) {
@@ -205,40 +241,36 @@
                 );
                 
                 // Use onSnapshot for real-time updates
-                return onSnapshot(q, (querySnapshot) => {
-                    activityLogBody.innerHTML = ''; // Clear existing logs
-
+                return onSnapshot(q, async (querySnapshot) => {
+                    activityLogBody.innerHTML = '';
+                    // Get memo for columns
+                    const memoRef = doc(db, 'memos', memoId);
+                    const memoDoc = await getDoc(memoRef);
+                    const memo = memoDoc.exists() ? memoDoc.data() : {};
                     if (querySnapshot.empty) {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
                                 No activity logs found
                             </td>
                         `;
                         activityLogBody.appendChild(row);
                         return;
                     }
-
                     // Convert to array and sort by timestamp
                     const logs = [];
                     querySnapshot.forEach((doc) => {
                         logs.push(doc.data());
                     });
-
-                    // Sort logs by timestamp in descending order
                     logs.sort((a, b) => {
                         const timeA = a.timestamp?.toDate() || new Date(0);
                         const timeB = b.timestamp?.toDate() || new Date(0);
                         return timeB - timeA;
                     });
-
-                    // Display sorted logs
                     logs.forEach((log) => {
                         const row = document.createElement('tr');
-                        
                         // Format the timestamp
                         const timestamp = log.timestamp?.toDate().toLocaleString() || 'N/A';
-                        
                         // Style the action text based on its type
                         let actionClass = 'text-gray-900';
                         if (log.action.includes('Status changed')) {
@@ -250,26 +282,26 @@
                         } else if (log.action.includes('Received')) {
                             actionClass = 'text-orange-600 font-medium';
                         }
-
+                        // Created At, Released To, Received By (Date + Name)
+                        const createdAt = memo.createdAt?.toDate ? memo.createdAt.toDate().toLocaleString() : 'N/A';
+                        const releasedTo = memo.releasedToRodFasd?.toDate ? memo.releasedToRodFasd.toDate().toLocaleString() : '—';
+                        const receivedBy = memo.receivedByRodFasd?.toDate ?
+                            memo.receivedByRodFasd.toDate().toLocaleString() + (memo.receivedByName ? ` (${memo.receivedByName})` : '') : '—';
                         row.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${timestamp}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm ${actionClass}">
-                                ${log.action}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${log.username}
-                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${createdAt}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${releasedTo}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${receivedBy}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${timestamp}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm ${actionClass}">${log.action}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${log.username}</td>
                         `;
                         activityLogBody.appendChild(row);
                     });
                 }, (error) => {
                     console.error('Error loading activity logs:', error);
-                    // Show error message in the table
                     activityLogBody.innerHTML = `
                         <tr>
-                            <td colspan="3" class="px-6 py-4 text-center text-sm text-red-500">
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
                                 Error loading activity logs. Please try again later.
                             </td>
                         </tr>
@@ -277,10 +309,9 @@
                 });
             } catch (error) {
                 console.error('Error setting up activity logs listener:', error);
-                // Show error message in the table
                 activityLogBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="px-6 py-4 text-center text-sm text-red-500">
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-red-500">
                             Error loading activity logs. Please try again later.
                         </td>
                     </tr>
@@ -333,6 +364,8 @@
                 }
 
                 const memo = memoDoc.data();
+                memoGlobal = memo;
+                memoIdGlobal = memoId;
 
                 // Update UI with memo details
                 document.getElementById('memoNumber').textContent = memo.memoNumber.split('-').pop();
@@ -349,6 +382,19 @@
                 document.getElementById('recipients').textContent = memo.recipients.join(', ');
                 document.getElementById('description').textContent = memo.description;
 
+                // Disable editing if archived
+                const isArchived = memo.status && memo.status.toLowerCase() === 'archived';
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    if (isArchived) {
+                        btn.classList.add('text-gray-300', 'cursor-not-allowed');
+                        btn.disabled = true;
+                        btn.style.pointerEvents = 'none';
+                    } else {
+                        btn.classList.remove('text-gray-300', 'cursor-not-allowed');
+                        btn.disabled = false;
+                        btn.style.pointerEvents = '';
+                    }
+                });
             } catch (error) {
                 console.error('Error loading memo details:', error);
                 errorMessage.textContent = error.message || 'Error loading memo details. Please try again.';
@@ -357,6 +403,100 @@
                 loadingOverlay.classList.add('hidden');
             }
         }
+
+        // Inline editing logic for each field
+        function setupInlineEditing() {
+            const fields = [
+                { id: 'signatory', btn: 'edit-signatory', field: 'signatory', type: 'text' },
+                { id: 'priority', btn: 'edit-priority', field: 'priority', type: 'dropdown', options: ['High', 'Medium', 'Low'] },
+                { id: 'department', btn: 'edit-department', field: 'department', type: 'text' },
+                { id: 'recipients', btn: 'edit-recipients', field: 'recipients', type: 'text' },
+                { id: 'title', btn: 'edit-title', field: 'title', type: 'text' },
+                { id: 'description', btn: 'edit-description', field: 'description', type: 'textarea' },
+            ];
+            fields.forEach(({ id, btn, field, type, options }) => {
+                const btnEl = document.getElementById(btn);
+                const fieldEl = document.getElementById(id);
+                if (!btnEl || !fieldEl) return;
+                btnEl.addEventListener('click', () => {
+                    if (btnEl.disabled) return;
+                    let input;
+                    if (type === 'dropdown') {
+                        input = document.createElement('select');
+                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            option.textContent = opt;
+                            if (fieldEl.textContent.trim() === opt) option.selected = true;
+                            input.appendChild(option);
+                        });
+                    } else if (type === 'textarea') {
+                        input = document.createElement('textarea');
+                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 w-full';
+                        input.value = fieldEl.textContent.trim();
+                        input.rows = 3;
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
+                        input.value = fieldEl.textContent.trim();
+                    }
+                    fieldEl.replaceWith(input);
+                    input.focus();
+                    // Save on Enter or blur
+                    const save = async () => {
+                        if (input._saving) return;
+                        input._saving = true;
+                        const value = (type === 'dropdown') ? input.value : (type === 'textarea' ? input.value : input.value.trim());
+                        // Show spinner
+                        btnEl.innerHTML = '<svg class="animate-spin h-4 w-4 text-blue-600 ml-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+                        try {
+                            loadingOverlay.classList.remove('hidden');
+                            const memoRef = doc(db, 'memos', memoIdGlobal);
+                            let updateObj = {};
+                            if (field === 'recipients') {
+                                updateObj[field] = value.split(',').map(s => s.trim()).filter(Boolean);
+                            } else {
+                                updateObj[field] = value;
+                            }
+                            await updateDoc(memoRef, updateObj);
+                            // Log activity
+                            const user = auth.currentUser;
+                            await logMemoActivity(memoIdGlobal, `Edited ${field.charAt(0).toUpperCase() + field.slice(1)}`, user);
+                            // Reload memo details
+                            await loadMemoDetails(memoIdGlobal);
+                            // Show checkmark
+                            btnEl.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500 ml-2"></i>';
+                            lucide.createIcons();
+                            setTimeout(() => {
+                                btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                                lucide.createIcons();
+                            }, 1200);
+                        } catch (err) {
+                            btnEl.innerHTML = '<i data-lucide="x" class="w-4 h-4 text-red-500 ml-2"></i>';
+                            setTimeout(() => {
+                                btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                                lucide.createIcons();
+                            }, 1200);
+                            errorMessage.textContent = 'Failed to save. Try again.';
+                            errorMessage.classList.remove('hidden');
+                        } finally {
+                            loadingOverlay.classList.add('hidden');
+                            input._saving = false;
+                        }
+                    };
+                    input.addEventListener('keydown', e => {
+                        if (e.key === 'Enter' && type !== 'textarea') {
+                            save();
+                        }
+                    });
+                    input.addEventListener('blur', save);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', setupInlineEditing);
     </script>
 </body>
 </html> 
