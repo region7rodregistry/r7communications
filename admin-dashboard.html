@@ -493,7 +493,7 @@
                 </div>
             </div>
 
-            <!-- Add the combined Advisory/Bulletin - Number Card -->
+            <!-- Merge Advisory/Bulletin - Number Card -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-2 bg-yellow-100 rounded-lg">
@@ -501,32 +501,18 @@
                     </div>
                     <div class="ml-4 flex-grow">
                         <p class="text-sm font-medium text-gray-600">Advisory/Bulletin - Number</p>
-                        <div class="flex items-center space-x-4">
-                            <span class="flex items-center space-x-2">
-                                <span class="text-xs text-gray-500">Advisory:</span>
-                                <span id="nextAdvisoryNumber" class="text-2xl font-bold text-gray-900">0000</span>
-                            </span>
-                            <span class="flex items-center space-x-2">
-                                <span class="text-xs text-gray-500">Bulletin:</span>
-                                <span id="nextBulletinNumber" class="text-2xl font-bold text-gray-900">0000</span>
-                            </span>
+                        <div class="flex items-center space-x-2">
+                            <p id="nextAdvisoryBulletinNumber" class="text-2xl font-bold text-gray-900">0000</p>
                             <button onclick="editMemoNumber('advisoryBulletin')" class="text-blue-600 hover:text-blue-800">
                                 <i data-lucide="edit-2" class="w-4 h-4"></i>
                             </button>
                         </div>
-                        <div id="advisoryBulletinNumberEdit" class="hidden mt-2 flex flex-col sm:flex-row gap-2">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs text-gray-500">Advisory:</span>
-                                <input type="number" id="advisoryNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs text-gray-500">Bulletin:</span>
-                                <input type="number" id="bulletinNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            </div>
-                            <button onclick="saveMemoNumber('advisoryBulletin')" class="text-green-600 hover:text-green-800">
+                        <div id="advisoryBulletinNumberEdit" class="hidden mt-2">
+                            <input type="number" id="advisoryBulletinNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
+                            <button onclick="saveMemoNumber('advisoryBulletin')" class="ml-2 text-green-600 hover:text-green-800">
                                 <i data-lucide="check" class="w-4 h-4"></i>
                             </button>
-                            <button onclick="cancelMemoNumberEdit()" class="text-red-600 hover:text-red-800">
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
                                 <i data-lucide="x" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -949,35 +935,19 @@
                 }
             });
 
-            // Set up real-time listener for next Advisory number
-            const advisoryNumberRef = doc(db, "memoNumbers", "advisory");
-            onSnapshot(advisoryNumberRef, async (doc) => {
+            // Set up real-time listener for next Advisory/Bulletin number (merged)
+            const advisoryBulletinNumberRef = doc(db, "memoNumbers", "advisoryBulletin");
+            onSnapshot(advisoryBulletinNumberRef, async (doc) => {
                 if (!doc.exists()) {
                     try {
-                        await updateDoc(advisoryNumberRef, { number: 0 });
+                        await updateDoc(advisoryBulletinNumberRef, { number: 0 });
                     } catch (error) {
-                        await setDoc(advisoryNumberRef, { number: 0 });
+                        await setDoc(advisoryBulletinNumberRef, { number: 0 });
                     }
                 } else {
                     const currentNumber = doc.data().number;
-                    document.getElementById('nextAdvisoryNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextAdvisoryNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Set up real-time listener for next Bulletin number
-            const bulletinNumberRef = doc(db, "memoNumbers", "bulletin");
-            onSnapshot(bulletinNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(bulletinNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(bulletinNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextBulletinNumber', `${String(currentNumber).padStart(4, '0')}`);
+                    document.getElementById('nextAdvisoryBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
+                    localStorage.setItem('dashboard_nextAdvisoryBulletinNumber', `${String(currentNumber).padStart(4, '0')}`);
                 }
             });
 
@@ -1964,24 +1934,14 @@
 
         // Memo number editing functionality
         window.editMemoNumber = function(type) {
-            console.log('editMemoNumber called with type:', type);
-            
             if (type === 'advisoryBulletin') {
                 const editDiv = document.getElementById('advisoryBulletinNumberEdit');
-                const advisoryInput = document.getElementById('advisoryNumberInput');
-                const bulletinInput = document.getElementById('bulletinNumberInput');
-                const nextAdvisoryNumber = document.getElementById('nextAdvisoryNumber');
-                const nextBulletinNumber = document.getElementById('nextBulletinNumber');
-                
-                console.log('Advisory/Bulletin elements:', { editDiv, advisoryInput, bulletinInput, nextAdvisoryNumber, nextBulletinNumber });
-                
-                if (editDiv && advisoryInput && bulletinInput && nextAdvisoryNumber && nextBulletinNumber) {
-                    const advisoryValue = nextAdvisoryNumber.textContent.replace(/^0+/, '') || '0';
-                    const bulletinValue = nextBulletinNumber.textContent.replace(/^0+/, '') || '0';
-                    advisoryInput.value = parseInt(advisoryValue);
-                    bulletinInput.value = parseInt(bulletinValue);
+                const input = document.getElementById('advisoryBulletinNumberInput');
+                const currentNumber = document.getElementById('nextAdvisoryBulletinNumber');
+                if (editDiv && input && currentNumber) {
+                    const currentValue = currentNumber.textContent.replace(/^0+/, '') || '0';
+                    input.value = parseInt(currentValue);
                     editDiv.classList.remove('hidden');
-                    console.log('Set advisory/bulletin input values:', { advisoryValue, bulletinValue });
                 }
             } else {
                 let editDiv, input, currentNumber;
@@ -2020,14 +1980,11 @@
                         return;
                 }
                 
-                console.log('Elements found:', { editDiv, input, currentNumber, type });
-                
                 // Set the input value and show the edit div
                 if (editDiv && input && currentNumber) {
                     const currentValue = currentNumber.textContent.replace(/^0+/, '') || '0';
                     input.value = parseInt(currentValue);
                     editDiv.classList.remove('hidden');
-                    console.log('Set input value:', { currentValue, inputValue: input.value, type });
                 } else {
                     console.log('Missing elements for type:', type);
                 }
@@ -2053,75 +2010,54 @@
         };
 
         window.saveMemoNumber = async function(type) {
-            console.log('saveMemoNumber called with type:', type);
-            
             if (type === 'advisoryBulletin') {
-                const advisoryInput = document.getElementById('advisoryNumberInput');
-                const bulletinInput = document.getElementById('bulletinNumberInput');
-                
-                if (!advisoryInput || !bulletinInput) {
-                    errorMessage.textContent = 'Input elements not found';
+                const input = document.getElementById('advisoryBulletinNumberInput');
+                if (!input) {
+                    errorMessage.textContent = 'Input element not found';
                     errorMessage.classList.remove('hidden');
                     return;
                 }
-                
-                const newAdvisory = parseInt(advisoryInput.value);
-                const newBulletin = parseInt(bulletinInput.value);
-                console.log('Advisory/Bulletin values:', { newAdvisory, newBulletin });
-                
-                if (isNaN(newAdvisory) || newAdvisory < 0 || isNaN(newBulletin) || newBulletin < 0) {
-                    errorMessage.textContent = 'Please enter valid numbers';
+                const newNumber = parseInt(input.value);
+                if (isNaN(newNumber) || newNumber < 0) {
+                    errorMessage.textContent = 'Please enter a valid number';
                     errorMessage.classList.remove('hidden');
                     return;
                 }
                 try {
                     loadingOverlay.classList.remove('hidden');
                     errorMessage.classList.add('hidden');
-                    // Check highest numbers for both types
+                    // Validate against highest number in memos of type Advisory or Bulletin
                     const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
                     const memosSnapshot = await getDocs(memosQuery);
-                    let highestAdvisory = 0, highestBulletin = 0;
+                    let highestNumber = 0;
                     memosSnapshot.forEach((doc) => {
                         const memo = doc.data();
-                        if (memo.memoType === 'Advisory') {
+                        if (memo.memoType === 'Advisory' || memo.memoType === 'Bulletin') {
                             const memoNumber = parseInt(formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated).replace(/[A-Z]/g, ''));
-                            if (!isNaN(memoNumber) && memoNumber > highestAdvisory) highestAdvisory = memoNumber;
-                        }
-                        if (memo.memoType === 'Bulletin') {
-                            const memoNumber = parseInt(formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated).replace(/[A-Z]/g, ''));
-                            if (!isNaN(memoNumber) && memoNumber > highestBulletin) highestBulletin = memoNumber;
+                            if (!isNaN(memoNumber) && memoNumber > highestNumber) highestNumber = memoNumber;
                         }
                     });
-                    console.log('Highest numbers:', { highestAdvisory, highestBulletin });
-                    
-                    if (newAdvisory < highestAdvisory || newBulletin < highestBulletin) {
-                        errorMessage.textContent = `Numbers must be greater than or equal to their current highest values`;
+                    if (newNumber < highestNumber) {
+                        errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
                         loadingOverlay.classList.add('hidden');
                         return;
                     }
-                    // Update both numbers
-                    const advisoryRef = doc(db, "memoNumbers", "advisory");
-                    const bulletinRef = doc(db, "memoNumbers", "bulletin");
-                    console.log('Updating Firestore documents...');
-                    await Promise.all([
-                        updateDoc(advisoryRef, { number: newAdvisory }).catch(async (error) => {
-                            if (error.code === "not-found" || error.message.includes("No document to update")) {
-                                await setDoc(advisoryRef, { number: newAdvisory });
-                            } else { throw error; }
-                        }),
-                        updateDoc(bulletinRef, { number: newBulletin }).catch(async (error) => {
-                            if (error.code === "not-found" || error.message.includes("No document to update")) {
-                                await setDoc(bulletinRef, { number: newBulletin });
-                            } else { throw error; }
-                        })
-                    ]);
-                    console.log('Successfully updated advisory/bulletin numbers');
-                    showSuccessToast(`Memo numbers updated successfully`);
+                    const advisoryBulletinRef = doc(db, "memoNumbers", "advisoryBulletin");
+                    try {
+                        await updateDoc(advisoryBulletinRef, { number: newNumber });
+                    } catch (error) {
+                        if (error.code === "not-found" || error.message.includes("No document to update")) {
+                            await setDoc(advisoryBulletinRef, { number: newNumber });
+                        } else {
+                            throw error;
+                        }
+                    }
+                    showSuccessToast(`Advisory/Bulletin number updated successfully`);
                     cancelMemoNumberEdit();
                 } catch (error) {
-                    console.error('Error updating memo numbers:', error);
-                    errorMessage.textContent = 'Error updating memo numbers. Please try again.';
+                    console.error('Error updating Advisory/Bulletin number:', error);
+                    errorMessage.textContent = 'Error updating Advisory/Bulletin number. Please try again.';
                     errorMessage.classList.remove('hidden');
                 } finally {
                     loadingOverlay.classList.add('hidden');
