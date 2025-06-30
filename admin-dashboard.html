@@ -891,7 +891,7 @@
                 // Update stats
                 if (totalMemos) totalMemos.textContent = allMemos.length;
                 if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => m.status === 'approved').length;
+                if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
                 if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
 
                 // Store memos globally for search functionality
