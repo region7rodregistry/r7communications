@@ -1,0 +1,21 @@
+{
+  "name": "ro7communications",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r7rodiTeam/ro7communications.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/r7rodiTeam/ro7communications/issues"
+  },
+  "homepage": "https://github.com/r7rodiTeam/ro7communications#readme"
+}

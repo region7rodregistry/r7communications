@@ -387,7 +387,15 @@
                     day: 'numeric'
                 });
                 el = document.getElementById('recipients');
-                if (el) el.textContent = memo.recipients.join(', ');
+                if (el) {
+                    if (Array.isArray(memo.recipients)) {
+                        el.textContent = memo.recipients.join(', ');
+                    } else if (typeof memo.recipients === 'string') {
+                        el.textContent = memo.recipients;
+                    } else {
+                        el.textContent = '';
+                    }
+                }
                 el = document.getElementById('description');
                 if (el) el.textContent = memo.description;
 

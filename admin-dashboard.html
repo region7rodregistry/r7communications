@@ -257,6 +257,128 @@
             gap: 0.5rem;
             align-items: center;
         }
+        /* Futuristic gradient border for modal */
+        .futuristic-gradient {
+            border-image: none;
+        }
+        #virtualFolderModal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #virtualFolderModal .modal-bg {
+            z-index: 0;
+        }
+        #virtualFolderModalContent {
+            z-index: 10;
+            background: #fff;
+            color: #111;
+            border-radius: 1rem;
+            min-width: 320px;
+            max-width: 95vw;
+            min-height: 120px;
+            max-height: 60vh;
+            overflow-y: auto;
+            resize: vertical;
+            box-shadow: 0 8px 32px 0 rgba(30,58,138,0.18);
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            transform: scale(0.92);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        #virtualFolderModal.show #virtualFolderModalContent {
+            animation: popoutModal 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+            opacity: 1;
+            transform: scale(1);
+        }
+        @keyframes popoutModal {
+            0% {
+                opacity: 0;
+                transform: scale(0.85);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        #closeVirtualFolderModal {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            font-size: 1.5rem;
+            color: #111;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 20;
+            transition: color 0.2s;
+        }
+        #closeVirtualFolderModal:hover {
+            color: #1e3a8a;
+        }
+        #virtualFolderModalBody {
+            padding-top: 1.5rem;
+            padding-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            overflow-y: auto;
+        }
+        @media (max-width: 600px) {
+            #virtualFolderModalContent {
+                min-width: 90vw;
+                max-width: 98vw;
+                max-height: 80vh;
+            }
+        }
+        /* Add Virtual Folder Modal for Archive Folders */
+        #archiveFolderModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #archiveFolderModal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #archiveFolderModalContent {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        #archiveFolderModalContent.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+        #closeArchiveFolderModal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: #333;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        #archiveFolderModalBody {
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -627,6 +749,9 @@
                             <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
                         </div>
                         <div class="flex space-x-2 ml-4">
+                            <button onclick="sortArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Sort
+                            </button>
                             <button onclick="copyArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                 Copy
                             </button>
@@ -788,7 +913,6 @@
         // Helper function to get filtered memos based on current view
         function getFilteredMemosForCurrentView() {
             if (!allMemos) return [];
-            
             if (currentView === 'pending') {
                 return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
             } else if (currentView === 'approved') {
@@ -1026,217 +1150,90 @@
             const memosCardBody = document.getElementById('memosCardBody');
             if (memosCardBody) memosCardBody.innerHTML = '';
 
+            // FLAT LIST FOR ARCHIVE TAB (no folders)
             if (currentView === 'archive') {
-                const grouped = groupMemosByReceivedMonth(memos);
-                const now = new Date();
-                const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                let currentMonthMemos = [];
-                let foldersToShow = grouped;
-                if (grouped.length > 0 && grouped[0].year === now.getFullYear() && grouped[0].rawMonth === (now.getMonth() + 1)) {
-                    currentMonthMemos = grouped[0].memos;
-                    foldersToShow = grouped.slice(1);
-                }
-                // Show current month memos as individual rows (with Actions)
-                if (currentMonthMemos.length > 0) {
-                    renderTableHeader('normal');
-                    currentMonthMemos.forEach(memo => {
-                        // Table row (desktop)
-                        const row = document.createElement('tr');
-                        row.className = 'bg-white';
-                        row.innerHTML = `
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                            <td class="px-6 py-3 whitespace-nowrap">
-                                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
-                                    ${memo.status}
-                                </span>
-                            </td>
-                            <td class="px-6 py-3 text-sm text-gray-900 w-48">
-                                ${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', {
-                                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                }) : ''}
-                            </td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
-                                ${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
-                                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                }) : ''}
-                            </td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
-                                ${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
-                                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}
-                            </td>
-                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                                <div class="flex space-x-4">
-                                    <div id="actionButtons_${memo.id}" class="action-buttons">
-                                        <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
-                                        <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
-                                        <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
-                                    </div>
+                // Just render all memos as a flat list
+                memos.forEach(memo => {
+                    // Table row (desktop)
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white';
+                    row.innerHTML = `
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
+                        <td class="px-6 py-3 text-sm text-gray-900 w-48">
+                            ${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) : 'N/A'}
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
+                            ${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) : ''}
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
+                            ${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                            }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-4">
+                                <div id="actionButtons_${memo.id}" class="action-buttons">
+                                    <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                                    <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                    <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
                                 </div>
-                            </td>
-                        `;
-                        memosTableBody.appendChild(row);
-                        // Mobile card
-                        if (memosCardBody) {
-                            const card = document.createElement('div');
-                            card.className = 'bg-white shadow-md rounded-lg p-4 mb-4';
-                            card.innerHTML = `
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
-                                    <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
-                                    <span class="block text-sm text-gray-900">${memo.title}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">From:</span>
-                                    <span class="block text-sm text-gray-900">${memo.department}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
-                                    <span class="block text-sm text-gray-900">${memo.recipients}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
-                                    <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
-                                    <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
-                                    <span class="block text-sm text-gray-900">${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
-                                </div>
-                                <div class="mb-1">
-                                    <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
-                                    <span class="block text-sm text-gray-900">${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}</span>
-                                </div>
-                                <div class="flex space-x-2 mt-2">
-                                    <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
-                                    <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
-                                    <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
-                                </div>
-                            `;
-                            memosCardBody.appendChild(card);
-                        }
-                    });
-                } else {
-                    renderTableHeader('folder');
-                }
-                // Render the rest as folders (with Action Taken column)
-                foldersToShow.forEach(group => {
-                    const tr = document.createElement('tr');
-                    tr.className = `cursor-pointer hover:bg-blue-50 transition bg-white`;
-                    tr.innerHTML = `
-                        <td colspan="9" class="flex items-center space-x-3 px-6 py-4">
-                            <i data-lucide="folder" class="w-5 h-5 text-yellow-500 mr-2"></i>
-                            <span>${group.label}</span>
-                            <span class="ml-2 text-xs text-gray-500">(${group.memos.length} entries)</span>
-                            <span class="ml-auto text-xs text-blue-600">${expandedFolderKey === (group.year + '-' + String(group.rawMonth).padStart(2, '0')) ? 'Hide' : 'View'}</span>
+                            </div>
                         </td>
                     `;
-                    tr.addEventListener('click', () => {
-                        if (expandedFolderKey === (group.year + '-' + String(group.rawMonth).padStart(2, '0'))) {
-                            expandedFolderKey = null;
-                        } else {
-                            expandedFolderKey = group.year + '-' + String(group.rawMonth).padStart(2, '0');
-                        }
-                        renderMemos(memos);
-                    });
-                    memosTableBody.appendChild(tr);
-                    if (expandedFolderKey === (group.year + '-' + String(group.rawMonth).padStart(2, '0'))) {
-                        renderTableHeader('folder-entries');
-                        group.memos.forEach(memo => {
-                            // Table row (desktop)
-                            const row = document.createElement('tr');
-                            row.className = 'bg-gray-50';
-                            row.innerHTML = `
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                                <td class="px-6 py-3 whitespace-nowrap">
-                                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
-                                        ${memo.status}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-900 w-48">
-                                    ${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', {
-                                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                    }) : ''}
-                                </td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
-                                    ${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
-                                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                    }) : ''}
-                                </td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
-                                    ${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
-                                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                                    }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}
-                                </td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                                    <div class="flex space-x-4">
-                                        <div id="actionTaken_${memo.id}" class="action-taken">
-                                            <span class="text-gray-600">${memo.actionTaken || ''}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                            `;
-                            memosTableBody.appendChild(row);
-                            // Mobile card
-                            if (memosCardBody) {
-                                const card = document.createElement('div');
-                                card.className = 'bg-white shadow-md rounded-lg p-4 mb-4';
-                                card.innerHTML = `
-                                    <div class="flex justify-between items-center mb-2">
-                                        <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
-                                        <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
-                                        <span class="block text-sm text-gray-900">${memo.title}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">From:</span>
-                                        <span class="block text-sm text-gray-900">${memo.department}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
-                                        <span class="block text-sm text-gray-900">${memo.recipients}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
-                                        <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
-                                        <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
-                                        <span class="block text-sm text-gray-900">${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
-                                        <span class="block text-sm text-gray-900">${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}</span>
-                                    </div>
-                                    <div class="mb-1">
-                                        <span class="block text-xs font-bold text-gray-500 uppercase">Action Taken:</span>
-                                        <span class="block text-sm text-gray-900">${memo.actionTaken || ''}</span>
-                                    </div>
-                                `;
-                                memosCardBody.appendChild(card);
-                            }
-                        });
+                    memosTableBody.appendChild(row);
+                    // Mobile card
+                    if (memosCardBody) {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white shadow-md rounded-lg p-4 mb-4';
+                        card.innerHTML = `
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
+                                <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
+                                <span class="block text-sm text-gray-900">${memo.title}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">From:</span>
+                                <span class="block text-sm text-gray-900">${memo.department}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
+                                <span class="block text-sm text-gray-900">${memo.recipients}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
+                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
+                                <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A'}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
+                                <span class="block text-sm text-gray-900">${memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
+                                <span class="block text-sm text-gray-900">${memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : ''}</span>
+                            </div>
+                            <div class="flex space-x-2 mt-2">
+                                <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
+                                <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
+                                <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
+                            </div>
+                        `;
+                        memosCardBody.appendChild(card);
                     }
                 });
-                lucide.createIcons();
                 return;
             }
             // ... existing code for non-archive views ...
@@ -1268,7 +1265,7 @@
                         <td class="px-2 py-2 text-sm text-gray-900 w-48">
                             ${memo.createdAt ? memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                            }) : ''}
+                            }) : 'N/A'}
                         </td>
                         <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
                             ${memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
@@ -1432,7 +1429,7 @@
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
-                            <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}</span>
+                            <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A'}</span>
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
@@ -1440,14 +1437,7 @@
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
-                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                            }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : '—'}</span>
+                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : '—'}</span>
                         </div>
                         <div class="flex space-x-2 mt-2">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
@@ -2573,7 +2563,8 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                // REMOVE STATUS COLUMN FOR ARCHIVE
+                // headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
@@ -2588,7 +2579,7 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
+                // REMOVE STATUS COLUMN FOR ARCHIVE
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
@@ -2624,7 +2615,6 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
@@ -2917,6 +2907,72 @@
             }
             return result;
         }
+    </script>
+    <script>
+        // Modal logic for archive folder view
+        const archiveFolderModal = document.getElementById('archiveFolderModal');
+        const archiveFolderModalContent = document.getElementById('archiveFolderModalContent');
+        const archiveFolderModalBody = document.getElementById('archiveFolderModalBody');
+        const closeArchiveFolderModal = document.getElementById('closeArchiveFolderModal');
+
+        function openArchiveFolderModal(label, memos) {
+            // Build modal content
+            let html = `<div class='text-xl font-bold mb-2 text-center'>${label}</div>`;
+            if (memos.length === 0) {
+                html += `<div class='text-center text-gray-500'>No memos in this folder.</div>`;
+            } else {
+                html += `<div class='overflow-x-auto'><table class='min-w-full divide-y divide-gray-200 mt-2'>`;
+                html += `<thead><tr>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Memo No.</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Subject</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>From</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Recipients</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Created At</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Released to</th>
+                    <th class='px-4 py-2 text-left text-xs font-semibold text-gray-600'>Received by (Date + Name)</th>
+                </tr></thead><tbody>`;
+                memos.forEach(memo => {
+                    html += `<tr>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.memoNumber ? memo.memoNumber.split('-').pop() : ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.title || ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.department || ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.recipients || ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.createdAt || ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.releasedToRodFasd || ''}</td>
+                        <td class='px-4 py-2 text-sm text-gray-900'>${memo.receivedByRodFasd || ''}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+            }
+            archiveFolderModalBody.innerHTML = html;
+            archiveFolderModal.classList.remove('hidden');
+            setTimeout(() => {
+                archiveFolderModalContent.classList.remove('opacity-0', 'scale-95');
+                archiveFolderModalContent.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        }
+        function closeArchiveFolderModalFn() {
+            archiveFolderModalContent.classList.remove('opacity-100', 'scale-100');
+            archiveFolderModalContent.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                archiveFolderModal.classList.add('hidden');
+            }, 250);
+        }
+        closeArchiveFolderModal.onclick = closeArchiveFolderModalFn;
+        archiveFolderModal.onclick = function(e) {
+            if (e.target === archiveFolderModal) closeArchiveFolderModalFn();
+        };
+        // Delegate click for view-folder-btn
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('view-folder-btn')) {
+                const label = e.target.getAttribute('data-label');
+                let memos = [];
+                try {
+                    memos = JSON.parse(e.target.getAttribute('data-memos'));
+                } catch {}
+                openArchiveFolderModal(label, memos);
+            }
+        });
     </script>
 
     <!-- Footer -->
