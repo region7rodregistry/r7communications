@@ -610,109 +610,79 @@
             }
         }
 
-        // Function to get the next antedated memo number
+        // Function to get the next antedated memo number (A-Z only, error if all used)
         async function getNextAntedatedMemoNumber(memoType, selectedDate) {
             try {
                 const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
                 const year = new Date(selectedDate).getFullYear();
                 
-                // Query memos for the specific memo type (simplified to avoid index requirement)
+                // Query memos for the specific memo type and date
                 const q = query(
                     collection(db, "memos"),
                     where("memoType", "==", memoType)
                 );
-
                 const querySnapshot = await getDocs(q);
                 
-                // Filter memos for the specific date AND memo type, then sort by memo number in memory
+                // Filter memos for the specific date AND memo type
                 const memosForDate = querySnapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() }))
                     .filter(memo => {
                         // Only include memos of the same type AND same date
-                        const memoDate = memo.antedationDate || memo.createdAt.toDate().toISOString().split('T')[0];
+                        const memoDate = memo.antedationDate || (memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toISOString().split('T')[0] : null);
                         return memoDate === selectedDate && memo.memoType === memoType;
-                    })
-                    .sort((a, b) => {
-                        // Sort by memo number (extract the numeric part for proper sorting)
-                        const aNum = parseInt(a.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
-                        const bNum = parseInt(b.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
-                        if (aNum !== bNum) return bNum - aNum;
-                        
-                        // If same number, sort by suffix (A < B < C, etc.)
-                        const aSuffix = a.memoNumber.split('-').pop().replace(/\d/g, '') || '';
-                        const bSuffix = b.memoNumber.split('-').pop().replace(/\d/g, '') || '';
-                        return bSuffix.localeCompare(aSuffix);
                     });
                 
-                if (memosForDate.length === 0) {
-                    // No memos found for this specific date AND memo type
-                    // Get the last memo number from the last memo of the same type before this date
-                    const baseQuery = query(
-                        collection(db, "memos"),
-                        where("memoType", "==", memoType)
-                    );
-                    
-                    const baseSnapshot = await getDocs(baseQuery);
-                    if (baseSnapshot.empty) {
-                        // No previous memos of this type at all, start with 0001
-                        return `${memoType}-${year}-${departmentCode}-0001`;
+                // Extract base numbers and suffixes
+                const baseNumberMap = {};
+                memosForDate.forEach(memo => {
+                    // Memo number format: PO-2025-DEP-1554 or PO-2025-DEP-1554-A
+                    const parts = memo.memoNumber.split('-');
+                    const base = parts.slice(0, -1).join('-');
+                    const lastPart = parts[parts.length - 1];
+                    // If last part is a single letter, it's a suffix
+                    if (/^[A-Z]$/.test(lastPart)) {
+                        const baseNum = parts.slice(0, -1).join('-');
+                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
+                        baseNumberMap[baseNum].push(lastPart);
                     } else {
-                        // Find the last memo of the same type before the selected date
-                        const memosBeforeDate = baseSnapshot.docs
-                            .map(doc => ({ id: doc.id, ...doc.data() }))
-                            .filter(memo => {
-                                // Only include memos of the same type AND before the selected date
-                                const memoDate = memo.antedationDate || memo.createdAt.toDate().toISOString().split('T')[0];
-                                return memoDate < selectedDate && memo.memoType === memoType;
-                            })
-                            .sort((a, b) => {
-                                const aDate = a.antedationDate || a.createdAt.toDate().toISOString().split('T')[0];
-                                const bDate = b.antedationDate || b.createdAt.toDate().toISOString().split('T')[0];
-                                return bDate.localeCompare(aDate);
-                            });
-                        
-                        if (memosBeforeDate.length === 0) {
-                            // No previous memos of this type, start with 0001
-                            return `${memoType}-${year}-${departmentCode}-0001`;
-                        } else {
-                            // Use the last memo number from the last memo of the same type before this date
-                            const lastMemo = memosBeforeDate[0];
-                            const lastNumber = parseInt(lastMemo.memoNumber.split('-').pop().replace(/[A-Z]/g, ''));
-                            return `${memoType}-${year}-${departmentCode}-${String(lastNumber).padStart(4, '0')}`;
-                        }
+                        // No suffix, treat as base
+                        const baseNum = memo.memoNumber;
+                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
                     }
+                });
+                
+                // Find the highest base number (numeric part)
+                let highestBase = null;
+                let highestNum = -1;
+                Object.keys(baseNumberMap).forEach(baseNum => {
+                    // baseNum: PO-2025-DEP-1554
+                    const numPart = parseInt(baseNum.split('-').pop());
+                    if (numPart > highestNum) {
+                        highestNum = numPart;
+                        highestBase = baseNum;
+                    }
+                });
+                
+                if (!highestBase) {
+                    // No memos for this date/type, start with 0001
+                    return `${memoType}-${year}-${departmentCode}-0001`;
+                }
+                
+                // Check if the base number itself (no suffix) is available
+                const usedSuffixes = baseNumberMap[highestBase];
+                if (usedSuffixes.length === 0) {
+                    // Base number exists, assign -A
+                    return `${highestBase}-A`;
                 } else {
-                    // Found memos for this specific date AND memo type
-                    // Use the last memo number from this date and type (highest number)
-                    const lastMemo = memosForDate[0];
-                    const memoNumber = lastMemo.memoNumber;
-                    
-                    // Check if the memo number already has a suffix (A, B, C, etc.)
-                    const hasSuffix = /-[A-Z]+$/.test(memoNumber);
-                    
-                    if (hasSuffix) {
-                        // Extract the base number and suffix
-                        const match = memoNumber.match(/^(.+?)-([A-Z]+)$/);
-                        if (match) {
-                            const baseNumber = match[1];
-                            const suffix = match[2];
-                            
-                            // Convert suffix to index (A=0, B=1, ..., Z=25, AA=26, etc.)
-                            let suffixIndex;
-                            if (suffix.length === 1) {
-                                suffixIndex = suffix.charCodeAt(0) - 65; // A=0, B=1, etc.
-                            } else {
-                                // Handle AA, AB, etc. (AA=26, AB=27, etc.)
-                                suffixIndex = 26 + (suffix.charCodeAt(0) - 65) * 26 + (suffix.charCodeAt(1) - 65);
-                            }
-                            
-                            const nextSuffix = generateSuffix(suffixIndex + 1);
-                            return `${baseNumber}-${nextSuffix}`;
+                    // Find next available suffix A-Z
+                    const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    for (let i = 0; i < suffixes.length; i++) {
+                        if (!usedSuffixes.includes(suffixes[i])) {
+                            return `${highestBase}-${suffixes[i]}`;
                         }
-                    } else {
-                        // No suffix, add 'A' to the last memo number from this date and type
-                        return `${memoNumber}-A`;
                     }
+                    // All suffixes used
+                    throw new Error(`No more antedation suffixes available for PO #${highestBase.split('-').pop()} on ${selectedDate}.`);
                 }
             } catch (error) {
                 console.error('Error getting next antedated memo number:', error);
