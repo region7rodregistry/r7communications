@@ -394,7 +394,14 @@
                 row.className = 'hidden sm:table-row';
                 row.innerHTML = `
                     <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        <span>${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                        <span>${(() => {
+                            if (!memo.memoNumber) return '';
+                            const parts = memo.memoNumber.split('-');
+                            if (memo.isAntedated && parts.length >= 2) {
+                                return parts.slice(-2).join('-');
+                            }
+                            return parts[parts.length - 1];
+                        })()}</span>
                     </td>
                     <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="${memo.title}">${memo.title}</td>
                     <td class="px-2 py-4 text-sm text-gray-900 dark:text-gray-100">${memo.department}</td>
@@ -445,7 +452,14 @@
                 card.innerHTML = `
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Memo Number:</span>
-                        <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                        <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">${(() => {
+                            if (!memo.memoNumber) return '';
+                            const parts = memo.memoNumber.split('-');
+                            if (memo.isAntedated && parts.length >= 2) {
+                                return parts.slice(-2).join('-');
+                            }
+                            return parts[parts.length - 1];
+                        })()}</span>
                     </div>
                     <div class="mb-1">
                         <span class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Title:</span>

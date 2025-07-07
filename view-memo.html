@@ -31,6 +31,19 @@
     <!-- Error Message -->
     <div id="errorMessage" class="hidden fixed top-4 right-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-md shadow-lg z-50"></div>
 
+    <!-- Password Modal for Memo No. Editing -->
+    <div id="memoNoPasswordModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Enter Password to Edit Memo No.</h3>
+            <input type="password" id="memoNoPasswordInput" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2" placeholder="Password">
+            <p id="memoNoPasswordError" class="hidden text-sm text-red-600 mb-2"></p>
+            <div class="flex justify-end gap-2">
+                <button id="cancelMemoNoPasswordBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Cancel</button>
+                <button id="confirmMemoNoPasswordBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-[8.5in] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="flex justify-between items-center mb-8 no-print">
@@ -107,9 +120,19 @@
                 <!-- Memo Number and Date -->
                 <div class="mb-8">
                     <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-sm text-gray-500">Memo No.:</p>
-                            <p id="memoNumber" class="text-lg font-mono font-semibold text-blue-600"></p>
+                        <div class="flex items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    Memo No.:
+                                    <span id="adminBadge" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Admin Only</span>
+                                    <button id="edit-memoNumber" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Memo Number">
+                                        <i data-lucide="pen" class="w-4 h-4"></i>
+                                    </button>
+                                </p>
+                                <span id="memoNumberWrapper">
+                                  <p id="memoNumber" class="text-lg font-mono font-semibold text-blue-600"></p>
+                                </span>
+                            </div>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Date:</p>
@@ -205,6 +228,7 @@
 
         let memoGlobal = null;
         let memoIdGlobal = null;
+        let isAdmin = false;
 
         // Helper function to log memo activity
         async function logMemoActivity(memoId, action, user) {
@@ -326,6 +350,17 @@
                 return;
             }
 
+            // Check user role
+            const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+            if (userData && (userData.role === 'Administrator' || userData.role === 'admin')) {
+                isAdmin = true;
+                // Show admin badge
+                const adminBadge = document.getElementById('adminBadge');
+                if (adminBadge) {
+                    adminBadge.classList.remove('hidden');
+                }
+            }
+
             // Get memo ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             const memoId = urlParams.get('id');
@@ -430,87 +465,183 @@
                 { id: 'recipients', btn: 'edit-recipients', field: 'recipients', type: 'text' },
                 { id: 'title', btn: 'edit-title', field: 'title', type: 'text' },
                 { id: 'description', btn: 'edit-description', field: 'description', type: 'textarea' },
+                { id: 'memoNumber', btn: 'edit-memoNumber', field: 'memoNumber', type: 'text' },
             ];
             fields.forEach(({ id, btn, field, type, options }) => {
                 const btnEl = document.getElementById(btn);
                 const fieldEl = document.getElementById(id);
                 if (!btnEl || !fieldEl) return;
-                btnEl.addEventListener('click', () => {
-                    if (btnEl.disabled) return;
-                    let input;
-                    if (type === 'dropdown') {
-                        input = document.createElement('select');
-                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
-                        options.forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt;
-                            option.textContent = opt;
-                            if (fieldEl.textContent.trim() === opt) option.selected = true;
-                            input.appendChild(option);
-                        });
-                    } else if (type === 'textarea') {
-                        input = document.createElement('textarea');
-                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 w-full';
-                        input.value = fieldEl.textContent.trim();
-                        input.rows = 3;
-                    } else {
-                        input = document.createElement('input');
-                        input.type = 'text';
-                        input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
-                        input.value = fieldEl.textContent.trim();
-                    }
-                    fieldEl.replaceWith(input);
-                    input.focus();
-                    // Save on Enter or blur
-                    const save = async () => {
-                        if (input._saving) return;
-                        input._saving = true;
-                        const value = (type === 'dropdown') ? input.value : (type === 'textarea' ? input.value : input.value.trim());
-                        // Show spinner
-                        btnEl.innerHTML = '<svg class="animate-spin h-4 w-4 text-blue-600 ml-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
-                        try {
-                            loadingOverlay.classList.remove('hidden');
-                            const memoRef = doc(db, 'memos', memoIdGlobal);
-                            let updateObj = {};
-                            if (field === 'recipients') {
-                                updateObj[field] = value.split(',').map(s => s.trim()).filter(Boolean);
-                            } else {
-                                updateObj[field] = value;
-                            }
-                            await updateDoc(memoRef, updateObj);
-                            // Log activity
-                            const user = auth.currentUser;
-                            await logMemoActivity(memoIdGlobal, `Edited ${field.charAt(0).toUpperCase() + field.slice(1)}`, user);
-                            // Reload memo details
-                            await loadMemoDetails(memoIdGlobal);
-                            // Show checkmark
-                            btnEl.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500 ml-2"></i>';
-                            lucide.createIcons();
-                            setTimeout(() => {
-                                btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
-                                lucide.createIcons();
-                            }, 1200);
-                        } catch (err) {
-                            btnEl.innerHTML = '<i data-lucide="x" class="w-4 h-4 text-red-500 ml-2"></i>';
-                            setTimeout(() => {
-                                btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
-                                lucide.createIcons();
-                            }, 1200);
-                            errorMessage.textContent = 'Failed to save. Try again.';
-                            errorMessage.classList.remove('hidden');
-                        } finally {
-                            loadingOverlay.classList.add('hidden');
-                            input._saving = false;
-                        }
-                    };
-                    input.addEventListener('keydown', e => {
-                        if (e.key === 'Enter' && type !== 'textarea') {
-                            save();
-                        }
+                // For memoNumber, show password modal before editing
+                if (field === 'memoNumber') {
+                    btnEl.addEventListener('click', () => {
+                        if (btnEl.disabled) return;
+                        openMemoNoPasswordModal(() => startMemoNoEdit(fieldEl, btnEl));
                     });
-                    input.addEventListener('blur', save);
-                });
+                } else {
+                    btnEl.addEventListener('click', () => {
+                        if (btnEl.disabled) return;
+                        startInlineEdit(fieldEl, btnEl, field, type, options);
+                    });
+                }
             });
+        }
+
+        // Inline edit for all fields except memoNumber
+        function startInlineEdit(fieldEl, btnEl, field, type, options) {
+            let input;
+            if (type === 'dropdown') {
+                input = document.createElement('select');
+                input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
+                options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt;
+                    if (fieldEl.textContent.trim() === opt) option.selected = true;
+                    input.appendChild(option);
+                });
+            } else if (type === 'textarea') {
+                input = document.createElement('textarea');
+                input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 w-full';
+                input.value = fieldEl.textContent.trim();
+                input.rows = 3;
+            } else {
+                input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500';
+                input.value = fieldEl.textContent.trim();
+            }
+            fieldEl.replaceWith(input);
+            input.focus();
+            // Save on Enter or blur
+            const save = async () => {
+                if (input._saving) return;
+                input._saving = true;
+                const value = (type === 'dropdown') ? input.value : (type === 'textarea' ? input.value : input.value.trim());
+                btnEl.innerHTML = '<svg class="animate-spin h-4 w-4 text-blue-600 ml-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+                try {
+                    loadingOverlay.classList.remove('hidden');
+                    const memoRef = doc(db, 'memos', memoIdGlobal);
+                    let updateObj = {};
+                    if (field === 'recipients') {
+                        updateObj[field] = value.split(',').map(s => s.trim()).filter(Boolean);
+                    } else {
+                        updateObj[field] = value;
+                    }
+                    await updateDoc(memoRef, updateObj);
+                    // Log activity
+                    const user = auth.currentUser;
+                    await logMemoActivity(memoIdGlobal, `Edited ${field.charAt(0).toUpperCase() + field.slice(1)}`, user);
+                    // Reload memo details
+                    await loadMemoDetails(memoIdGlobal);
+                    // Show checkmark
+                    btnEl.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500 ml-2"></i>';
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                        lucide.createIcons();
+                    }, 1200);
+                } catch (err) {
+                    btnEl.innerHTML = '<i data-lucide="x" class="w-4 h-4 text-red-500 ml-2"></i>';
+                    setTimeout(() => {
+                        btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                        lucide.createIcons();
+                    }, 1200);
+                    errorMessage.textContent = 'Failed to save. Try again.';
+                    errorMessage.classList.remove('hidden');
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                    input._saving = false;
+                }
+            };
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && type !== 'textarea') {
+                    save();
+                }
+            });
+            input.addEventListener('blur', save);
+        }
+
+        // Memo No. password modal logic
+        function openMemoNoPasswordModal(onSuccess) {
+            const modal = document.getElementById('memoNoPasswordModal');
+            const input = document.getElementById('memoNoPasswordInput');
+            const error = document.getElementById('memoNoPasswordError');
+            const confirmBtn = document.getElementById('confirmMemoNoPasswordBtn');
+            const cancelBtn = document.getElementById('cancelMemoNoPasswordBtn');
+            error.classList.add('hidden');
+            input.value = '';
+            modal.classList.remove('hidden');
+            input.focus();
+            function closeModal() {
+                modal.classList.add('hidden');
+                input.value = '';
+                error.classList.add('hidden');
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', closeModal);
+                input.removeEventListener('keydown', keyHandler);
+            }
+            function confirmHandler() {
+                if (input.value === 'admintesda') {
+                    closeModal();
+                    if (typeof onSuccess === 'function') onSuccess();
+                } else {
+                    error.textContent = 'Incorrect password.';
+                    error.classList.remove('hidden');
+                    input.focus();
+                }
+            }
+            function keyHandler(e) {
+                if (e.key === 'Enter') confirmHandler();
+            }
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', closeModal);
+            input.addEventListener('keydown', keyHandler);
+        }
+
+        // Memo No. inline edit after password
+        function startMemoNoEdit(fieldEl, btnEl) {
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'border border-blue-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 font-mono text-lg font-semibold text-blue-600';
+            input.value = fieldEl.textContent.trim();
+            fieldEl.replaceWith(input);
+            input.focus();
+            const save = async () => {
+                if (input._saving) return;
+                input._saving = true;
+                const value = input.value.trim();
+                btnEl.innerHTML = '<svg class="animate-spin h-4 w-4 text-blue-600 ml-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+                try {
+                    loadingOverlay.classList.remove('hidden');
+                    const memoRef = doc(db, 'memos', memoIdGlobal);
+                    await updateDoc(memoRef, { memoNumber: value });
+                    // Log activity
+                    const user = auth.currentUser;
+                    await logMemoActivity(memoIdGlobal, 'Edited Memo Number', user);
+                    await loadMemoDetails(memoIdGlobal);
+                    btnEl.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500 ml-2"></i>';
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                        lucide.createIcons();
+                    }, 1200);
+                } catch (err) {
+                    btnEl.innerHTML = '<i data-lucide="x" class="w-4 h-4 text-red-500 ml-2"></i>';
+                    setTimeout(() => {
+                        btnEl.innerHTML = '<i data-lucide="pen" class="w-4 h-4"></i>';
+                        lucide.createIcons();
+                    }, 1200);
+                    errorMessage.textContent = 'Failed to save. Try again.';
+                    errorMessage.classList.remove('hidden');
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                    input._saving = false;
+                }
+            };
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') save();
+            });
+            input.addEventListener('blur', save);
         }
 
         document.addEventListener('DOMContentLoaded', setupInlineEditing);
