@@ -711,18 +711,6 @@
             }
         });
 
-        // Helper function to generate A-Z suffixes
-        function generateSuffix(index) {
-            if (index < 26) {
-                return String.fromCharCode(65 + index); // A-Z
-            } else {
-                // For AA, AB, etc. (index 26 = AA, 27 = AB, etc.)
-                const firstChar = String.fromCharCode(65 + Math.floor((index - 26) / 26));
-                const secondChar = String.fromCharCode(65 + ((index - 26) % 26));
-                return firstChar + secondChar;
-            }
-        }
-
         // Function to get the next antedated memo number (A-Z only, error if all used)
         async function getNextAntedatedMemoNumber(memoType, selectedDate) {
             try {
@@ -758,9 +746,11 @@
                         if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
                         baseNumberMap[baseNum].push(lastPart);
                     } else {
-                        // No suffix, treat as base
+                        // No suffix, treat as base (normal memo)
                         const baseNum = memo.memoNumber;
                         if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
+                        // Mark that the base number itself is taken (so -A is the first antedated)
+                        baseNumberMap[baseNum].push('BASE');
                     }
                 });
                 
@@ -781,10 +771,10 @@
                     return `${memoType}-${year}-${departmentCode}-0001`;
                 }
                 
-                // Check if the base number itself (no suffix) is available
-                const usedSuffixes = baseNumberMap[highestBase];
-                if (usedSuffixes.length === 0) {
-                    // Base number exists, assign -A
+                // Always assign -A for the first antedated memo for a base number
+                const usedSuffixes = baseNumberMap[highestBase] || [];
+                // If only 'BASE' is present, no antedated memos yet, so assign -A
+                if (usedSuffixes.length === 1 && usedSuffixes[0] === 'BASE') {
                     return `${highestBase}-A`;
                 } else {
                     // Find next available suffix A-Z
