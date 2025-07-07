@@ -363,38 +363,25 @@
                     </div>
                 </div>
 
-                <!-- Category -->
-                <div class="relative">
+                <!-- Author/Focal -->
+                <div class="relative" id="authorFocalContainer"></div>
+
+                <!-- Signatory -->
+                <div class="relative" id="signatory-container">
                     <label for="signatory" class="block text-sm font-medium text-gray-700 mb-1">Signatory <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="signatory" name="signatory" required
                             class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
+                            <option value="">Select Signatory</option>
                             <option value="Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.">Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.</option>
-                            <option value="Jocelyn V. Cabahug">Jocelyn V. Cabahug</option>
                             <option value="Ivy Michelle T. Vasquez">Ivy Michelle T. Vasquez</option>
+                            <option value="Jocelyn V. Cabahug">Jocelyn V. Cabahug</option>
                             <option value="Others">Other (Please specify)</option>
                         </select>
                         <div id="signatory-other-wrapper" class="hidden relative">
-                            <input type="text" id="signatory-other" name="signatory-other" placeholder="Enter custom signatory" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <input type="text" id="signatory-other" name="signatory-other" placeholder="Enter custom Signatory" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
                             <button type="button" id="signatory-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
                         </div>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Priority -->
-                <div class="relative">
-                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Priority <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <select id="priority" name="priority" required
-                            class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
-                            <option value="">Select Priority</option>
-                            <option value="High" class="text-red-600">High</option>
-                            <option value="Medium" class="text-yellow-600">Medium</option>
-                            <option value="Low" class="text-green-600">Low</option>
-                        </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -572,6 +559,98 @@
                 assignedMemoNumber.textContent = 'Select memo type first';
             } else {
                 updateMemoNumberDisplay();
+            }
+
+            // Author/Focal field logic (dropdown with 'Others' option)
+            const authorFocalContainer = document.getElementById('authorFocalContainer');
+            if (authorFocalContainer) {
+                authorFocalContainer.innerHTML = `
+                    <label for="authorFocal" class="block text-sm font-medium text-gray-700 mb-1">Author/Focal <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select id="authorFocal" name="authorFocal" required
+                            class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
+                            <option value="">Select Author/Focal</option>
+                            <!-- ROD -->
+                            <option value="AGBAY, ANNALIE B.">AGBAY, ANNALIE B.</option>
+                            <option value="CABAHUG, JOCELYN V">CABAHUG, JOCELYN V</option>
+                            <option value="CALAGO, ZHAIRAH P">CALAGO, ZHAIRAH P</option>
+                            <option value="GAYAS, PRISCILLA B.">GAYAS, PRISCILLA B.</option>
+                            <option value="NAVARRO, CHRISTINE A.">NAVARRO, CHRISTINE A.</option>
+                            <option value="SAROMINES, KISSYLEN G.">SAROMINES, KISSYLEN G.</option>
+                            <option value="SERINAS, KATRINA MAE CELESTE G.">SERINAS, KATRINA MAE CELESTE G.</option>
+                            <option value="SOON, CHEYENNE S.">SOON, CHEYENNE S.</option>
+                            <option value="TECSON, GERARD RANDOLF G.">TECSON, GERARD RANDOLF G.</option>
+                            <option value="DAMOLO, JAMINEL A.">DAMOLO, JAMINEL A.</option>
+                            <!-- FASD -->
+                            <option value="AKIATAN, JOSEPHINE F.">AKIATAN, JOSEPHINE F.</option>
+                            <option value="ALCERA, RIVA JANE D.">ALCERA, RIVA JANE D.</option>
+                            <option value="DALIGDIG, ALEXANDER A.">DALIGDIG, ALEXANDER A.</option>
+                            <option value="MACACHOR, DONNE MAR L.">MACACHOR, DONNE MAR L.</option>
+                            <option value="MOLDE, MARK ERVIN D.">MOLDE, MARK ERVIN D.</option>
+                            <option value="PARBA, MARLOU G.">PARBA, MARLOU G.</option>
+                            <option value="RECESIO, LIRA M.">RECESIO, LIRA M.</option>
+                            <option value="VASQUEZ, IVY MICHELLE T.">VASQUEZ, IVY MICHELLE T.</option>
+                            <option value="VERDEFLOR, JASMIN S.">VERDEFLOR, JASMIN S.</option>
+                            <!-- ORD -->
+                            <option value="Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.">Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.</option>
+                            <option value="Alexander A. Daligdig">Alexander A. Daligdig</option>
+                            <option value="Marlou G. Parba">Marlou G. Parba</option>
+                            <option value="Others">Other (Please specify)</option>
+                        </select>
+                        <div id="authorFocal-other-wrapper" class="hidden relative">
+                            <input type="text" id="authorFocal-other" name="authorFocal-other" placeholder="Enter custom Author/Focal" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <button type="button" id="authorFocal-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
+                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                `;
+                // Re-initialize Lucide icons if needed
+                if (window.lucide) lucide.createIcons();
+            }
+
+            // Author/Focal dropdown logic for 'Others'
+            const authorFocalSelect = document.getElementById('authorFocal');
+            const authorFocalOtherInput = document.getElementById('authorFocal-other');
+            const authorFocalOtherWrapper = document.getElementById('authorFocal-other-wrapper');
+            const authorFocalBackBtn = document.getElementById('authorFocal-back-btn');
+
+            if (authorFocalSelect && authorFocalOtherInput && authorFocalOtherWrapper && authorFocalBackBtn) {
+                authorFocalSelect.addEventListener('change', function() {
+                    if (this.value === 'Others') {
+                        authorFocalSelect.classList.add('hidden');
+                        authorFocalOtherWrapper.classList.remove('hidden');
+                        authorFocalOtherInput.setAttribute('required', 'required');
+                        authorFocalOtherInput.focus();
+                    } else {
+                        authorFocalOtherInput.classList.add('hidden');
+                        authorFocalOtherInput.removeAttribute('required');
+                        authorFocalOtherWrapper.classList.add('hidden');
+                        authorFocalSelect.classList.remove('hidden');
+                    }
+                });
+
+                authorFocalOtherInput.addEventListener('blur', function() {
+                    setTimeout(() => {
+                        if (authorFocalOtherInput.value.trim() === '') {
+                            authorFocalOtherInput.classList.add('hidden');
+                            authorFocalOtherInput.removeAttribute('required');
+                            authorFocalOtherWrapper.classList.add('hidden');
+                            authorFocalSelect.classList.remove('hidden');
+                            authorFocalSelect.value = '';
+                        }
+                    }, 100);
+                });
+
+                authorFocalBackBtn.addEventListener('click', function() {
+                    authorFocalOtherInput.classList.add('hidden');
+                    authorFocalOtherInput.removeAttribute('required');
+                    authorFocalOtherWrapper.classList.add('hidden');
+                    authorFocalSelect.classList.remove('hidden');
+                    authorFocalSelect.value = '';
+                    authorFocalSelect.focus();
+                });
             }
         });
 
@@ -844,18 +923,40 @@
 
                 // Determine recipients value
                 let recipientsValue = '';
-                if (!recipientsSelect.classList.contains('hidden')) {
+                if (recipientsSelect && !recipientsSelect.classList.contains('hidden')) {
                     recipientsValue = formData.get('recipients');
-                } else {
+                } else if (recipientsOtherInput) {
                     recipientsValue = recipientsOtherInput.value.trim();
                 }
 
                 // Determine signatory value
                 let signatoryValue = '';
-                if (!signatorySelect.classList.contains('hidden')) {
-                    signatoryValue = formData.get('signatory');
+                const signatorySelect = document.getElementById('signatory');
+                const signatoryOtherInput = document.getElementById('signatory-other');
+                if (signatorySelect && signatoryOtherInput) {
+                    if (!signatorySelect.classList.contains('hidden')) {
+                        signatoryValue = formData.get('signatory');
+                    } else {
+                        signatoryValue = signatoryOtherInput.value.trim();
+                    }
                 } else {
-                    signatoryValue = signatoryOtherInput.value.trim();
+                    // fallback: try to get from formData
+                    signatoryValue = formData.get('signatory') || '';
+                }
+
+                // Determine authorFocal value
+                let authorFocalValue = '';
+                const authorFocalSelect = document.getElementById('authorFocal');
+                const authorFocalOtherInput = document.getElementById('authorFocal-other');
+                if (authorFocalSelect && authorFocalOtherInput) {
+                    if (!authorFocalSelect.classList.contains('hidden')) {
+                        authorFocalValue = formData.get('authorFocal');
+                    } else {
+                        authorFocalValue = authorFocalOtherInput.value.trim();
+                    }
+                } else {
+                    // fallback: try to get from formData
+                    authorFocalValue = formData.get('authorFocal') || '';
                 }
 
                 // Create memo data object with the assigned number
@@ -864,7 +965,7 @@
                     description: formData.get('description'),
                     department: userData.department,
                     recipients: recipientsValue ? [recipientsValue] : [],
-                    priority: formData.get('priority'),
+                    authorFocal: authorFocalValue,
                     signatory: signatoryValue,
                     createdBy: userData.username,
                     memoType: memoType,
@@ -1134,19 +1235,21 @@
         const signatoryOtherWrapper = document.getElementById('signatory-other-wrapper');
         const signatoryBackBtn = document.getElementById('signatory-back-btn');
 
-        signatorySelect.addEventListener('change', function() {
-            if (this.value === 'Others') {
-                signatorySelect.classList.add('hidden');
-                signatoryOtherWrapper.classList.remove('hidden');
-                signatoryOtherInput.setAttribute('required', 'required');
-                signatoryOtherInput.focus();
-            } else {
-                signatoryOtherInput.classList.add('hidden');
-                signatoryOtherInput.removeAttribute('required');
-                signatoryOtherWrapper.classList.add('hidden');
-                signatorySelect.classList.remove('hidden');
-            }
-        });
+        if (signatorySelect) {
+            signatorySelect.addEventListener('change', function() {
+                if (this.value === 'Others') {
+                    signatorySelect.classList.add('hidden');
+                    signatoryOtherWrapper.classList.remove('hidden');
+                    signatoryOtherInput.setAttribute('required', 'required');
+                    signatoryOtherInput.focus();
+                } else {
+                    signatoryOtherInput.classList.add('hidden');
+                    signatoryOtherInput.removeAttribute('required');
+                    signatoryOtherWrapper.classList.add('hidden');
+                    signatorySelect.classList.remove('hidden');
+                }
+            });
+        }
 
         signatoryOtherInput.addEventListener('blur', function() {
             setTimeout(() => {

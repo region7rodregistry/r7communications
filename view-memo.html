@@ -102,10 +102,10 @@
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Priority:</p>
-                        <span id="priority" class="text-lg text-gray-900 inline-block"></span>
+                        <p class="text-sm text-gray-500">Author/Focal:</p>
+                        <span id="authorFocal" class="text-lg text-gray-900 inline-block"></span>
                     </div>
-                    <button id="edit-priority" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Priority">
+                    <button id="edit-authorFocal" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer" title="Edit Author/Focal">
                         <i data-lucide="pen" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -411,8 +411,8 @@
                 if (el) el.textContent = memo.department;
                 el = document.getElementById('signatory');
                 if (el) el.textContent = memo.signatory;
-                el = document.getElementById('priority');
-                if (el) el.textContent = memo.priority;
+                el = document.getElementById('authorFocal');
+                if (el) el.textContent = memo.authorFocal;
                 el = document.getElementById('status');
                 if (el) el.textContent = memo.status;
                 el = document.getElementById('createdAt');
@@ -460,7 +460,7 @@
         function setupInlineEditing() {
             const fields = [
                 { id: 'signatory', btn: 'edit-signatory', field: 'signatory', type: 'text' },
-                { id: 'priority', btn: 'edit-priority', field: 'priority', type: 'dropdown', options: ['High', 'Medium', 'Low'] },
+                { id: 'authorFocal', btn: 'edit-authorFocal', field: 'authorFocal', type: 'text' },
                 { id: 'department', btn: 'edit-department', field: 'department', type: 'text' },
                 { id: 'recipients', btn: 'edit-recipients', field: 'recipients', type: 'text' },
                 { id: 'title', btn: 'edit-title', field: 'title', type: 'text' },
