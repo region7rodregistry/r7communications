@@ -281,10 +281,12 @@
         let currentPage = 1;
         const rowsPerPage = 15;
         let filteredMemosCache = [];
+        let memosUnsubscribe = null;
 
         // Check authentication and load memos
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
+                if (memosUnsubscribe) memosUnsubscribe();
                 window.location.href = 'index.html';
                 return;
             }
@@ -295,8 +297,23 @@
                 // Update welcome message based on department
                 updateWelcomeMessage(userData.department);
             }
-            // Load memos
-            await loadMemos();
+            // Real-time memos listener
+            if (memosUnsubscribe) memosUnsubscribe();
+            loadingModal.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            memosUnsubscribe = getMemosByDepartment(userData.department, (memos) => {
+                allMemos = memos;
+                // Sort memos by creation date (newest first)
+                allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+                // Update stats and table
+                totalMemos.textContent = allMemos.length;
+                pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
+                filteredMemosCache = allMemos;
+                currentPage = 1;
+                updateTable(allMemos);
+                loadingModal.classList.add('hidden');
+            });
             // Add search input event listener
             searchInput.addEventListener('input', filterMemos);
         });
@@ -734,7 +751,7 @@
     </script>
     <script>
         function cleanup() {
-            // No longer needed: Firestore listener cleanup
+            if (memosUnsubscribe) memosUnsubscribe();
         }
     </script>
 </body>

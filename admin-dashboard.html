@@ -794,7 +794,7 @@
 
     <script type="module">
         import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
-        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
         // Initialize Lucide icons
@@ -1010,9 +1010,12 @@
             }, 3000);
         }
 
+        let memosUnsubscribe = null;
+
         // Check authentication
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
+                if (memosUnsubscribe) memosUnsubscribe();
                 window.location.href = 'index.html';
                 return;
             }
@@ -1027,31 +1030,33 @@
             loadingModal.classList.remove('hidden');
             errorMessage.classList.add('hidden');
             try {
-                // Fetch memos (one-time)
+                // Real-time listener for memos
                 const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
-                const memosSnapshot = await getDocs(memosQuery);
-                allMemos = [];
-                memosSnapshot.forEach((doc) => {
-                    const memoData = {
-                        id: doc.id,
-                        ...doc.data()
-                    };
-                    allMemos.push(memoData);
+                if (memosUnsubscribe) memosUnsubscribe();
+                memosUnsubscribe = onSnapshot(memosQuery, (memosSnapshot) => {
+                    allMemos = [];
+                    memosSnapshot.forEach((doc) => {
+                        const memoData = {
+                            id: doc.id,
+                            ...doc.data()
+                        };
+                        allMemos.push(memoData);
+                    });
+
+                    // Update stats
+                    if (totalMemos) totalMemos.textContent = allMemos.length;
+                    if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                    if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
+                    if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
+
+                    // Store memos globally for search functionality
+                    window.allMemos = allMemos;
+
+                    // Render memos based on current view
+                    renderMemos(getFilteredMemosForCurrentView());
                 });
 
-                // Update stats
-                if (totalMemos) totalMemos.textContent = allMemos.length;
-                if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
-                if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
-
-                // Store memos globally for search functionality
-                window.allMemos = allMemos;
-
-                // Render memos based on current view
-                renderMemos(getFilteredMemosForCurrentView());
-
-                // Fetch all memoNumbers in parallel
+                // Fetch all memoNumbers in parallel (keep as getDoc for now)
                 const memoNumberRefs = [
                     { id: 'current', el: 'nextMemoNumber', storage: 'dashboard_nextMemoNumber' },
                     { id: 'coCurrent', el: 'nextCoMemoNumber', storage: 'dashboard_nextCoMemoNumber' },
@@ -1600,6 +1605,7 @@
 
         // Handle logout
         logoutBtn.addEventListener('click', async () => {
+            if (memosUnsubscribe) memosUnsubscribe();
             try {
                 await logoutUser();
                 localStorage.removeItem('tesdaUser');

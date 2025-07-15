@@ -71,20 +71,23 @@ async function createMemo(memoData) {
     }
 }
 
-async function getMemosByDepartment(department) {
+// Replace getMemosByDepartment with real-time version
+function getMemosByDepartment(department, callback) {
     try {
         const q = query(
             collection(db, "memos"),
-            where("department", "==", department)
+            where("department", "==", department),
+            orderBy("createdAt", "desc")
         );
-        const querySnapshot = await getDocs(q);
-        const memos = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        // Sort memos by createdAt in memory
-        memos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-        return memos;
+        // Listen in real-time
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const memos = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            callback(memos);
+        });
+        return unsubscribe;
     } catch (error) {
         console.error("Error getting memos: ", error);
         throw error;
