@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Memo</title>
+  <style>
+    body { font-family: Arial; padding: 30px; }
+    input, button { display: block; margin: 10px 0; padding: 10px; width: 100%; max-width: 500px; }
+  </style>
+</head>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script>
+<body>
+
+<h2>Upload Signed Memo (Authenticated)</h2>
+
+<input type="file" id="memoFile">
+<input type="text" id="fileName" placeholder="Custom filename (e.g. ROD-2024-001)">
+<button onclick="uploadMemo()">📤 Upload to Firebase</button>
+
+<div id="output"></div>
+
+<script>
+  const storage = firebase.storage();
+
+  async function uploadMemo() {
+    const file = document.getElementById('memoFile').files[0];
+    const customName = document.getElementById('fileName').value.trim();
+
+    if (!file || !customName) {
+      return alert("Please select a file and enter a filename.");
+    }
+
+    const ext = file.name.split('.').pop();
+    const storageRef = storage.ref(`memos/${customName}.${ext}`);
+
+    try {
+      const snapshot = await storageRef.put(file);
+      const url = await snapshot.ref.getDownloadURL();
+
+      document.getElementById('output').innerHTML =
+        `<p>✅ Upload complete! <a href="${url}" target="_blank">📄 View Memo</a></p>`;
+      
+      // Optional: Save to Firestore
+      const db = firebase.firestore();
+      const user = firebase.auth().currentUser;
+      if (user) {
+        await db.collection("memo_uploads").add({
+          filename: `${customName}.${ext}`,
+          url: url,
+          uploaded_by: user.email,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed.");
+    }
+  }
+  const firebaseConfig = {
+    apiKey: "AIzaSyAiDFpdkWI3BiZwdjp6mHN01hmvBItMk6o",
+  authDomain: "ro7mbms.firebaseapp.com",
+  projectId: "ro7mbms",
+  storageBucket: "ro7mbms.firebasestorage.app",
+  messagingSenderId: "379123096432",
+  appId: "1:379123096432:web:b790b0eaf620840af80db5",
+  measurementId: "G-JX5VHXX3GH"
+};
+firebase.initializeApp(firebaseConfig);
+</script>
+
+</body>
+</html>

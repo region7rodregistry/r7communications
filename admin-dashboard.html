@@ -379,13 +379,27 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-4 rounded-lg shadow-lg">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <!-- Loading Modal Overlay -->
+    <div id="loadingModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center animate-fadeIn">
+            <div class="mb-6">
+                <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+            </div>
+            <div class="text-2xl font-bold text-gray-800 mb-2 tracking-wide">Loading Data Records . . .</div>
+            <div class="text-gray-500 text-base">Please wait while we fetch the latest records for you.</div>
         </div>
     </div>
 
@@ -776,14 +790,13 @@
 
     <script type="module">
         import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
-        import { doc, updateDoc, serverTimestamp, onSnapshot, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
         // Initialize Lucide icons
         lucide.createIcons();
 
         // Get DOM elements
-        const loadingOverlay = document.getElementById('loadingOverlay');
         const errorMessage = document.getElementById('errorMessage');
         const successToast = document.getElementById('successToast');
         const successMessage = document.getElementById('successMessage');
@@ -802,6 +815,7 @@
         const searchSpinner = document.getElementById('searchSpinner');
         const clearSearch = document.getElementById('clearSearch');
         const searchSuggestions = document.getElementById('searchSuggestions');
+        const loadingModal = document.getElementById('loadingModal');
 
         let currentMemoId = null;
         let allMemos = []; // Store all memos for filtering
@@ -983,17 +997,19 @@
                 userInfo.textContent = `${userData.username} (${userData.department})`;
             }
 
-            // Set up real-time listener for memos
-            const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
-            onSnapshot(memosQuery, (snapshot) => {
-                console.log("Received snapshot from Firestore:", snapshot.size, "documents");
+            // Show loading modal while fetching
+            loadingModal.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            try {
+                // Fetch memos (one-time)
+                const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
+                const memosSnapshot = await getDocs(memosQuery);
                 allMemos = [];
-                snapshot.forEach((doc) => {
+                memosSnapshot.forEach((doc) => {
                     const memoData = {
                         id: doc.id,
                         ...doc.data()
                     };
-                    console.log("Processing memo:", memoData);
                     allMemos.push(memoData);
                 });
 
@@ -1006,92 +1022,46 @@
                 // Store memos globally for search functionality
                 window.allMemos = allMemos;
 
-                console.log("Rendering memos:", allMemos.length, "memos");
                 // Render memos based on current view
                 renderMemos(getFilteredMemosForCurrentView());
-            });
 
-            // Set up real-time listener for next memo number
-            const memoNumberRef = doc(db, "memoNumbers", "current");
-            onSnapshot(memoNumberRef, (doc) => {
-                if (doc.exists()) {
-                    const currentNumber = doc.data().number;
-                    const nextMemoNumberElement = document.getElementById('nextMemoNumber');
-                    if (nextMemoNumberElement) {
-                        nextMemoNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                        localStorage.setItem('dashboard_nextMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
-                    }
-                }
-            });
-
-            // Set up real-time listener for next CO memo number
-            const coMemoNumberRef = doc(db, "memoNumbers", "coCurrent");
-            onSnapshot(coMemoNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    // Initialize CO number document if it doesn't exist
+                // Fetch all memoNumbers in parallel
+                const memoNumberRefs = [
+                    { id: 'current', el: 'nextMemoNumber', storage: 'dashboard_nextMemoNumber' },
+                    { id: 'coCurrent', el: 'nextCoMemoNumber', storage: 'dashboard_nextCoMemoNumber' },
+                    { id: 'officeOrder', el: 'nextOfficeOrderNumber', storage: 'dashboard_nextOfficeOrderNumber' },
+                    { id: 'advisoryBulletin', el: 'nextAdvisoryBulletinNumber', storage: 'dashboard_nextAdvisoryBulletinNumber' },
+                    { id: 'acknowledgment', el: 'nextAcknowledgmentNumber', storage: 'dashboard_nextAcknowledgmentNumber' }
+                ];
+                const memoNumberPromises = memoNumberRefs.map(async ref => {
                     try {
-                        await updateDoc(coMemoNumberRef, { number: 0 });
-                    } catch (error) {
-                        // If document doesn't exist, create it
-                        await setDoc(coMemoNumberRef, { number: 0 });
+                        const docRef = doc(db, "memoNumbers", ref.id);
+                        const docSnap = await getDoc(docRef);
+                        let number = 0;
+                        if (docSnap.exists()) {
+                            number = docSnap.data().number;
+                        } else {
+                            // If not exist, create with 0
+                            await setDoc(docRef, { number: 0 });
+                        }
+                        const el = document.getElementById(ref.el);
+                        if (el) {
+                            el.textContent = `${String(number).padStart(4, '0')}`;
+                            localStorage.setItem(ref.storage, `${String(number).padStart(4, '0')}`);
+                        }
+                    } catch (err) {
+                        // Show error but continue
+                        console.error(`Error fetching memo number for ${ref.id}:`, err);
                     }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextCoMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextCoMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Set up real-time listener for next Office Order number
-            const officeOrderNumberRef = doc(db, "memoNumbers", "officeOrder");
-            onSnapshot(officeOrderNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(officeOrderNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(officeOrderNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextOfficeOrderNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextOfficeOrderNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Set up real-time listener for next Advisory/Bulletin number (merged)
-            const advisoryBulletinNumberRef = doc(db, "memoNumbers", "advisoryBulletin");
-            onSnapshot(advisoryBulletinNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(advisoryBulletinNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(advisoryBulletinNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextAdvisoryBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextAdvisoryBulletinNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Acknowledgment
-            const acknowledgmentNumberRef = doc(db, "memoNumbers", "acknowledgment");
-            onSnapshot(acknowledgmentNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(acknowledgmentNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(acknowledgmentNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    const nextAcknowledgmentNumberElement = document.getElementById('nextAcknowledgmentNumber');
-                    if (nextAcknowledgmentNumberElement) {
-                        nextAcknowledgmentNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                        localStorage.setItem('dashboard_nextAcknowledgmentNumber', `${String(currentNumber).padStart(4, '0')}`);
-                    }
-                }
-            });
+                });
+                await Promise.all(memoNumberPromises);
+            } catch (err) {
+                console.error('Error loading dashboard data:', err);
+                errorMessage.textContent = 'Error loading dashboard data. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
         });
 
         // Helper function to format memo number for display
@@ -1481,8 +1451,8 @@
                         memoHeader.addEventListener('click', async () => {
                             const selectedRows = [...rowCheckboxes].filter(cb => cb.checked);
                             if (selectedRows.length > 0) {
-                                // Show loading overlay
-                                loadingOverlay.classList.remove('hidden');
+                                // Show loading modal
+                                loadingModal.classList.remove('hidden');
                                 errorMessage.classList.add('hidden');
                                 try {
                                     // Get memo IDs
@@ -1519,7 +1489,7 @@
                                     errorMessage.textContent = 'Error routing memos to archive. Please try again.';
                                     errorMessage.classList.remove('hidden');
                                 } finally {
-                                    loadingOverlay.classList.add('hidden');
+                                    loadingModal.classList.add('hidden');
                                 }
                             }
                         });
@@ -1573,7 +1543,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 // Use the enhanced delete function that handles cascading delete of activity logs
@@ -1587,7 +1557,7 @@
                 errorMessage.textContent = 'Error deleting memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -1624,7 +1594,7 @@
         // Cleanup function for orphaned activity logs (admin only)
         window.cleanupOrphanedLogs = async function() {
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 const cleanedCount = await cleanupOrphanedActivityLogs();
@@ -1640,7 +1610,7 @@
                 errorMessage.textContent = 'Error cleaning up orphaned logs. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -1880,7 +1850,7 @@
             if (!currentStatusMemoId) return;
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 // Get current status before updating
@@ -1910,7 +1880,7 @@
                 errorMessage.textContent = 'Error updating memo status. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2013,7 +1983,7 @@
                     return;
                 }
                 try {
-                    loadingOverlay.classList.remove('hidden');
+                    loadingModal.classList.remove('hidden');
                     errorMessage.classList.add('hidden');
                     // Validate against highest number in memos of type Advisory or Bulletin
                     const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
@@ -2029,7 +1999,7 @@
                     if (newNumber < highestNumber) {
                         errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
-                        loadingOverlay.classList.add('hidden');
+                        loadingModal.classList.add('hidden');
                         return;
                     }
                     const advisoryBulletinRef = doc(db, "memoNumbers", "advisoryBulletin");
@@ -2049,7 +2019,7 @@
                     errorMessage.textContent = 'Error updating Advisory/Bulletin number. Please try again.';
                     errorMessage.classList.remove('hidden');
                 } finally {
-                    loadingOverlay.classList.add('hidden');
+                    loadingModal.classList.add('hidden');
                 }
             } else {
                 let input, memoType;
@@ -2097,7 +2067,7 @@
                     return;
                 }
                 try {
-                    loadingOverlay.classList.remove('hidden');
+                    loadingModal.classList.remove('hidden');
                     errorMessage.classList.add('hidden');
                     const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
                     const memosSnapshot = await getDocs(memosQuery);
@@ -2117,7 +2087,7 @@
                     if (newNumber < highestNumber) {
                         errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
-                        loadingOverlay.classList.add('hidden');
+                        loadingModal.classList.add('hidden');
                         return;
                     }
                     const memoNumberRef = doc(db, "memoNumbers", memoType);
@@ -2140,7 +2110,7 @@
                     errorMessage.textContent = 'Error updating memo number. Please try again.';
                     errorMessage.classList.remove('hidden');
                 } finally {
-                    loadingOverlay.classList.add('hidden');
+                    loadingModal.classList.add('hidden');
                 }
             }
         };
@@ -2148,7 +2118,7 @@
         // Add release to ROD/FASD functionality
         window.releaseToRodFasd = async function(memoId) {
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 const memoRef = doc(db, 'memos', memoId);
@@ -2186,7 +2156,7 @@
                 errorMessage.textContent = 'Error releasing memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2350,7 +2320,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Get all visible memos (filtered memos)
@@ -2392,7 +2362,7 @@
                 errorMessage.textContent = 'Error updating action taken. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2441,7 +2411,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Update all selected memos to archived status
@@ -2486,7 +2456,7 @@
                 errorMessage.textContent = 'Error routing memos to archive. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2508,7 +2478,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Delete all selected memos and their activity logs
@@ -2537,7 +2507,7 @@
                 errorMessage.textContent = 'Error deleting memos. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
