@@ -188,10 +188,12 @@
             </footer>
         </div>
     </div>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 bg-opacity-60 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 dark:border-blue-300"></div>
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 flex flex-col items-center min-w-[280px]">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-6"></div>
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Loading memos...</h2>
+            <p class="text-gray-500 dark:text-gray-300 text-sm">Please wait while we fetch your data.</p>
         </div>
     </div>
     <!-- Error Message -->
@@ -264,7 +266,7 @@
         import { doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // DOM elements
-        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingModal = document.getElementById('loadingModal');
         const errorMessage = document.getElementById('errorMessage');
         const memosTableBody = document.getElementById('memosTableBody');
         const userInfo = document.getElementById('userInfo');
@@ -575,29 +577,27 @@
         // Load memos from Firestore
         async function loadMemos() {
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
-                // Get memos for the user's department
+                // Get memos for the user's department (one-time fetch)
                 const userData = JSON.parse(localStorage.getItem('tesdaUser'));
-                // Set up real-time listener
-                window.unsubscribeMemos = await getMemosByDepartment(userData.department, (memos) => {
-                    allMemos = memos;
-                    // Sort memos by creation date (newest first)
-                    allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-                    // Update stats and table
-                    totalMemos.textContent = allMemos.length;
-                    pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                    approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
-                    filteredMemosCache = allMemos;
-                    currentPage = 1;
-                    updateTable(allMemos);
-                });
+                const memos = await getMemosByDepartment(userData.department);
+                allMemos = memos;
+                // Sort memos by creation date (newest first)
+                allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+                // Update stats and table
+                totalMemos.textContent = allMemos.length;
+                pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
+                filteredMemosCache = allMemos;
+                currentPage = 1;
+                updateTable(allMemos);
             } catch (error) {
                 console.error('Error loading memos:', error);
                 errorMessage.textContent = 'Error loading memos. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         }
 
@@ -733,12 +733,8 @@
         }
     </script>
     <script>
-        let unsubscribeMemos = null; // Store the unsubscribe function for Firestore
-
         function cleanup() {
-            if (typeof unsubscribeMemos === 'function') {
-                unsubscribeMemos();
-            }
+            // No longer needed: Firestore listener cleanup
         }
     </script>
 </body>

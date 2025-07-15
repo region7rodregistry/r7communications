@@ -71,23 +71,20 @@ async function createMemo(memoData) {
     }
 }
 
-async function getMemosByDepartment(department, callback) {
+async function getMemosByDepartment(department) {
     try {
         const q = query(
             collection(db, "memos"),
             where("department", "==", department)
         );
-        
-        // Return the unsubscribe function from onSnapshot
-        return onSnapshot(q, (querySnapshot) => {
-            const memos = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            // Sort memos by createdAt in memory
-            memos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-            callback(memos);
-        });
+        const querySnapshot = await getDocs(q);
+        const memos = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        // Sort memos by createdAt in memory
+        memos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+        return memos;
     } catch (error) {
         console.error("Error getting memos: ", error);
         throw error;
