@@ -462,6 +462,7 @@
                     <select id="newStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3">
@@ -698,6 +699,9 @@
                             <button id="archiveMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
                                 Archive
                             </button>
+                            <button id="cancelledMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Cancelled
+                            </button>
                         </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
                         <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
@@ -825,6 +829,7 @@
         const pendingMemosTab = document.getElementById('pendingMemosTab');
         const approvedMemosTab = document.getElementById('approvedMemosTab');
         const archiveMemosTab = document.getElementById('archiveMemosTab');
+        const cancelledMemosTab = document.getElementById('cancelledMemosTab');
         const statsCards = document.getElementById('statsCards');
         const actionToggleContainer = document.getElementById('actionToggleContainer');
 
@@ -834,6 +839,9 @@
                 if (statsCards) statsCards.classList.add('hidden');
                 if (actionToggleContainer) actionToggleContainer.classList.remove('hidden');
             } else if (currentView === 'archive') {
+                if (statsCards) statsCards.classList.add('hidden');
+                if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
+            } else if (currentView === 'cancelled') {
                 if (statsCards) statsCards.classList.add('hidden');
                 if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
             } else {
@@ -858,6 +866,10 @@
                 archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 archiveMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             }
+            if (cancelledMemosTab) {
+                cancelledMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                cancelledMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
 
             // Add highlight to the active tab
             if (currentView === 'pending' && pendingMemosTab) {
@@ -866,21 +878,26 @@
             } else if (currentView === 'approved' && approvedMemosTab) {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
-            } else if (currentView === 'archive') {
+            } else if (currentView === 'archive' && archiveMemosTab) {
                 archiveMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 archiveMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
+            } else if (currentView === 'cancelled' && cancelledMemosTab) {
+                cancelledMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                cancelledMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             }
 
             // Add/remove table container classes for styling
             const tableContainer = document.querySelector('.overflow-x-auto');
             if (tableContainer) {
-                tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active');
+                tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active', 'cancelled-tab-active');
                 if (currentView === 'pending') {
                     tableContainer.classList.add('pending-tab-active');
                 } else if (currentView === 'approved') {
                     tableContainer.classList.add('approved-tab-active');
                 } else if (currentView === 'archive') {
                     tableContainer.classList.add('archive-tab-active');
+                } else if (currentView === 'cancelled') {
+                    tableContainer.classList.add('cancelled-tab-active');
                 }
             }
 
@@ -932,6 +949,8 @@
                 return allMemos.filter(memo => shouldShowInApprovedTab(memo));
             } else if (currentView === 'archive') {
                 return allMemos.filter(memo => isMemoArchived(memo));
+            } else if (currentView === 'cancelled') {
+                return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'cancelled');
             } else {
                 return allMemos; // Default to all memos
             }
@@ -967,6 +986,13 @@
             renderTableHeader();
             if (archiveTypeTabs) archiveTypeTabs.classList.remove('hidden');
             setActiveArchiveTypeTab('All'); // Default to All
+        });
+
+        cancelledMemosTab.addEventListener('click', () => {
+            currentView = 'cancelled';
+            updateTabStyles();
+            renderTableHeader();
+            renderMemos(getFilteredMemosForCurrentView());
         });
 
         // Show success toast
@@ -1261,11 +1287,13 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                        <td class="px-6 py-3 whitespace-nowrap">
-                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
+                        ${currentView !== 'cancelled' ? `
+                        <td class=\"px-6 py-3 whitespace-nowrap\">
+                            <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
                                 ${memo.status}
                             </span>
                         </td>
+                        ` : ''}
                         <td class="px-6 py-3 text-sm text-gray-900 w-48">
                             ${memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -1286,7 +1314,7 @@
                                     minute: '2-digit',
                                     hour12: true
                                 }) : 
-                                `<button onclick="releaseToRodFasd('${memo.id}')" class="text-blue-600 hover:text-blue-900">Release now</button>`
+                                `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
                             )}
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
@@ -1510,6 +1538,8 @@
                     return 'bg-red-100 text-red-800';
                 case 'archived':
                     return 'bg-gray-100 text-gray-800';
+                case 'cancelled':
+                    return 'bg-red-100 text-red-800';
                 default:
                     return 'bg-gray-100 text-gray-800';
             }
@@ -1820,7 +1850,15 @@
         // Show status modal
         window.changeStatus = function(memoId, currentStatus) {
             currentStatusMemoId = memoId;
-            newStatus.value = currentStatus === 'approved' ? 'pending' : 'approved';
+            if (currentStatus === 'approved') {
+                newStatus.value = 'pending';
+            } else if (currentStatus === 'pending') {
+                newStatus.value = 'approved';
+            } else if (currentStatus === 'cancelled') {
+                newStatus.value = 'approved';
+            } else {
+                newStatus.value = 'approved';
+            }
             statusModal.classList.remove('hidden');
         };
 
@@ -2579,6 +2617,15 @@
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
                 headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
+            } else if (currentView === 'cancelled') {
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
             } else {
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
@@ -2662,6 +2709,9 @@
             if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
         });
         approvedMemosTab.addEventListener('click', () => {
+            if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
+        });
+        cancelledMemosTab.addEventListener('click', () => {
             if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
         });
 
