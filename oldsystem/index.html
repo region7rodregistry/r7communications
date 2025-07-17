@@ -27,6 +27,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // Your Firebase config (copy from firebase-config.js)
     const firebaseConfig = {
@@ -42,6 +43,7 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     // Check Firebase Auth session
     onAuthStateChanged(auth, (user) => {
@@ -49,6 +51,37 @@
         window.location.href = '../index.html'; // or your login page
       }
       // else: user is authenticated, allow access
+    });
+
+    // Helper to get user data from Firestore
+    async function getUserData(email) {
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data();
+      }
+      return null;
+    }
+
+    // Add event listener to dashboard button(s)
+    document.addEventListener("DOMContentLoaded", () => {
+      // Find all dashboard links/buttons
+      document.querySelectorAll('a[href="../index.html"], a[href="index.html"]').forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const user = auth.currentUser;
+          if (!user) {
+            window.location.href = "../index.html";
+            return;
+          }
+          const userData = await getUserData(user.email);
+          if (userData && userData.role === "admin") {
+            window.location.href = "../admin-dashboard.html";
+          } else {
+            window.location.href = "../user-dashboard.html";
+          }
+        });
+      });
     });
   </script>
   <div class="flex min-h-screen flex-col md:flex-row">
