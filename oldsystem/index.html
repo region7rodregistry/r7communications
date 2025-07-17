@@ -23,11 +23,33 @@
   </script>
 </head>
 <body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
-  <script>
-    // Session check: redirect if not authenticated
-    if (localStorage.getItem('isAuthenticated') !== 'true') {
-      window.location.href = '../index.html'; // or your login page
-    }
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Your Firebase config (copy from firebase-config.js)
+    const firebaseConfig = {
+  apiKey: "AIzaSyAiDFpdkWI3BiZwdjp6mHN01hmvBItMk6o",
+  authDomain: "ro7mbms.firebaseapp.com",
+  projectId: "ro7mbms",
+  storageBucket: "ro7mbms.firebasestorage.app",
+  messagingSenderId: "379123096432",
+  appId: "1:379123096432:web:b790b0eaf620840af80db5",
+  measurementId: "G-JX5VHXX3GH"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Check Firebase Auth session
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = '../index.html'; // or your login page
+      }
+      // else: user is authenticated, allow access
+    });
   </script>
   <div class="flex min-h-screen flex-col md:flex-row">
     <!-- Sidebar (Desktop) -->
