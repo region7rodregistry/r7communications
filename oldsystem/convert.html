@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Excel to JSON Converter (Fixed Headers)</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <style>
+    body { font-family: monospace; background: #1e1e1e; color: #fff; padding: 20px; }
+    input, button { margin: 10px 0; padding: 10px; border-radius: 5px; }
+    pre { background: #2e2e2e; padding: 15px; overflow-x: auto; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+<h2>Excel to JSON (All Sheets with Fixed Headers)</h2>
+
+<input type="file" id="upload" accept=".xlsx, .xls" />
+<br>
+<button id="download" disabled>Download JSON</button>
+<pre id="output">Upload an Excel file...</pre>
+
+<script>
+function excelDateToJSDate(serial) {
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400;
+  const date_info = new Date(utc_value * 1000);
+  return dayjs(date_info).format("MMMM D, YYYY");
+}
+
+document.getElementById('upload').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+
+    const allSheetsData = {};
+
+    const fixedHeaders = [
+      "Date Logged",
+      "Date Issued",
+      "Memo No.",
+      "Memo to",
+      "Subject",
+      "Date/Time Released to ROD/FASD",
+      "Date/Time Received by ROD/FASD",
+      "Action Taken"
+    ];
+
+    workbook.SheetNames.forEach(sheetName => {
+      const sheet = workbook.Sheets[sheetName];
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      const sheetData = [];
+
+      for (let row = 2; row <= range.e.r; row++) { // start from row 3 (index 2)
+        const rowData = {};
+        let hasValue = false;
+
+        for (let col = 0; col <= 7; col++) { // columns A–H (0–7)
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          const cell = sheet[cellAddress];
+          let value = cell ? cell.v : null;
+
+          // Columns A, B, F, G → date conversion
+          if ([0, 1, 5, 6].includes(col) && typeof value === 'number') {
+            value = excelDateToJSDate(value);
+          }
+
+          if (value !== null && value !== "") hasValue = true;
+          rowData[fixedHeaders[col]] = value;
+        }
+
+        if (hasValue) sheetData.push(rowData);
+      }
+
+      allSheetsData[sheetName] = sheetData;
+    });
+
+    const jsonOutput = JSON.stringify(allSheetsData, null, 2);
+    document.getElementById('output').textContent = jsonOutput;
+    document.getElementById('download').disabled = false;
+
+    document.getElementById('download').onclick = function () {
+      const blob = new Blob([jsonOutput], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "all_sheets_fixed_headers.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+</script>
+
+</body>
+</html>
