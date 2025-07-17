@@ -23,6 +23,12 @@
   </script>
 </head>
 <body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
+  <script>
+    // Session check: redirect if not authenticated
+    if (localStorage.getItem('isAuthenticated') !== 'true') {
+      window.location.href = '../index.html'; // or your login page
+    }
+  </script>
   <div class="flex min-h-screen flex-col md:flex-row">
     <!-- Sidebar (Desktop) -->
     <aside class="hidden md:flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl py-8 px-6 space-y-10 transition-colors duration-300 rounded-r-3xl">
