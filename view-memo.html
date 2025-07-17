@@ -402,7 +402,16 @@
 
                 // Update UI with memo details
                 let el = document.getElementById('memoNumber');
-                if (el) el.textContent = memo.memoNumber.split('-').pop();
+                if (el) {
+                    if (memo.antedated) {
+                        // Show last two segments joined by '-'
+                        const parts = memo.memoNumber.split('-');
+                        el.textContent = parts.slice(-2).join('-');
+                    } else {
+                        // Show only the last segment
+                        el.textContent = memo.memoNumber.split('-').pop();
+                    }
+                }
                 el = document.getElementById('title');
                 if (el) el.textContent = memo.title;
                 el = document.getElementById('department');

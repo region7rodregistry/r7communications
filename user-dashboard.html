@@ -242,6 +242,7 @@
             cleanup();
             logoutUser().then(() => {
                 localStorage.removeItem('tesdaUser');
+                console.log('Redirecting to index.html');
                 window.location.href = 'index.html';
             }).catch((error) => {
                 console.error('Error logging out:', error);
@@ -249,7 +250,9 @@
                 errorMessage.classList.remove('hidden');
             });
         }
-        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        });
         document.getElementById('sidebarLogoutBtn')?.addEventListener('click', handleLogout);
         document.getElementById('mobileLogoutBtn')?.addEventListener('click', handleLogout);
         // View Drafts button (sidebar/mobile)
