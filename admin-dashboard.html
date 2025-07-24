@@ -772,8 +772,7 @@
                             <button data-type="CO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">CO</button>
                             <button data-type="PO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">PO</button>
                             <button data-type="Office Order" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Office Order</button>
-                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory</button>
-                            <button data-type="Bulletin" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Bulletin</button>
+                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory/Bulletin</button>
                             <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
                         </div>
                         <div class="flex space-x-2 ml-4">
@@ -2846,113 +2845,55 @@
         // Export archive data function
         window.exportArchiveData = function() {
             try {
-                const currentArchiveMemos = filterArchivedMemosByType(currentArchiveType);
-                if (currentArchiveMemos.length === 0) {
+                // Define all archive types and their worksheet names
+                const archiveTypes = [
+                    { type: 'All', sheet: 'All' },
+                    { type: 'CO', sheet: 'CO' },
+                    { type: 'PO', sheet: 'PO' },
+                    { type: 'Office Order', sheet: 'Office Order' },
+                    { type: 'Advisory', sheet: 'Advisory' },
+                    { type: 'Bulletin', sheet: 'Bulletin' },
+                    { type: 'Acknowledgment', sheet: 'Acknowledgment' }
+                ];
+                // Prepare a new workbook
+                const wb = XLSX.utils.book_new();
+                let totalExported = 0;
+                // For each archive type, generate a worksheet
+                archiveTypes.forEach(({ type, sheet }) => {
+                    const memos = filterArchivedMemosByType(type);
+                    if (!memos || memos.length === 0) return; // Skip empty sheets
+                    // Prepare data rows
+                    const data = memos.map(memo => ({
+                        'Memo No.': memo.memoNumber,
+                        'Subject': memo.title,
+                        'From': memo.department,
+                        'Recipients': memo.recipients,
+                        'Status': memo.status,
+                        'Created At': memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+                        'Released To': memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+                        'Received By (Date + Name)': memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : '') : '',
+                        'Action Taken': memo.actionTaken || ''
+                    }));
+                    totalExported += data.length;
+                    // Create worksheet
+                    const ws = XLSX.utils.json_to_sheet(data, { header: [
+                        'Memo No.', 'Subject', 'From', 'Recipients', 'Status', 'Created At', 'Released To', 'Received By (Date + Name)', 'Action Taken'
+                    ] });
+                    XLSX.utils.book_append_sheet(wb, ws, sheet);
+                });
+                if (totalExported === 0) {
                     showSuccessToast('No data to export');
                     return;
                 }
-
-                // Load the template file
-                const templateUrl = './New Communications Template.xlsx';
-                
-                fetch(templateUrl)
-                    .then(response => response.arrayBuffer())
-                    .then(arrayBuffer => {
-                        // Read the template workbook
-                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                        
-                        // Map archive type to sheet name
-                        let sheetName;
-                        switch(currentArchiveType) {
-                            case 'All':
-                                sheetName = 'All Archive';
-                                break;
-                            case 'CO':
-                                sheetName = 'Central Office';
-                                break;
-                            case 'PO':
-                                sheetName = 'Provincial Office';
-                                break;
-                            case 'Office Order':
-                                sheetName = 'Office Order';
-                                break;
-                            case 'Advisory':
-                                sheetName = 'Advisory';
-                                break;
-                            case 'Bulletin':
-                                sheetName = 'Bulletin';
-                                break;
-                            case 'Acknowledgment':
-                                sheetName = 'Acknowledgment';
-                                break;
-                            default:
-                                sheetName = workbook.SheetNames[0]; // Fallback to first sheet
-                        }
-                        
-                        // Check if the sheet exists in the template
-                        if (!workbook.SheetNames.includes(sheetName)) {
-                            errorMessage.textContent = `Sheet "${sheetName}" not found in template. Available sheets: ${workbook.SheetNames.join(', ')}`;
-                            errorMessage.classList.remove('hidden');
-                            return;
-                        }
-                        
-                        // Get the worksheet based on the active tab
-                        const worksheet = workbook.Sheets[sheetName];
-                        
-                        // Prepare data starting from row 3 (index 2)
-                        const startRow = 2; // 0-based index, so row 3 = index 2
-                        
-                        currentArchiveMemos.forEach((memo, index) => {
-                            const rowIndex = startRow + index;
-                            
-                            // Insert data into the template
-                            // Adjust column positions based on your template structure
-                            const rowData = [
-                                memo.memoNumber,
-                                memo.title,
-                                memo.department,
-                                memo.recipients,
-                                memo.status,
-                                memo.createdAt ? memo.createdAt.toDate().toLocaleDateString() : '',
-                                memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString() : '',
-                                memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString() : '',
-                                memo.actionTaken || ''
-                            ];
-                            
-                            // Insert each cell in the row while preserving existing formatting
-                            rowData.forEach((value, colIndex) => {
-                                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-                                
-                                // Check if cell already exists to preserve formatting
-                                if (worksheet[cellAddress]) {
-                                    // Preserve existing cell properties and only update the value
-                                    worksheet[cellAddress].v = value;
-                                } else {
-                                    // Create new cell with value only
-                                    worksheet[cellAddress] = { v: value };
-                                }
-                            });
-                        });
-                        
-                        // Generate XLSX file with template
-                        const currentDate = new Date().toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                        }).replace(/\//g, '-');
-                        
-                        const archiveTypeName = currentArchiveType === 'All' ? 'All_Archive' : currentArchiveType.replace(/\s+/g, '_');
-                        const fileName = `TESDA_Region_VII_${archiveTypeName}_${currentDate}.xlsx`;
-                        XLSX.writeFile(workbook, fileName);
-                        
-                        showSuccessToast(`${currentArchiveMemos.length} memo(s) exported to ${sheetName} sheet successfully`);
-                    })
-                    .catch(error => {
-                        console.error('Error loading template:', error);
-                        errorMessage.textContent = 'Error loading template file. Please ensure "New Communications Template.xlsx" exists in the same directory.';
-                        errorMessage.classList.remove('hidden');
-                    });
-                    
+                // Generate file name
+                const currentDate = new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).replace(/\//g, '-');
+                const fileName = `TESDA VII Outgoing Records ${currentDate}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showSuccessToast(`${totalExported} memo(s) exported to Excel file successfully`);
             } catch (error) {
                 console.error('Error exporting archive data:', error);
                 errorMessage.textContent = 'Error exporting data. Please try again.';
