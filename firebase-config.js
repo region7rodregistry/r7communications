@@ -49,6 +49,9 @@ async function createMemo(memoData) {
                 case 'Advisory':
                     memoNumberKey = 'advisory';
                     break;
+                case 'AdvisoryBulletin':
+                    memoNumberKey = 'advisoryBulletin';
+                    break;
                 case 'Bulletin':
                     memoNumberKey = 'bulletin';
                     break;
@@ -231,6 +234,9 @@ async function getNextMemoNumber(memoType = 'PO') {
             case 'Advisory':
                 memoNumberKey = 'advisory';
                 break;
+            case 'AdvisoryBulletin':
+                memoNumberKey = 'advisoryBulletin';
+                break;
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
                 break;
@@ -273,6 +279,9 @@ async function getCurrentMemoNumber(memoType = 'PO') {
                 break;
             case 'Advisory':
                 memoNumberKey = 'advisory';
+                break;
+            case 'AdvisoryBulletin':
+                memoNumberKey = 'advisoryBulletin';
                 break;
             case 'Bulletin':
                 memoNumberKey = 'bulletin';

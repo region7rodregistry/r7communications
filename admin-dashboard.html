@@ -3101,6 +3101,23 @@
         searchInput.addEventListener('input', function() {
             if (currentView === 'archive') archiveCurrentPage = 1;
         });
+
+        // Real-time listener for advisoryBulletin number
+        const advisoryBulletinNumberEl = document.getElementById('nextAdvisoryBulletinNumber');
+        const advisoryBulletinInput = document.getElementById('advisoryBulletinNumberInput');
+        const advisoryBulletinEditDiv = document.getElementById('advisoryBulletinNumberEdit');
+
+        onSnapshot(doc(db, "memoNumbers", "advisoryBulletin"), (docSnap) => {
+            if (docSnap.exists()) {
+                const number = docSnap.data().number || 0;
+                if (advisoryBulletinNumberEl) {
+                    advisoryBulletinNumberEl.textContent = String(number).padStart(4, '0');
+                }
+                if (advisoryBulletinInput && advisoryBulletinEditDiv.classList.contains('hidden')) {
+                    advisoryBulletinInput.value = number;
+                }
+            }
+        });
     </script>
     <script>
         // Modal logic for archive folder view
