@@ -460,9 +460,12 @@
                 </div>
                 <div class="mb-4">
                     <select id="newStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        
+                        <option value="signed">Signed</option>
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
                         <option value="cancelled">Cancelled</option>
+                        
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3">
@@ -697,6 +700,9 @@
                             <button id="pendingMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
                                 Pending Memos
                             </button>
+                            <button id="signedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Signed Memos
+                            </button>
                             <button id="approvedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
                                 Approved Memos
                             </button>
@@ -831,6 +837,7 @@
 
         // Tab switching functionality
         const pendingMemosTab = document.getElementById('pendingMemosTab');
+        const signedMemosTab = document.getElementById('signedMemosTab');
         const approvedMemosTab = document.getElementById('approvedMemosTab');
         const archiveMemosTab = document.getElementById('archiveMemosTab');
         const cancelledMemosTab = document.getElementById('cancelledMemosTab');
@@ -862,6 +869,10 @@
                 pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             }
+            if (signedMemosTab) {
+                signedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                signedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
             if (approvedMemosTab) {
                 approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
@@ -879,6 +890,9 @@
             if (currentView === 'pending' && pendingMemosTab) {
                 pendingMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 pendingMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
+            } else if (currentView === 'signed' && signedMemosTab) {
+                signedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                signedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             } else if (currentView === 'approved' && approvedMemosTab) {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
@@ -896,6 +910,8 @@
                 tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active', 'cancelled-tab-active');
                 if (currentView === 'pending') {
                     tableContainer.classList.add('pending-tab-active');
+                } else if (currentView === 'signed') {
+                    tableContainer.classList.add('signed-tab-active');
                 } else if (currentView === 'approved') {
                     tableContainer.classList.add('approved-tab-active');
                 } else if (currentView === 'archive') {
@@ -949,6 +965,8 @@
             if (!allMemos) return [];
             if (currentView === 'pending') {
                 return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
+            } else if (currentView === 'signed') {
+                return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'signed');
             } else if (currentView === 'approved') {
                 return allMemos.filter(memo => shouldShowInApprovedTab(memo));
             } else if (currentView === 'archive') {
@@ -962,6 +980,13 @@
 
         pendingMemosTab.addEventListener('click', () => {
             currentView = 'pending';
+            updateTabStyles();
+            renderTableHeader();
+            renderMemos(getFilteredMemosForCurrentView());
+        });
+
+        signedMemosTab.addEventListener('click', () => {
+            currentView = 'signed';
             updateTabStyles();
             renderTableHeader();
             renderMemos(getFilteredMemosForCurrentView());
@@ -1314,17 +1339,33 @@
                             })}
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
-                            ${currentView === 'pending' ? 'Not Released yet' : (memo.releasedToRodFasd ? 
-                                memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                }) : 
-                                `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
-                            )}
+                            ${
+                                currentView === 'signed'
+                                    ? (memo.releasedToRodFasd
+                                        ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        })
+                                        : 'Not Released yet')
+                                    : (currentView === 'pending'
+                                        ? 'Not Released yet'
+                                        : (memo.releasedToRodFasd
+                                            ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            })
+                                            : `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
+                                        )
+                                    )
+                            }
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
                             ${currentView === 'approved' ? (memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
@@ -1439,11 +1480,11 @@
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
-                            <span class="block text-sm text-gray-900">${currentView === 'pending' ? 'Not Released yet' : (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—')}</span>
+                            <span class="block text-sm text-gray-900">${currentView === 'pending' ? 'Not Released yet' : (currentView === 'signed' ? (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not Released yet') : (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : `<button onclick=\\"releaseToRodFasd('${memo.id}')\\" class=\\"text-blue-600 hover:text-blue-900\\">Release now</button>`))}</span>
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
-                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : '—'}</span>
+                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : 'Not received yet'}</span>
                         </div>
                         <div class="flex space-x-2 mt-2">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
@@ -1549,6 +1590,8 @@
                     return 'bg-gray-100 text-gray-800';
                 case 'cancelled':
                     return 'bg-red-100 text-red-800';
+                case 'signed':
+                    return 'bg-yellow-100 text-yellow-900 font-bold'; // dark yellow text
                 default:
                     return 'bg-gray-100 text-gray-800';
             }
@@ -1860,7 +1903,12 @@
         // Show status modal
         window.changeStatus = function(memoId, currentStatus) {
             currentStatusMemoId = memoId;
-            if (currentStatus === 'approved') {
+            // Set default status based on currentView
+            if (currentView === 'pending') {
+                newStatus.value = 'signed';
+            } else if (currentView === 'signed') {
+                newStatus.value = 'approved';
+            } else if (currentStatus === 'approved') {
                 newStatus.value = 'pending';
             } else if (currentStatus === 'pending') {
                 newStatus.value = 'approved';
@@ -2605,7 +2653,7 @@
                 thead.innerHTML = headerHtml;
                 return;
             }
-            if (currentView === 'pending') {
+            if (currentView === 'pending' || currentView === 'signed') {
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
@@ -2615,18 +2663,16 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
-            } else if (!isActionMode && currentView === 'approved') {
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    <input type="checkbox" id="memoHeaderCheckbox" class="mr-2 align-middle">
-                    <span id="memoNoHeader" class="inline-block align-middle text-blue-700 font-semibold opacity-50 pointer-events-none">Memo No.</span>
-                </th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
+            } else if (currentView === 'approved') {
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Status</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
             } else if (currentView === 'cancelled') {
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
