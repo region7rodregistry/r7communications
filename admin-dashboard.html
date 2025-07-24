@@ -3127,24 +3127,6 @@
           let docs = await fetchPage(tab, page, lastDoc);
           renderEntries(docs);
         }
-
-        // On tab click:
-        async function handleTabSwitch(tab) {
-          currentTab = tab;
-          currentPage = 1;
-          await showPage(tab, 1);
-        }
-
-        // On page navigation:
-        async function handlePageChange(tab, page) {
-          currentPage = page;
-          await showPage(tab, page);
-        }
-
-        // On search input:
-        document.getElementById("searchInput").addEventListener("input", e => {
-          onSearchInput(currentTab, "memo_number", e.target.value);
-        });
     </script>
     <script>
         // Modal logic for archive folder view
