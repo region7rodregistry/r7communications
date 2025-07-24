@@ -803,7 +803,7 @@
 
     <script type="module">
         import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
-        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc, onSnapshot, startAfter, limit } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
         // Initialize Lucide icons
@@ -3104,6 +3104,46 @@
                     advisoryBulletinInput.value = number;
                 }
             }
+        });
+
+        function getTabQuery(tab, lastVisible) {
+          let q = collection(db, "entries");
+          if (tab === "archive") {
+            q = query(q, where("status", "==", "archived"));
+          }
+          q = query(q, orderBy("timestamp", "desc"), limit(PAGE_SIZE));
+          if (lastVisible) q = query(q, startAfter(lastVisible));
+          return q;
+        }
+
+        async function showPage(tab, page) {
+          let cache = tabCaches[tab][page];
+          if (cache) {
+            renderEntries(cache.docs);
+            return;
+          }
+          // Fetch and cache if not present
+          let lastDoc = page > 1 ? tabCaches[tab][page - 1]?.lastDoc : null;
+          let docs = await fetchPage(tab, page, lastDoc);
+          renderEntries(docs);
+        }
+
+        // On tab click:
+        async function handleTabSwitch(tab) {
+          currentTab = tab;
+          currentPage = 1;
+          await showPage(tab, 1);
+        }
+
+        // On page navigation:
+        async function handlePageChange(tab, page) {
+          currentPage = page;
+          await showPage(tab, page);
+        }
+
+        // On search input:
+        document.getElementById("searchInput").addEventListener("input", e => {
+          onSearchInput(currentTab, "memo_number", e.target.value);
         });
     </script>
     <script>
