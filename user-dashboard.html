@@ -251,8 +251,10 @@
             cleanup();
             logoutUser().then(() => {
                 localStorage.removeItem('tesdaUser');
-                console.log('Redirecting to index.html');
-                window.location.href = 'index.html';
+                showSuccessToast('Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
             }).catch((error) => {
                 console.error('Error logging out:', error);
                 errorMessage.textContent = 'Error logging out. Please try again.';
@@ -774,11 +776,6 @@
                 currentPage = 1;
                 filterMemos();
             });
-        }
-    </script>
-    <script>
-        function cleanup() {
-            if (memosUnsubscribe) memosUnsubscribe();
         }
     </script>
 </body>
