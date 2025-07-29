@@ -379,13 +379,120 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        /* Add after existing styles */
+        .modern-memo-card {
+            position: relative;
+            border-radius: 1rem;
+            box-shadow: 0 4px 16px 0 rgba(30,58,138,0.10);
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            padding: 1.5rem 1.25rem 1.25rem 1.25rem;
+            margin-bottom: 1.25rem;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            overflow: hidden;
+        }
+        .modern-memo-card:hover {
+            box-shadow: 0 8px 32px 0 rgba(30,58,138,0.16);
+            border-color: #3b82f6;
+        }
+        .modern-memo-card .card-accent {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 7px;
+            border-radius: 1rem 0 0 1rem;
+            background: var(--accent-color, #3b82f6);
+        }
+        .modern-memo-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .modern-memo-card .card-memo-no {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.4em;
+        }
+        .modern-memo-card .card-status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            padding: 0.2em 0.7em;
+            display: inline-block;
+            margin-left: 0.5em;
+        }
+        .modern-memo-card .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4em;
+        }
+        .modern-memo-card .card-field {
+            display: flex;
+            align-items: center;
+            font-size: 0.97rem;
+            color: #374151;
+            margin-bottom: 0.15rem;
+            gap: 0.5em;
+        }
+        .modern-memo-card .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.7rem;
+        }
+        .modern-memo-card .card-btn {
+            font-size: 0.97rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            padding: 0.35em 1.1em;
+            transition: background 0.15s, color 0.15s;
+            border: none;
+            outline: none;
+            cursor: pointer;
+        }
+        .modern-memo-card .card-btn.view { background: #eff6ff; color: #2563eb; }
+        .modern-memo-card .card-btn.view:hover { background: #dbeafe; color: #1d4ed8; }
+        .modern-memo-card .card-btn.status { background: #f0fdf4; color: #059669; }
+        .modern-memo-card .card-btn.status:hover { background: #bbf7d0; color: #047857; }
+        .modern-memo-card .card-btn.delete { background: #fef2f2; color: #dc2626; }
+        .modern-memo-card .card-btn.delete:hover { background: #fecaca; color: #b91c1c; }
+
+        /* Accent color by status */
+        .modern-memo-card[data-status="pending"] .card-accent { background: #fbbf24; }
+        .modern-memo-card[data-status="approved"] .card-accent { background: #22c55e; }
+        .modern-memo-card[data-status="archived"] .card-accent { background: #6b7280; }
+        .modern-memo-card[data-status="signed"] .card-accent { background: #f59e42; }
+        .modern-memo-card[data-status="cancelled"] .card-accent { background: #ef4444; }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-4 rounded-lg shadow-lg">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <!-- Loading Modal Overlay -->
+    <div id="loadingModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center animate-fadeIn">
+            <div class="mb-6">
+                <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+            </div>
+            <div class="text-2xl font-bold text-gray-800 mb-2 tracking-wide">Loading Data Records . . .</div>
+            <div class="text-gray-500 text-base">Please wait while we fetch the latest records for you.</div>
         </div>
     </div>
 
@@ -446,8 +553,12 @@
                 </div>
                 <div class="mb-4">
                     <select id="newStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        
+                        <option value="signed">Signed</option>
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3">
@@ -479,6 +590,10 @@
             </div>
             <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <span id="userInfo" class="text-sm text-gray-600"></span>
+                <button onclick="window.location.href='oldsystem/index.html'" id="viewOldRecords" class="w-full sm:w-auto inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400">
+                    <i data-lucide="view" class="w-4 h-4 mr-2"></i>
+                    View Old Records
+                </button>
                 <button id="logoutBtn" class="w-full sm:w-auto inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
                     Logout
@@ -678,11 +793,17 @@
                             <button id="pendingMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
                                 Pending Memos
                             </button>
+                            <button id="signedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Signed Memos
+                            </button>
                             <button id="approvedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
                                 Approved Memos
                             </button>
                             <button id="archiveMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
                                 Archive
+                            </button>
+                            <button id="cancelledMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
+                                Cancelled
                             </button>
                         </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
@@ -744,8 +865,7 @@
                             <button data-type="CO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">CO</button>
                             <button data-type="PO" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">PO</button>
                             <button data-type="Office Order" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Office Order</button>
-                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory</button>
-                            <button data-type="Bulletin" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Bulletin</button>
+                            <button data-type="Advisory" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Advisory/Bulletin</button>
                             <button data-type="Acknowledgment" class="archive-type-tab inline-block min-w-[110px] mx-1 px-5 py-2 text-base font-semibold rounded-full focus:outline-none transition-all duration-200 shadow-sm border border-transparent bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700">Acknowledgment</button>
                         </div>
                         <div class="flex space-x-2 ml-4">
@@ -776,14 +896,13 @@
 
     <script type="module">
         import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
-        import { doc, updateDoc, serverTimestamp, onSnapshot, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc, onSnapshot, startAfter, limit } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
 
         // Initialize Lucide icons
         lucide.createIcons();
 
         // Get DOM elements
-        const loadingOverlay = document.getElementById('loadingOverlay');
         const errorMessage = document.getElementById('errorMessage');
         const successToast = document.getElementById('successToast');
         const successMessage = document.getElementById('successMessage');
@@ -802,6 +921,7 @@
         const searchSpinner = document.getElementById('searchSpinner');
         const clearSearch = document.getElementById('clearSearch');
         const searchSuggestions = document.getElementById('searchSuggestions');
+        const loadingModal = document.getElementById('loadingModal');
 
         let currentMemoId = null;
         let allMemos = []; // Store all memos for filtering
@@ -809,8 +929,10 @@
 
         // Tab switching functionality
         const pendingMemosTab = document.getElementById('pendingMemosTab');
+        const signedMemosTab = document.getElementById('signedMemosTab');
         const approvedMemosTab = document.getElementById('approvedMemosTab');
         const archiveMemosTab = document.getElementById('archiveMemosTab');
+        const cancelledMemosTab = document.getElementById('cancelledMemosTab');
         const statsCards = document.getElementById('statsCards');
         const actionToggleContainer = document.getElementById('actionToggleContainer');
 
@@ -820,6 +942,9 @@
                 if (statsCards) statsCards.classList.add('hidden');
                 if (actionToggleContainer) actionToggleContainer.classList.remove('hidden');
             } else if (currentView === 'archive') {
+                if (statsCards) statsCards.classList.add('hidden');
+                if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
+            } else if (currentView === 'cancelled') {
                 if (statsCards) statsCards.classList.add('hidden');
                 if (actionToggleContainer) actionToggleContainer.classList.add('hidden');
             } else {
@@ -836,6 +961,10 @@
                 pendingMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 pendingMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             }
+            if (signedMemosTab) {
+                signedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                signedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
             if (approvedMemosTab) {
                 approvedMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
@@ -844,29 +973,43 @@
                 archiveMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 archiveMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
             }
+            if (cancelledMemosTab) {
+                cancelledMemosTab.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                cancelledMemosTab.classList.add('text-gray-500', 'hover:text-gray-900');
+            }
 
             // Add highlight to the active tab
             if (currentView === 'pending' && pendingMemosTab) {
                 pendingMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 pendingMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
+            } else if (currentView === 'signed' && signedMemosTab) {
+                signedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                signedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             } else if (currentView === 'approved' && approvedMemosTab) {
                 approvedMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 approvedMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
-            } else if (currentView === 'archive') {
+            } else if (currentView === 'archive' && archiveMemosTab) {
                 archiveMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
                 archiveMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
+            } else if (currentView === 'cancelled' && cancelledMemosTab) {
+                cancelledMemosTab.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                cancelledMemosTab.classList.remove('text-gray-500', 'hover:text-gray-900');
             }
 
             // Add/remove table container classes for styling
             const tableContainer = document.querySelector('.overflow-x-auto');
             if (tableContainer) {
-                tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active');
+                tableContainer.classList.remove('pending-tab-active', 'approved-tab-active', 'archive-tab-active', 'cancelled-tab-active');
                 if (currentView === 'pending') {
                     tableContainer.classList.add('pending-tab-active');
+                } else if (currentView === 'signed') {
+                    tableContainer.classList.add('signed-tab-active');
                 } else if (currentView === 'approved') {
                     tableContainer.classList.add('approved-tab-active');
                 } else if (currentView === 'archive') {
                     tableContainer.classList.add('archive-tab-active');
+                } else if (currentView === 'cancelled') {
+                    tableContainer.classList.add('cancelled-tab-active');
                 }
             }
 
@@ -914,10 +1057,14 @@
             if (!allMemos) return [];
             if (currentView === 'pending') {
                 return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'pending');
+            } else if (currentView === 'signed') {
+                return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'signed');
             } else if (currentView === 'approved') {
                 return allMemos.filter(memo => shouldShowInApprovedTab(memo));
             } else if (currentView === 'archive') {
                 return allMemos.filter(memo => isMemoArchived(memo));
+            } else if (currentView === 'cancelled') {
+                return allMemos.filter(memo => memo.status && memo.status.toLowerCase() === 'cancelled');
             } else {
                 return allMemos; // Default to all memos
             }
@@ -925,6 +1072,13 @@
 
         pendingMemosTab.addEventListener('click', () => {
             currentView = 'pending';
+            updateTabStyles();
+            renderTableHeader();
+            renderMemos(getFilteredMemosForCurrentView());
+        });
+
+        signedMemosTab.addEventListener('click', () => {
+            currentView = 'signed';
             updateTabStyles();
             renderTableHeader();
             renderMemos(getFilteredMemosForCurrentView());
@@ -955,6 +1109,13 @@
             setActiveArchiveTypeTab('All'); // Default to All
         });
 
+        cancelledMemosTab.addEventListener('click', () => {
+            currentView = 'cancelled';
+            updateTabStyles();
+            renderTableHeader();
+            renderMemos(getFilteredMemosForCurrentView());
+        });
+
         // Show success toast
         function showSuccessToast(message) {
             successMessage.textContent = message;
@@ -970,9 +1131,12 @@
             }, 3000);
         }
 
+        let memosUnsubscribe = null;
+
         // Check authentication
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
+                if (memosUnsubscribe) memosUnsubscribe();
                 window.location.href = 'index.html';
                 return;
             }
@@ -983,115 +1147,73 @@
                 userInfo.textContent = `${userData.username} (${userData.department})`;
             }
 
-            // Set up real-time listener for memos
-            const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
-            onSnapshot(memosQuery, (snapshot) => {
-                console.log("Received snapshot from Firestore:", snapshot.size, "documents");
-                allMemos = [];
-                snapshot.forEach((doc) => {
-                    const memoData = {
-                        id: doc.id,
-                        ...doc.data()
-                    };
-                    console.log("Processing memo:", memoData);
-                    allMemos.push(memoData);
+            // Show loading modal while fetching
+            loadingModal.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            try {
+                // Real-time listener for memos
+                const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
+                if (memosUnsubscribe) memosUnsubscribe();
+                memosUnsubscribe = onSnapshot(memosQuery, (memosSnapshot) => {
+                    allMemos = [];
+                    memosSnapshot.forEach((doc) => {
+                        const memoData = {
+                            id: doc.id,
+                            ...doc.data()
+                        };
+                        allMemos.push(memoData);
+                    });
+
+                    // Update stats
+                    if (totalMemos) totalMemos.textContent = allMemos.length;
+                    if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                    if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
+                    if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
+
+                    // Store memos globally for search functionality
+                    window.allMemos = allMemos;
+
+                    // Render memos based on current view
+                    renderMemos(getFilteredMemosForCurrentView());
                 });
 
-                // Update stats
-                if (totalMemos) totalMemos.textContent = allMemos.length;
-                if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
-                if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
-
-                // Store memos globally for search functionality
-                window.allMemos = allMemos;
-
-                console.log("Rendering memos:", allMemos.length, "memos");
-                // Render memos based on current view
-                renderMemos(getFilteredMemosForCurrentView());
-            });
-
-            // Set up real-time listener for next memo number
-            const memoNumberRef = doc(db, "memoNumbers", "current");
-            onSnapshot(memoNumberRef, (doc) => {
-                if (doc.exists()) {
-                    const currentNumber = doc.data().number;
-                    const nextMemoNumberElement = document.getElementById('nextMemoNumber');
-                    if (nextMemoNumberElement) {
-                        nextMemoNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                        localStorage.setItem('dashboard_nextMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
-                    }
-                }
-            });
-
-            // Set up real-time listener for next CO memo number
-            const coMemoNumberRef = doc(db, "memoNumbers", "coCurrent");
-            onSnapshot(coMemoNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    // Initialize CO number document if it doesn't exist
+                // Fetch all memoNumbers in parallel (keep as getDoc for now)
+                const memoNumberRefs = [
+                    { id: 'current', el: 'nextMemoNumber', storage: 'dashboard_nextMemoNumber' },
+                    { id: 'coCurrent', el: 'nextCoMemoNumber', storage: 'dashboard_nextCoMemoNumber' },
+                    { id: 'officeOrder', el: 'nextOfficeOrderNumber', storage: 'dashboard_nextOfficeOrderNumber' },
+                    { id: 'advisoryBulletin', el: 'nextAdvisoryBulletinNumber', storage: 'dashboard_nextAdvisoryBulletinNumber' },
+                    { id: 'acknowledgment', el: 'nextAcknowledgmentNumber', storage: 'dashboard_nextAcknowledgmentNumber' }
+                ];
+                const memoNumberPromises = memoNumberRefs.map(async ref => {
                     try {
-                        await updateDoc(coMemoNumberRef, { number: 0 });
-                    } catch (error) {
-                        // If document doesn't exist, create it
-                        await setDoc(coMemoNumberRef, { number: 0 });
+                        const docRef = doc(db, "memoNumbers", ref.id);
+                        const docSnap = await getDoc(docRef);
+                        let number = 0;
+                        if (docSnap.exists()) {
+                            number = docSnap.data().number;
+                        } else {
+                            // If not exist, create with 0
+                            await setDoc(docRef, { number: 0 });
+                        }
+                        const el = document.getElementById(ref.el);
+                        if (el) {
+                            el.textContent = `${String(number).padStart(4, '0')}`;
+                            localStorage.setItem(ref.storage, `${String(number).padStart(4, '0')}`);
+                        }
+                    } catch (err) {
+                        // Show error but continue
+                        console.error(`Error fetching memo number for ${ref.id}:`, err);
                     }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextCoMemoNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextCoMemoNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Set up real-time listener for next Office Order number
-            const officeOrderNumberRef = doc(db, "memoNumbers", "officeOrder");
-            onSnapshot(officeOrderNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(officeOrderNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(officeOrderNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextOfficeOrderNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextOfficeOrderNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Set up real-time listener for next Advisory/Bulletin number (merged)
-            const advisoryBulletinNumberRef = doc(db, "memoNumbers", "advisoryBulletin");
-            onSnapshot(advisoryBulletinNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(advisoryBulletinNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(advisoryBulletinNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    document.getElementById('nextAdvisoryBulletinNumber').textContent = `${String(currentNumber).padStart(4, '0')}`;
-                    localStorage.setItem('dashboard_nextAdvisoryBulletinNumber', `${String(currentNumber).padStart(4, '0')}`);
-                }
-            });
-
-            // Acknowledgment
-            const acknowledgmentNumberRef = doc(db, "memoNumbers", "acknowledgment");
-            onSnapshot(acknowledgmentNumberRef, async (doc) => {
-                if (!doc.exists()) {
-                    try {
-                        await updateDoc(acknowledgmentNumberRef, { number: 0 });
-                    } catch (error) {
-                        await setDoc(acknowledgmentNumberRef, { number: 0 });
-                    }
-                } else {
-                    const currentNumber = doc.data().number;
-                    const nextAcknowledgmentNumberElement = document.getElementById('nextAcknowledgmentNumber');
-                    if (nextAcknowledgmentNumberElement) {
-                        nextAcknowledgmentNumberElement.textContent = `${String(currentNumber).padStart(4, '0')}`;
-                        localStorage.setItem('dashboard_nextAcknowledgmentNumber', `${String(currentNumber).padStart(4, '0')}`);
-                    }
-                }
-            });
+                });
+                await Promise.all(memoNumberPromises);
+            } catch (err) {
+                console.error('Error loading dashboard data:', err);
+                errorMessage.textContent = 'Error loading dashboard data. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
         });
 
         // Helper function to format memo number for display
@@ -1291,11 +1413,13 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                        <td class="px-6 py-3 whitespace-nowrap">
-                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}">
+                        ${currentView !== 'cancelled' ? `
+                        <td class=\"px-6 py-3 whitespace-nowrap\">
+                            <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
                                 ${memo.status}
                             </span>
                         </td>
+                        ` : ''}
                         <td class="px-6 py-3 text-sm text-gray-900 w-48">
                             ${memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -1307,17 +1431,33 @@
                             })}
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col w-48">
-                            ${currentView === 'pending' ? 'Not Released yet' : (memo.releasedToRodFasd ? 
-                                memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                }) : 
-                                `<button onclick="releaseToRodFasd('${memo.id}')" class="text-blue-600 hover:text-blue-900">Release now</button>`
-                            )}
+                            ${
+                                currentView === 'signed'
+                                    ? (memo.releasedToRodFasd
+                                        ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        })
+                                        : 'Not Released yet')
+                                    : (currentView === 'pending'
+                                        ? 'Not Released yet'
+                                        : (memo.releasedToRodFasd
+                                            ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            })
+                                            : `<button onclick=\"releaseToRodFasd('${memo.id}')\" class=\"text-blue-600 hover:text-blue-900\">Release now</button>`
+                                        )
+                                    )
+                            }
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 rod-fasd-col">
                             ${currentView === 'approved' ? (memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', {
@@ -1432,11 +1572,11 @@
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Released to:</span>
-                            <span class="block text-sm text-gray-900">${currentView === 'pending' ? 'Not Released yet' : (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—')}</span>
+                            <span class="block text-sm text-gray-900">${currentView === 'pending' ? 'Not Released yet' : (currentView === 'signed' ? (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not Released yet') : (memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : `<button onclick=\\"releaseToRodFasd('${memo.id}')\\" class=\\"text-blue-600 hover:text-blue-900\\">Release now</button>`))}</span>
                         </div>
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Received by (Date + Name):</span>
-                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : '—'}</span>
+                            <span class="block text-sm text-gray-900">${memo.receivedByRodFasd ? breakLineEveryNChars(memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : ''), 40) : 'Not received yet'}</span>
                         </div>
                         <div class="flex space-x-2 mt-2">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
@@ -1481,8 +1621,8 @@
                         memoHeader.addEventListener('click', async () => {
                             const selectedRows = [...rowCheckboxes].filter(cb => cb.checked);
                             if (selectedRows.length > 0) {
-                                // Show loading overlay
-                                loadingOverlay.classList.remove('hidden');
+                                // Show loading modal
+                                loadingModal.classList.remove('hidden');
                                 errorMessage.classList.add('hidden');
                                 try {
                                     // Get memo IDs
@@ -1519,7 +1659,7 @@
                                     errorMessage.textContent = 'Error routing memos to archive. Please try again.';
                                     errorMessage.classList.remove('hidden');
                                 } finally {
-                                    loadingOverlay.classList.add('hidden');
+                                    loadingModal.classList.add('hidden');
                                 }
                             }
                         });
@@ -1540,6 +1680,10 @@
                     return 'bg-red-100 text-red-800';
                 case 'archived':
                     return 'bg-gray-100 text-gray-800';
+                case 'cancelled':
+                    return 'bg-red-100 text-red-800';
+                case 'signed':
+                    return 'bg-yellow-100 text-yellow-900 font-bold'; // dark yellow text
                 default:
                     return 'bg-gray-100 text-gray-800';
             }
@@ -1573,7 +1717,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 // Use the enhanced delete function that handles cascading delete of activity logs
@@ -1587,7 +1731,7 @@
                 errorMessage.textContent = 'Error deleting memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -1600,6 +1744,7 @@
 
         // Handle logout
         logoutBtn.addEventListener('click', async () => {
+            if (memosUnsubscribe) memosUnsubscribe();
             try {
                 await logoutUser();
                 localStorage.removeItem('tesdaUser');
@@ -1624,7 +1769,7 @@
         // Cleanup function for orphaned activity logs (admin only)
         window.cleanupOrphanedLogs = async function() {
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 const cleanedCount = await cleanupOrphanedActivityLogs();
@@ -1640,7 +1785,7 @@
                 errorMessage.textContent = 'Error cleaning up orphaned logs. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -1850,7 +1995,20 @@
         // Show status modal
         window.changeStatus = function(memoId, currentStatus) {
             currentStatusMemoId = memoId;
-            newStatus.value = currentStatus === 'approved' ? 'pending' : 'approved';
+            // Set default status based on currentView
+            if (currentView === 'pending') {
+                newStatus.value = 'signed';
+            } else if (currentView === 'signed') {
+                newStatus.value = 'approved';
+            } else if (currentStatus === 'approved') {
+                newStatus.value = 'pending';
+            } else if (currentStatus === 'pending') {
+                newStatus.value = 'approved';
+            } else if (currentStatus === 'cancelled') {
+                newStatus.value = 'approved';
+            } else {
+                newStatus.value = 'approved';
+            }
             statusModal.classList.remove('hidden');
         };
 
@@ -1880,7 +2038,7 @@
             if (!currentStatusMemoId) return;
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 // Get current status before updating
@@ -1910,7 +2068,7 @@
                 errorMessage.textContent = 'Error updating memo status. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2013,7 +2171,7 @@
                     return;
                 }
                 try {
-                    loadingOverlay.classList.remove('hidden');
+                    loadingModal.classList.remove('hidden');
                     errorMessage.classList.add('hidden');
                     // Validate against highest number in memos of type Advisory or Bulletin
                     const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
@@ -2029,7 +2187,7 @@
                     if (newNumber < highestNumber) {
                         errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
-                        loadingOverlay.classList.add('hidden');
+                        loadingModal.classList.add('hidden');
                         return;
                     }
                     const advisoryBulletinRef = doc(db, "memoNumbers", "advisoryBulletin");
@@ -2049,7 +2207,7 @@
                     errorMessage.textContent = 'Error updating Advisory/Bulletin number. Please try again.';
                     errorMessage.classList.remove('hidden');
                 } finally {
-                    loadingOverlay.classList.add('hidden');
+                    loadingModal.classList.add('hidden');
                 }
             } else {
                 let input, memoType;
@@ -2097,7 +2255,7 @@
                     return;
                 }
                 try {
-                    loadingOverlay.classList.remove('hidden');
+                    loadingModal.classList.remove('hidden');
                     errorMessage.classList.add('hidden');
                     const memosQuery = query(collection(db, "memos"), orderBy("createdAt", "desc"));
                     const memosSnapshot = await getDocs(memosQuery);
@@ -2117,7 +2275,7 @@
                     if (newNumber < highestNumber) {
                         errorMessage.textContent = `Number must be greater than or equal to ${highestNumber}`;
                         errorMessage.classList.remove('hidden');
-                        loadingOverlay.classList.add('hidden');
+                        loadingModal.classList.add('hidden');
                         return;
                     }
                     const memoNumberRef = doc(db, "memoNumbers", memoType);
@@ -2140,7 +2298,7 @@
                     errorMessage.textContent = 'Error updating memo number. Please try again.';
                     errorMessage.classList.remove('hidden');
                 } finally {
-                    loadingOverlay.classList.add('hidden');
+                    loadingModal.classList.add('hidden');
                 }
             }
         };
@@ -2148,7 +2306,7 @@
         // Add release to ROD/FASD functionality
         window.releaseToRodFasd = async function(memoId) {
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
                 
                 const memoRef = doc(db, 'memos', memoId);
@@ -2186,7 +2344,7 @@
                 errorMessage.textContent = 'Error releasing memo. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2350,7 +2508,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Get all visible memos (filtered memos)
@@ -2392,7 +2550,7 @@
                 errorMessage.textContent = 'Error updating action taken. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2441,7 +2599,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Update all selected memos to archived status
@@ -2486,7 +2644,7 @@
                 errorMessage.textContent = 'Error routing memos to archive. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2508,7 +2666,7 @@
             }
 
             try {
-                loadingOverlay.classList.remove('hidden');
+                loadingModal.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
 
                 // Delete all selected memos and their activity logs
@@ -2537,7 +2695,7 @@
                 errorMessage.textContent = 'Error deleting memos. Please try again.';
                 errorMessage.classList.remove('hidden');
             } finally {
-                loadingOverlay.classList.add('hidden');
+                loadingModal.classList.add('hidden');
             }
         };
 
@@ -2587,7 +2745,7 @@
                 thead.innerHTML = headerHtml;
                 return;
             }
-            if (currentView === 'pending') {
+            if (currentView === 'pending' || currentView === 'signed') {
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
@@ -2597,18 +2755,25 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
-            } else if (!isActionMode && currentView === 'approved') {
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    <input type="checkbox" id="memoHeaderCheckbox" class="mr-2 align-middle">
-                    <span id="memoNoHeader" class="inline-block align-middle text-blue-700 font-semibold opacity-50 pointer-events-none">Memo No.</span>
-                </th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
-                headerHtml += `<th scope="col" class="px-2 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
-                headerHtml += `<th scope="col" class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Action Taken</th>`;
+            } else if (currentView === 'approved') {
+                headerHtml += `<th id="memoNoHeader" scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
+            } else if (currentView === 'cancelled') {
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
+                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>`;
             } else {
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Memo No.</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
@@ -2694,6 +2859,9 @@
         approvedMemosTab.addEventListener('click', () => {
             if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
         });
+        cancelledMemosTab.addEventListener('click', () => {
+            if (archiveTypeTabs) archiveTypeTabs.classList.add('hidden');
+        });
 
         // Responsive: stack archive type tabs on mobile
         if (archiveTypeTabs) {
@@ -2770,113 +2938,55 @@
         // Export archive data function
         window.exportArchiveData = function() {
             try {
-                const currentArchiveMemos = filterArchivedMemosByType(currentArchiveType);
-                if (currentArchiveMemos.length === 0) {
+                // Define all archive types and their worksheet names
+                const archiveTypes = [
+                    { type: 'All', sheet: 'All' },
+                    { type: 'CO', sheet: 'CO' },
+                    { type: 'PO', sheet: 'PO' },
+                    { type: 'Office Order', sheet: 'Office Order' },
+                    { type: 'Advisory', sheet: 'Advisory' },
+                    { type: 'Bulletin', sheet: 'Bulletin' },
+                    { type: 'Acknowledgment', sheet: 'Acknowledgment' }
+                ];
+                // Prepare a new workbook
+                const wb = XLSX.utils.book_new();
+                let totalExported = 0;
+                // For each archive type, generate a worksheet
+                archiveTypes.forEach(({ type, sheet }) => {
+                    const memos = filterArchivedMemosByType(type);
+                    if (!memos || memos.length === 0) return; // Skip empty sheets
+                    // Prepare data rows
+                    const data = memos.map(memo => ({
+                        'Memo No.': memo.memoNumber,
+                        'Subject': memo.title,
+                        'From': memo.department,
+                        'Recipients': memo.recipients,
+                        'Status': memo.status,
+                        'Created At': memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+                        'Released To': memo.releasedToRodFasd && memo.releasedToRodFasd.toDate ? memo.releasedToRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+                        'Received By (Date + Name)': memo.receivedByRodFasd && memo.receivedByRodFasd.toDate ? memo.receivedByRodFasd.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + (memo.receivedByName ? ` (${memo.receivedByName})` : '') : '',
+                        'Action Taken': memo.actionTaken || ''
+                    }));
+                    totalExported += data.length;
+                    // Create worksheet
+                    const ws = XLSX.utils.json_to_sheet(data, { header: [
+                        'Memo No.', 'Subject', 'From', 'Recipients', 'Status', 'Created At', 'Released To', 'Received By (Date + Name)', 'Action Taken'
+                    ] });
+                    XLSX.utils.book_append_sheet(wb, ws, sheet);
+                });
+                if (totalExported === 0) {
                     showSuccessToast('No data to export');
                     return;
                 }
-
-                // Load the template file
-                const templateUrl = './New Communications Template.xlsx';
-                
-                fetch(templateUrl)
-                    .then(response => response.arrayBuffer())
-                    .then(arrayBuffer => {
-                        // Read the template workbook
-                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                        
-                        // Map archive type to sheet name
-                        let sheetName;
-                        switch(currentArchiveType) {
-                            case 'All':
-                                sheetName = 'All Archive';
-                                break;
-                            case 'CO':
-                                sheetName = 'Central Office';
-                                break;
-                            case 'PO':
-                                sheetName = 'Provincial Office';
-                                break;
-                            case 'Office Order':
-                                sheetName = 'Office Order';
-                                break;
-                            case 'Advisory':
-                                sheetName = 'Advisory';
-                                break;
-                            case 'Bulletin':
-                                sheetName = 'Bulletin';
-                                break;
-                            case 'Acknowledgment':
-                                sheetName = 'Acknowledgment';
-                                break;
-                            default:
-                                sheetName = workbook.SheetNames[0]; // Fallback to first sheet
-                        }
-                        
-                        // Check if the sheet exists in the template
-                        if (!workbook.SheetNames.includes(sheetName)) {
-                            errorMessage.textContent = `Sheet "${sheetName}" not found in template. Available sheets: ${workbook.SheetNames.join(', ')}`;
-                            errorMessage.classList.remove('hidden');
-                            return;
-                        }
-                        
-                        // Get the worksheet based on the active tab
-                        const worksheet = workbook.Sheets[sheetName];
-                        
-                        // Prepare data starting from row 3 (index 2)
-                        const startRow = 2; // 0-based index, so row 3 = index 2
-                        
-                        currentArchiveMemos.forEach((memo, index) => {
-                            const rowIndex = startRow + index;
-                            
-                            // Insert data into the template
-                            // Adjust column positions based on your template structure
-                            const rowData = [
-                                memo.memoNumber,
-                                memo.title,
-                                memo.department,
-                                memo.recipients,
-                                memo.status,
-                                memo.createdAt ? memo.createdAt.toDate().toLocaleDateString() : '',
-                                memo.releasedToRodFasd ? memo.releasedToRodFasd.toDate().toLocaleDateString() : '',
-                                memo.receivedByRodFasd ? memo.receivedByRodFasd.toDate().toLocaleDateString() : '',
-                                memo.actionTaken || ''
-                            ];
-                            
-                            // Insert each cell in the row while preserving existing formatting
-                            rowData.forEach((value, colIndex) => {
-                                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-                                
-                                // Check if cell already exists to preserve formatting
-                                if (worksheet[cellAddress]) {
-                                    // Preserve existing cell properties and only update the value
-                                    worksheet[cellAddress].v = value;
-                                } else {
-                                    // Create new cell with value only
-                                    worksheet[cellAddress] = { v: value };
-                                }
-                            });
-                        });
-                        
-                        // Generate XLSX file with template
-                        const currentDate = new Date().toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                        }).replace(/\//g, '-');
-                        
-                        const archiveTypeName = currentArchiveType === 'All' ? 'All_Archive' : currentArchiveType.replace(/\s+/g, '_');
-                        const fileName = `TESDA_Region_VII_${archiveTypeName}_${currentDate}.xlsx`;
-                        XLSX.writeFile(workbook, fileName);
-                        
-                        showSuccessToast(`${currentArchiveMemos.length} memo(s) exported to ${sheetName} sheet successfully`);
-                    })
-                    .catch(error => {
-                        console.error('Error loading template:', error);
-                        errorMessage.textContent = 'Error loading template file. Please ensure "New Communications Template.xlsx" exists in the same directory.';
-                        errorMessage.classList.remove('hidden');
-                    });
-                    
+                // Generate file name
+                const currentDate = new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).replace(/\//g, '-');
+                const fileName = `TESDA VII Outgoing Records ${currentDate}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showSuccessToast(`${totalExported} memo(s) exported to Excel file successfully`);
             } catch (error) {
                 console.error('Error exporting archive data:', error);
                 errorMessage.textContent = 'Error exporting data. Please try again.';
@@ -3071,6 +3181,45 @@
         searchInput.addEventListener('input', function() {
             if (currentView === 'archive') archiveCurrentPage = 1;
         });
+
+        // Real-time listener for advisoryBulletin number
+        const advisoryBulletinNumberEl = document.getElementById('nextAdvisoryBulletinNumber');
+        const advisoryBulletinInput = document.getElementById('advisoryBulletinNumberInput');
+        const advisoryBulletinEditDiv = document.getElementById('advisoryBulletinNumberEdit');
+
+        onSnapshot(doc(db, "memoNumbers", "advisoryBulletin"), (docSnap) => {
+            if (docSnap.exists()) {
+                const number = docSnap.data().number || 0;
+                if (advisoryBulletinNumberEl) {
+                    advisoryBulletinNumberEl.textContent = String(number).padStart(4, '0');
+                }
+                if (advisoryBulletinInput && advisoryBulletinEditDiv.classList.contains('hidden')) {
+                    advisoryBulletinInput.value = number;
+                }
+            }
+        });
+
+        function getTabQuery(tab, lastVisible) {
+          let q = collection(db, "entries");
+          if (tab === "archive") {
+            q = query(q, where("status", "==", "archived"));
+          }
+          q = query(q, orderBy("timestamp", "desc"), limit(PAGE_SIZE));
+          if (lastVisible) q = query(q, startAfter(lastVisible));
+          return q;
+        }
+
+        async function showPage(tab, page) {
+          let cache = tabCaches[tab][page];
+          if (cache) {
+            renderEntries(cache.docs);
+            return;
+          }
+          // Fetch and cache if not present
+          let lastDoc = page > 1 ? tabCaches[tab][page - 1]?.lastDoc : null;
+          let docs = await fetchPage(tab, page, lastDoc);
+          renderEntries(docs);
+        }
     </script>
     <script>
         // Modal logic for archive folder view

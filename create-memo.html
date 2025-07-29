@@ -304,8 +304,7 @@
                             <option value="PO">PO (Provincial Office)</option>
                             <option value="CO">CO (Central Office)</option>
                             <option value="Office Order">Office Order</option>
-                            <option value="Advisory">Advisory</option>
-                            <option value="Bulletin">Bulletin</option>
+                            <option value="AdvisoryBulletin">Advisory/Bulletin</option>
                             <option value="Acknowledgment">Acknowledgment</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -401,14 +400,14 @@
                             <option value="ORD">Office of the Regional Director</option>
                             <option value="ROD">Regional Operations Division</option>
                             <option value="FASD">Finance and Administrative Services Division</option>
-                            <option value="CO">Central Office</option>
+                            <option value="Central Office">Central Office</option>
                             <option value="AOUs">All Operating Units</option>
                             <option value="APOs">All Provincial Offices</option>
                             <option value="TTIs">All TTIs / TTI</option>
-                            <option value="PO">Provincial Office - Cebu</option>
-                            <option value="PO">Provincial Office - Bohol</option>
-                            <option value="PO">Provincial Office - Siquijor</option>
-                            <option value="PO">Provincial Office - Negros Oriental</option>
+                            <option value="PO Cebu">Provincial Office - Cebu</option>
+                            <option value="PO Bohol">Provincial Office - Bohol</option>
+                            <option value="PO Siquijor">Provincial Office - Siquijor</option>
+                            <option value="PO Negros Oriental">Provincial Office - Negros Oriental</option>
                             <option value="LTI">Lazi Technical Institute</option>
                             <option value="RTC">Regional Training Center VII</option>
                             <option value="Others">Other (Please specify on Description)</option>
@@ -511,8 +510,7 @@
             'PO': 'current',
             'CO': 'coCurrent',
             'Office Order': 'officeOrder',
-            'Advisory': 'advisory',
-            'Bulletin': 'bulletin',
+            'AdvisoryBulletin': 'advisoryBulletin',
             'Acknowledgment': 'acknowledgment',
         };
 
@@ -716,77 +714,109 @@
             try {
                 const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
                 const year = new Date(selectedDate).getFullYear();
-                
-                // Query memos for the specific memo type and date
+                // --- 1. Query Firebase for memos for this type ---
                 const q = query(
                     collection(db, "memos"),
                     where("memoType", "==", memoType)
                 );
                 const querySnapshot = await getDocs(q);
-                
-                // Filter memos for the specific date AND memo type
-                const memosForDate = querySnapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(memo => {
-                        // Only include memos of the same type AND same date
-                        const memoDate = memo.antedationDate || (memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toISOString().split('T')[0] : null);
-                        return memoDate === selectedDate && memo.memoType === memoType;
-                    });
-                
-                // Extract base numbers and suffixes
-                const baseNumberMap = {};
-                memosForDate.forEach(memo => {
-                    // Memo number format: PO-2025-DEP-1554 or PO-2025-DEP-1554-A
-                    const parts = memo.memoNumber.split('-');
-                    const base = parts.slice(0, -1).join('-');
-                    const lastPart = parts[parts.length - 1];
-                    // If last part is a single letter, it's a suffix
-                    if (/^[A-Z]$/.test(lastPart)) {
-                        const baseNum = parts.slice(0, -1).join('-');
-                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
-                        baseNumberMap[baseNum].push(lastPart);
-                    } else {
-                        // No suffix, treat as base (normal memo)
-                        const baseNum = memo.memoNumber;
-                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
-                        // Mark that the base number itself is taken (so -A is the first antedated)
-                        baseNumberMap[baseNum].push('BASE');
-                    }
-                });
-                
-                // Find the highest base number (numeric part)
-                let highestBase = null;
-                let highestNum = -1;
-                Object.keys(baseNumberMap).forEach(baseNum => {
-                    // baseNum: PO-2025-DEP-1554
-                    const numPart = parseInt(baseNum.split('-').pop());
-                    if (numPart > highestNum) {
-                        highestNum = numPart;
-                        highestBase = baseNum;
-                    }
-                });
-                
-                if (!highestBase) {
-                    // No memos for this date/type, start with 0001
-                    return `${memoType}-${year}-${departmentCode}-0001`;
-                }
-                
-                // Always assign -A for the first antedated memo for a base number
-                const usedSuffixes = baseNumberMap[highestBase] || [];
-                // If only 'BASE' is present, no antedated memos yet, so assign -A
-                if (usedSuffixes.length === 1 && usedSuffixes[0] === 'BASE') {
-                    return `${highestBase}-A`;
-                } else {
-                    // Find next available suffix A-Z
-                    const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-                    for (let i = 0; i < suffixes.length; i++) {
-                        if (!usedSuffixes.includes(suffixes[i])) {
-                            return `${highestBase}-${suffixes[i]}`;
+                // --- 2. Gather memos from Firebase ---
+                const firebaseMemos = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }));
+                // --- 3. Gather memos from old system JSON cache ---
+                let oldMemos = [];
+                if (oldMemoLoaded) {
+                    for (const year of OLD_JSON_YEARS) {
+                        const data = window.oldSystemRawData && window.oldSystemRawData[year];
+                        if (!data) continue;
+                        let records = [];
+                        if (Array.isArray(data)) {
+                            records = data;
+                        } else if (typeof data === 'object' && data !== null) {
+                            Object.values(data).forEach(arr => {
+                                if (Array.isArray(arr)) records = records.concat(arr);
+                            });
+                        }
+                        for (const rec of records) {
+                            oldMemos.push(rec);
                         }
                     }
-                    // All suffixes used
-                    throw new Error(`No more antedation suffixes available for PO #${highestBase.split('-').pop()} on ${selectedDate}.`);
                 }
+                // --- 4. Combine all memos ---
+                const allMemos = [
+                    ...firebaseMemos.map(m => ({
+                        memoNumber: m.memoNumber,
+                        date: m.antedationDate || (m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().split('T')[0] : null)
+                    })),
+                    ...oldMemos.map(m => ({
+                        memoNumber: m["Memo No."] ? String(m["Memo No."]).trim() : null,
+                        date: m["Date Issued"] ? new Date(m["Date Issued"]).toISOString().split('T')[0] : null
+                    }))
+                ].filter(m => m.memoNumber && m.date);
+                // --- 5. Find all memos for the selected date ---
+                const memosForDate = allMemos.filter(m => m.date === selectedDate);
+                // --- 6. If memos exist for the date, find highest base and assign next suffix ---
+                if (memosForDate.length > 0) {
+                    // Extract base numbers and suffixes
+                    const baseNumberMap = {};
+                    memosForDate.forEach(memo => {
+                        const parts = String(memo.memoNumber).split('-');
+                        let base, lastPart;
+                        if (parts.length > 1) {
+                            base = parts.slice(0, -1).join('-');
+                            lastPart = parts[parts.length - 1];
+                        } else {
+                            const match = String(memo.memoNumber).match(/^(\d+)(?:-([A-Z]+))?$/);
+                            if (match) {
+                                base = match[1];
+                                lastPart = match[2] || 'BASE';
+                            } else {
+                                base = String(memo.memoNumber);
+                                lastPart = 'BASE';
+                            }
+                        }
+                        if (!baseNumberMap[base]) baseNumberMap[base] = [];
+                        baseNumberMap[base].push(lastPart);
+                    });
+                    // Find the highest base number
+                    let highestBase = null;
+                    let highestNum = -1;
+                    Object.keys(baseNumberMap).forEach(baseNum => {
+                        const numPart = parseInt(baseNum.split('-').pop());
+                        if (numPart > highestNum) {
+                            highestNum = numPart;
+                            highestBase = baseNum;
+                        }
+                    });
+                    const usedSuffixes = baseNumberMap[highestBase] || [];
+                    if (usedSuffixes.length === 1 && usedSuffixes[0] === 'BASE') {
+                        return `${memoType}-${year}-${departmentCode}-${String(highestNum).padStart(4, '0')}-A`;
+                    } else {
+                        const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                        for (let i = 0; i < suffixes.length; i++) {
+                            if (!usedSuffixes.includes(suffixes[i])) {
+                                return `${memoType}-${year}-${departmentCode}-${String(highestNum).padStart(4, '0')}-${suffixes[i]}`;
+                            }
+                        }
+                        throw new Error(`No more antedation suffixes available for #${highestNum} on ${selectedDate}.`);
+                    }
+                }
+                // --- 7. If no memos for the date, find the last memo before the date ---
+                const memosBeforeDate = allMemos.filter(m => m.date < selectedDate && m.memoNumber && m.memoNumber.startsWith(`${memoType}-${year}-${departmentCode}`));
+                let lastBaseNum = 0;
+                if (memosBeforeDate.length > 0) {
+                    // Find the highest base number before the date
+                    memosBeforeDate.forEach(memo => {
+                        const match = String(memo.memoNumber).match(/(\d{4})(?:-[A-Z]+)?$/);
+                        if (match) {
+                            const num = parseInt(match[1]);
+                            if (num > lastBaseNum) lastBaseNum = num;
+                        }
+                    });
+                }
+                // If found, continue sequence, else start at 0001
+                const nextNum = lastBaseNum > 0 ? lastBaseNum + 1 : 1;
+                return `${memoType}-${year}-${departmentCode}-${String(nextNum).padStart(4, '0')}`;
             } catch (error) {
                 console.error('Error getting next antedated memo number:', error);
                 throw error;
@@ -850,6 +880,20 @@
                     throw new Error('Please select an antedation date');
                 }
 
+                // Validate antedation against old system
+                if (isAntedated && oldMemoLoaded) {
+                    let memoNo = null;
+                    if (memoNumberInputContainer && !memoNumberInputContainer.classList.contains('hidden')) {
+                        memoNo = memoNumberInput.value.trim();
+                    } else {
+                        memoNo = assignedMemoNumber.textContent.trim();
+                    }
+                    const antedationCheck = checkAntedationOldSystem(memoNo, antedationDate);
+                    if (antedationCheck && antedationCheck.antedated) {
+                        throw new Error(`Antedated: This Memo No. was already issued on ${antedationCheck.oldDate.toLocaleDateString()} in the old system.`);
+                    }
+                }
+
                 // Get current user
                 const currentUser = auth.currentUser;
                 if (!currentUser) {
@@ -886,8 +930,8 @@
                         case 'Office Order':
                             memoNumberKey = 'officeOrder';
                             break;
-                        case 'Advisory':
-                            memoNumberKey = 'advisory';
+                        case 'AdvisoryBulletin':
+                            memoNumberKey = 'advisoryBulletin';
                             break;
                         case 'Bulletin':
                             memoNumberKey = 'bulletin';
@@ -982,8 +1026,8 @@
                         case 'Office Order':
                             memoNumberKey = 'officeOrder';
                             break;
-                        case 'Advisory':
-                            memoNumberKey = 'advisory';
+                        case 'AdvisoryBulletin':
+                            memoNumberKey = 'advisoryBulletin';
                             break;
                         case 'Bulletin':
                             memoNumberKey = 'bulletin';
@@ -1309,6 +1353,96 @@
 
         // Initialize role checking
         checkUserRole();
+
+        // --- BEGIN: Old System Data Loader and Antedation Checker ---
+        const OLD_JSON_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+        const oldMemoCache = {};
+        let oldMemoLoaded = false;
+
+        async function loadOldSystemData() {
+            const promises = OLD_JSON_YEARS.map(year => fetch(`oldsystem/${year}.json`).then(r => r.json().catch(() => null)));
+            const allData = await Promise.all(promises);
+            for (let i = 0; i < OLD_JSON_YEARS.length; i++) {
+                const year = OLD_JSON_YEARS[i];
+                const data = allData[i];
+                if (!data) continue;
+                // If data is grouped by department, flatten
+                let records = [];
+                if (Array.isArray(data)) {
+                    records = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    Object.values(data).forEach(arr => {
+                        if (Array.isArray(arr)) records = records.concat(arr);
+                    });
+                }
+                for (const rec of records) {
+                    // Memo No. may be a number or string
+                    const memoNo = String(rec["Memo No."]).trim();
+                    const dateIssued = rec["Date Issued"] ? new Date(rec["Date Issued"]) : null;
+                    if (memoNo && dateIssued) {
+                        // Only keep the earliest date for each Memo No.
+                        if (!oldMemoCache[memoNo] || oldMemoCache[memoNo] > dateIssued) {
+                            oldMemoCache[memoNo] = dateIssued;
+                        }
+                    }
+                }
+            }
+            oldMemoLoaded = true;
+        }
+        // Start loading old data ASAP
+        loadOldSystemData();
+
+        // Helper: check if a memo is antedated compared to old system
+        function checkAntedationOldSystem(memoNo, userDateIssued) {
+            if (!oldMemoLoaded) return null; // Not ready
+            const oldDate = oldMemoCache[String(memoNo).trim()];
+            if (!oldDate) return null; // Not found in old system
+            const userDate = new Date(userDateIssued);
+            if (isNaN(userDate.getTime())) return null;
+            // If user date is before old date, it's antedated
+            if (userDate < oldDate) return { antedated: true, oldDate };
+            return { antedated: false, oldDate };
+        }
+        // --- END: Old System Data Loader and Antedation Checker ---
+
+        // Add this after DOMContentLoaded or where Memo No. and Date Issued are input/selected
+        // For this example, let's assume you have inputs with IDs 'memoNumberInput' and 'antedationDate' (already present)
+
+        function updateAntedationVisualCue() {
+            // Only run if both fields are present and loaded
+            if (!oldMemoLoaded) return;
+            let memoNo = null;
+            let dateIssued = null;
+            // Try to get from admin input, else from assignedMemoNumber
+            if (memoNumberInputContainer && !memoNumberInputContainer.classList.contains('hidden')) {
+                memoNo = memoNumberInput.value.trim();
+            } else {
+                memoNo = assignedMemoNumber.textContent.trim();
+            }
+            dateIssued = antedationDateInput.value;
+            if (!memoNo || !dateIssued) {
+                antedationDateInput.classList.remove('border-red-500');
+                antedationDateInput.title = '';
+                return;
+            }
+            const result = checkAntedationOldSystem(memoNo, dateIssued);
+            if (result && result.antedated) {
+                antedationDateInput.classList.add('border-red-500');
+                antedationDateInput.title = `Antedated: Old system has this Memo No. issued on ${result.oldDate.toLocaleDateString()}`;
+            } else {
+                antedationDateInput.classList.remove('border-red-500');
+                antedationDateInput.title = '';
+            }
+        }
+        // Hook up to relevant events
+        if (antedationDateInput) {
+            antedationDateInput.addEventListener('input', updateAntedationVisualCue);
+        }
+        if (memoNumberInput) {
+            memoNumberInput.addEventListener('input', updateAntedationVisualCue);
+        }
+        // Also call after memo number is assigned/generated
+        memoTypeSelect.addEventListener('change', () => setTimeout(updateAntedationVisualCue, 200));
     </script>
 </body>
 </html>

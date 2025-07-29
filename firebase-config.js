@@ -49,6 +49,9 @@ async function createMemo(memoData) {
                 case 'Advisory':
                     memoNumberKey = 'advisory';
                     break;
+                case 'AdvisoryBulletin':
+                    memoNumberKey = 'advisoryBulletin';
+                    break;
                 case 'Bulletin':
                     memoNumberKey = 'bulletin';
                     break;
@@ -71,23 +74,23 @@ async function createMemo(memoData) {
     }
 }
 
-async function getMemosByDepartment(department, callback) {
+// Replace getMemosByDepartment with real-time version
+function getMemosByDepartment(department, callback) {
     try {
         const q = query(
             collection(db, "memos"),
-            where("department", "==", department)
+            where("department", "==", department),
+            orderBy("createdAt", "desc")
         );
-        
-        // Return the unsubscribe function from onSnapshot
-        return onSnapshot(q, (querySnapshot) => {
+        // Listen in real-time
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const memos = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-            // Sort memos by createdAt in memory
-            memos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
             callback(memos);
         });
+        return unsubscribe;
     } catch (error) {
         console.error("Error getting memos: ", error);
         throw error;
@@ -231,6 +234,9 @@ async function getNextMemoNumber(memoType = 'PO') {
             case 'Advisory':
                 memoNumberKey = 'advisory';
                 break;
+            case 'AdvisoryBulletin':
+                memoNumberKey = 'advisoryBulletin';
+                break;
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
                 break;
@@ -273,6 +279,9 @@ async function getCurrentMemoNumber(memoType = 'PO') {
                 break;
             case 'Advisory':
                 memoNumberKey = 'advisory';
+                break;
+            case 'AdvisoryBulletin':
+                memoNumberKey = 'advisoryBulletin';
                 break;
             case 'Bulletin':
                 memoNumberKey = 'bulletin';
@@ -406,6 +415,43 @@ async function initializeUsers() {
     }
 }
 
+// Increment analytics counters in Firestore
+async function incrementAnalyticsCounter(type) {
+    // type: 'read' or 'write'
+    const analyticsRef = doc(db, 'analytics', 'global');
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10); // e.g. '2024-05-30'
+
+    await runTransaction(db, async (transaction) => {
+        const docSnap = await transaction.get(analyticsRef);
+        let data = docSnap.exists() ? docSnap.data() : {};
+
+        // Reset today's counters if it's a new day
+        let lastUpdated = data.lastUpdated;
+        let lastDay = null;
+        if (lastUpdated && lastUpdated.toDate) {
+            lastDay = lastUpdated.toDate().toISOString().slice(0, 10);
+        } else if (lastUpdated instanceof Date) {
+            lastDay = lastUpdated.toISOString().slice(0, 10);
+        }
+        if (lastDay !== todayKey) {
+            data.todayReads = 0;
+            data.todayWrites = 0;
+        }
+
+        if (type === 'read') {
+            data.totalReads = (data.totalReads || 0) + 1;
+            data.todayReads = (data.todayReads || 0) + 1;
+        } else if (type === 'write') {
+            data.totalWrites = (data.totalWrites || 0) + 1;
+            data.todayWrites = (data.todayWrites || 0) + 1;
+        }
+
+        data.lastUpdated = new Date();
+        transaction.set(analyticsRef, data, { merge: true });
+    });
+}
+
 // Export functions
 export {
     db,
@@ -421,5 +467,6 @@ export {
     getUserData,
     logoutUser,
     initializeUsers,
-    getCurrentMemoNumber
+    getCurrentMemoNumber,
+    incrementAnalyticsCounter
 }; 

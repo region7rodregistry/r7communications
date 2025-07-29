@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Old Records System (Outgoing)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: '#1a237e',
+              dark: '#283593',
+            },
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Your Firebase config (copy from firebase-config.js)
+    const firebaseConfig = {
+  apiKey: "AIzaSyAiDFpdkWI3BiZwdjp6mHN01hmvBItMk6o",
+  authDomain: "ro7mbms.firebaseapp.com",
+  projectId: "ro7mbms",
+  storageBucket: "ro7mbms.firebasestorage.app",
+  messagingSenderId: "379123096432",
+  appId: "1:379123096432:web:b790b0eaf620840af80db5",
+  measurementId: "G-JX5VHXX3GH"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Check Firebase Auth session
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = '../index.html'; // or your login page
+      }
+      // else: user is authenticated, allow access
+    });
+
+    // Helper to get user data from Firestore
+    async function getUserData(email) {
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data();
+      }
+      return null;
+    }
+
+    // Add event listener to dashboard button(s)
+    document.addEventListener("DOMContentLoaded", () => {
+      // Find all dashboard links/buttons
+      document.querySelectorAll('a[href="../index.html"], a[href="index.html"]').forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const user = auth.currentUser;
+          if (!user) {
+            window.location.href = "../index.html";
+            return;
+          }
+          const userData = await getUserData(user.email);
+          if (userData && userData.role === "admin") {
+            window.location.href = "../admin-dashboard.html";
+          } else {
+            window.location.href = "../user-dashboard.html";
+          }
+        });
+      });
+    });
+  </script>
+  <div class="flex min-h-screen flex-col md:flex-row">
+    <!-- Sidebar (Desktop) -->
+    <aside class="hidden md:flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl py-8 px-6 space-y-10 transition-colors duration-300 rounded-r-3xl">
+      <div class="flex items-center space-x-4">
+        <img src="../icons/tlogo.png" alt="Logo" class="w-12 h-12 rounded-xl shadow-md">
+        <span class="text-2xl font-extrabold text-primary dark:text-white tracking-wide">TESDA DBMS</span>
+      </div>
+      <nav class="flex flex-col space-y-3">
+        <a href="../index.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+        </a>
+        <a href="../create-memo.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="plus" class="w-5 h-5 mr-3"></i> Create Memo
+        </a>
+        <a href="index.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 bg-gradient-to-r from-blue-600 to-blue-400 text-white dark:bg-gradient-to-r dark:from-blue-800 dark:to-blue-600 font-semibold shadow-sm">
+          <i data-lucide="file" class="w-5 h-5 mr-3"></i> View Old System
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="database" class="w-5 h-5 mr-3"></i> R7-Data
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="users" class="w-5 h-5 mr-3"></i> ICT Team
+        </a>
+      </nav>
+    </aside>
+    <!-- Sidebar (Mobile Drawer) -->
+    <div id="mobileSidebarOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden transition-opacity duration-300"></div>
+    <aside id="mobileSidebar" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl py-8 px-6 space-y-10 z-50 transform -translate-x-full transition-transform duration-300 md:hidden">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-4">
+          <img src="../icons/memlogo.png" alt="Logo" class="w-12 h-12 rounded-xl shadow-md">
+          <span class="text-2xl font-extrabold text-primary dark:text-white tracking-wide">TESDA DBMS</span>
+        </div>
+        <button id="closeMobileSidebar" class="text-gray-700 dark:text-gray-200 focus:outline-none">
+          <i data-lucide="x" class="w-7 h-7"></i>
+        </button>
+      </div>
+      <nav class="flex flex-col space-y-3">
+        <a href="../index.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+        </a>
+        <a href="../create-memo.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="plus" class="w-5 h-5 mr-3"></i> Create Memo
+        </a>
+        <a href="index.html" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-white bg-gradient-to-r from-blue-600 to-blue-400 text-white dark:bg-gradient-to-r dark:from-blue-800 dark:to-blue-600 font-semibold shadow-sm">
+          <i data-lucide="file" class="w-5 h-5 mr-3"></i> View Old System
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="database" class="w-5 h-5 mr-3"></i> R7-Data
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-400 hover:text-white dark:hover:bg-gradient-to-r dark:hover:from-blue-800 dark:hover:to-blue-600 transition font-semibold shadow-sm">
+          <i data-lucide="users" class="w-5 h-5 mr-3"></i> ICT Team
+        </a>
+      </nav>
+    </aside>
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-h-screen">
+      <!-- Topbar -->
+      <header class="flex items-center justify-between px-4 py-4 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 sticky top-0 z-30">
+        <div class="flex items-center space-x-3 md:hidden">
+          <button id="mobileMenuBtn" class="text-gray-700 dark:text-white focus:outline-none">
+            <i data-lucide="menu" class="w-7 h-7"></i>
+          </button>
+          <img src="../icons/memlogo.png" alt="Logo" class="w-10 h-10 rounded-lg">
+          <span class="text-lg font-bold text-primary dark:text-white">TESDA DBMS</span>
+        </div>
+        <div class="flex-1 flex items-center justify-center md:justify-start">
+          <h1 class="text-2xl font-extrabold text-primary dark:text-white hidden md:block tracking-tight">Old Records System (Outgoing)</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs sm:text-sm text-gray-700 dark:text-white font-medium">region7.rod (ROD)</span>
+          <button id="darkToggle" class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 dark:text-white hover:bg-blue-100 dark:hover:bg-gray-800 transition shadow-sm">
+            <i data-lucide="moon" class="w-5 h-5"></i>
+          </button>
+          <button class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs sm:text-sm leading-4 font-semibold rounded-lg text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition shadow-md">
+            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+            Logout
+          </button>
+        </div>
+      </header>
+      <!-- Main Content Area -->
+      <main class="flex-1 w-full max-w-full mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-10 transition-colors duration-300">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div class="flex-1"></div>
+          <div class="flex-1 sm:ml-4 max-w-full sm:max-w-md w-full mt-2 sm:mt-0">
+            <div class="relative">
+              <input id="searchInput" type="text" placeholder="Search..." class="w-full px-5 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition" />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                <i data-lucide="search" class="w-6 h-6 text-gray-400 dark:text-gray-300"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Year Filter Buttons -->
+        <div id="yearFilter" class="flex flex-wrap justify-center gap-2 mb-6">
+          <button data-year="2020" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2020</button>
+          <button data-year="2021" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2021</button>
+          <button data-year="2022" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2022</button>
+          <button data-year="2023" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2023</button>
+          <button data-year="2024" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2024</button>
+          <button data-year="2025" class="year-btn px-4 py-2 rounded-lg font-semibold border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition">2025</button>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-x-auto transition-colors duration-300">
+          <div class="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Old System Records</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 text-base">
+              <thead class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 hidden sm:table-header-group">
+                <tr>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Logged</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Issued</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Memo No.</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Memo for</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">From</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subject</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date/Time Released to ROD/FASD</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date/Time Received by ROD/FASD</th>
+                  <th class="px-2 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">Action Taken</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody" class="bg-white dark:bg-gray-800">
+                <!-- Data rows go here -->
+              </tbody>
+            </table>
+          </div>
+          <div id="pagination" class="flex justify-center items-center py-6"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <style>
+    @media (max-width: 768px) {
+      .sm\:table-header-group { display: none !important; }
+      .sm\:table-cell { display: none !important; }
+      #tableBody td, #tableBody th {
+        font-size: 0.95rem;
+        padding: 0.5rem 0.25rem;
+      }
+      #yearFilter button {
+        font-size: 0.95rem;
+        padding: 0.5rem 0.75rem;
+      }
+    }
+    /* Ensure all text is white in dark mode */
+    .dark .text-gray-700, .dark .text-blue-700, .dark .text-gray-500, .dark .text-blue-300, .dark .text-primary {
+      color: #fff !important;
+    }
+    .dark .bg-white {
+      background-color: #18181b !important;
+    }
+    .dark .border-gray-200 {
+      border-color: #27272a !important;
+    }
+    .dark .border-blue-200 {
+      border-color: #27272a !important;
+    }
+    .dark .bg-blue-50 {
+      background-color: #18181b !important;
+    }
+    .dark .bg-blue-100 {
+      background-color: #18181b !important;
+    }
+    .dark .bg-gradient-to-r {
+      background-image: linear-gradient(to right, #18181b, #27272a) !important;
+    }
+  </style>
+  <script>
+    lucide.createIcons();
+    // Dark mode toggle
+    document.getElementById('darkToggle').addEventListener('click', function() {
+      document.documentElement.classList.toggle('dark');
+    });
+    // Mobile sidebar logic
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+    const closeMobileSidebar = document.getElementById('closeMobileSidebar');
+    function openMobileSidebar() {
+      mobileSidebar.classList.remove('-translate-x-full');
+      mobileSidebarOverlay.classList.remove('hidden');
+      setTimeout(() => {
+        mobileSidebarOverlay.classList.add('opacity-100');
+      }, 10);
+    }
+    function closeSidebar() {
+      mobileSidebar.classList.add('-translate-x-full');
+      mobileSidebarOverlay.classList.remove('opacity-100');
+      setTimeout(() => {
+        mobileSidebarOverlay.classList.add('hidden');
+      }, 300);
+    }
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', openMobileSidebar);
+    }
+    if (closeMobileSidebar) {
+      closeMobileSidebar.addEventListener('click', closeSidebar);
+    }
+    if (mobileSidebarOverlay) {
+      mobileSidebarOverlay.addEventListener('click', closeSidebar);
+    }
+    // Table logic (unchanged, but add year switching)
+    const ENTRIES_PER_PAGE = 50;
+    let allData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    let currentYear = '2025';
+    function setActiveYearButton(year) {
+      document.querySelectorAll('.year-btn').forEach(btn => {
+        if (btn.getAttribute('data-year') === year) {
+          btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-lg', 'scale-105');
+          btn.classList.remove('bg-white', 'dark:bg-gray-900', 'text-blue-700', 'dark:text-blue-300');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-lg', 'scale-105');
+          btn.classList.add('bg-white', 'dark:bg-gray-900', 'text-blue-700', 'dark:text-blue-300');
+        }
+      });
+    }
+    function loadYearData(year) {
+      currentYear = year;
+      setActiveYearButton(year);
+      fetch(year + ".json")
+        .then(res => res.json())
+        .then(data => {
+          // If data is an object with a property (e.g., records), use that property
+          if (Array.isArray(data)) {
+            allData = data;
+          } else if (data && typeof data === "object") {
+            // Try to find the first array property
+            const arr = Object.values(data).find(v => Array.isArray(v));
+            allData = arr || [];
+          } else {
+            allData = [];
+          }
+          filteredData = allData;
+          currentPage = 1;
+          renderTable(currentPage, filteredData);
+          renderPagination(currentPage, filteredData);
+        })
+        .catch(err => {
+          document.getElementById("tableBody").innerHTML = `
+            <tr><td colspan="9" class="p-4 text-center text-red-600">Error loading data: ${err.message}</td></tr>
+          `;
+        });
+    }
+    document.getElementById('yearFilter').addEventListener('click', function(e) {
+      if (e.target.classList.contains('year-btn')) {
+        const year = e.target.getAttribute('data-year');
+        loadYearData(year);
+      }
+    });
+    // Initial load
+    setActiveYearButton(currentYear);
+    loadYearData(currentYear);
+    function renderTable(page, data) {
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+      const start = (page - 1) * ENTRIES_PER_PAGE;
+      const end = start + ENTRIES_PER_PAGE;
+      const pageData = data.slice(start, end);
+      pageData.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-900 transition-colors";
+        tr.innerHTML = `
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800">${row["Date Logged"] || ""}</td>
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800">${row["Date Issued"] || ""}</td>
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800 font-semibold text-blue-700 dark:text-blue-300">${row["Memo No."] || ""}</td>
+          
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800">${row["From"] || ""}</td>
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800 truncate max-w-[200px]">${row["Subject"] || ""}</td>
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800">${row["Date/Time Released to ROD/FASD"] || ""}</td>
+          <td class="px-2 py-4 border-r border-gray-100 dark:border-gray-800">${row["Date/Time Received by ROD/FASD"] || ""}</td>
+          <td class="px-2 py-4 hidden sm:table-cell truncate max-w-[200px]">${row["Action Taken"] || ""}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      if (pageData.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">No records found.</td></tr>`;
+      }
+    }
+    function renderPagination(page, data) {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+      const totalPages = Math.ceil(data.length / ENTRIES_PER_PAGE);
+      if (totalPages <= 1) return;
+      // Prev button
+      const prevBtn = document.createElement("button");
+      prevBtn.innerHTML = '<i data-lucide="chevron-left" class="w-5 h-5"></i>';
+      prevBtn.className = `mx-1 px-3 py-2 rounded-lg border text-base font-semibold shadow flex items-center justify-center transition-colors duration-150 ${page === 1 ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-800'}`;
+      prevBtn.disabled = page === 1;
+      prevBtn.onclick = () => {
+        if (page > 1) {
+          currentPage--;
+          renderTable(currentPage, filteredData);
+          renderPagination(currentPage, filteredData);
+          lucide.createIcons();
+        }
+      };
+      pagination.appendChild(prevBtn);
+      // Page numbers (show up to 5 pages, with ellipsis if needed)
+      let startPage = Math.max(1, page - 2);
+      let endPage = Math.min(totalPages, page + 2);
+      if (page <= 3) endPage = Math.min(5, totalPages);
+      if (page >= totalPages - 2) startPage = Math.max(1, totalPages - 4);
+      if (startPage > 1) {
+        const firstBtn = document.createElement("button");
+        firstBtn.textContent = "1";
+        firstBtn.className = `mx-1 px-3 py-2 rounded-lg border text-base font-semibold shadow transition-colors duration-150 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-800`;
+        firstBtn.onclick = () => {
+          currentPage = 1;
+          renderTable(currentPage, filteredData);
+          renderPagination(currentPage, filteredData);
+          lucide.createIcons();
+        };
+        pagination.appendChild(firstBtn);
+        if (startPage > 2) {
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
+          ellipsis.className = "mx-1 text-gray-400 dark:text-gray-500 select-none";
+          pagination.appendChild(ellipsis);
+        }
+      }
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.textContent = i;
+        pageBtn.className = `mx-1 px-3 py-2 rounded-lg border text-base font-semibold shadow transition-colors duration-150 ${i === page ? 'bg-blue-600 text-white border-blue-600 scale-105 shadow-lg' : 'bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-800'}`;
+        if (i !== page) {
+          pageBtn.onclick = () => {
+            currentPage = i;
+            renderTable(currentPage, filteredData);
+            renderPagination(currentPage, filteredData);
+            lucide.createIcons();
+          };
+        }
+        pagination.appendChild(pageBtn);
+      }
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
+          ellipsis.className = "mx-1 text-gray-400 dark:text-gray-500 select-none";
+          pagination.appendChild(ellipsis);
+        }
+        const lastBtn = document.createElement("button");
+        lastBtn.textContent = totalPages;
+        lastBtn.className = `mx-1 px-3 py-2 rounded-lg border text-base font-semibold shadow transition-colors duration-150 bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-800`;
+        lastBtn.onclick = () => {
+          currentPage = totalPages;
+          renderTable(currentPage, filteredData);
+          renderPagination(currentPage, filteredData);
+          lucide.createIcons();
+        };
+        pagination.appendChild(lastBtn);
+      }
+      // Next button
+      const nextBtn = document.createElement("button");
+      nextBtn.innerHTML = '<i data-lucide="chevron-right" class="w-5 h-5"></i>';
+      nextBtn.className = `mx-1 px-3 py-2 rounded-lg border text-base font-semibold shadow flex items-center justify-center transition-colors duration-150 ${page === totalPages ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-800'}`;
+      nextBtn.disabled = page === totalPages;
+      nextBtn.onclick = () => {
+        if (page < totalPages) {
+          currentPage++;
+          renderTable(currentPage, filteredData);
+          renderPagination(currentPage, filteredData);
+          lucide.createIcons();
+        }
+      };
+      pagination.appendChild(nextBtn);
+      lucide.createIcons();
+    }
+    function filterData(query) {
+      if (!query) return allData;
+      query = query.toLowerCase();
+      return allData.filter(row =>
+        Object.values(row).some(val =>
+          (val || "").toString().toLowerCase().includes(query)
+        )
+      );
+    }
+    // --- SEARCH BAR FUNCTIONALITY FIX ---
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const query = e.target.value;
+      filteredData = filterData(query);
+      currentPage = 1;
+      renderTable(currentPage, filteredData);
+      renderPagination(currentPage, filteredData);
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

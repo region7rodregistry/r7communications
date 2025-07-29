@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Memo - TESDA MBMS</title>
+    <title>View Memo - TESDA DBMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script type="module" src="firebase-config.js"></script>
@@ -56,8 +56,8 @@
             </div>
             <div class="flex gap-4">
                 <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                    <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
-                    Print
+                    <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                    Download
                 </button>
                 <button onclick="window.history.back()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                     <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
@@ -71,7 +71,7 @@
             <div class="flex items-center justify-between">
                 <!-- Left Logo -->
                 <div class="w-1/4">
-                    <img src="icons/both.png" alt="TESDA Logo" class="h-20">
+                    <img src="icons/tlogo.png" alt="TESDA Logo" class="h-20 ml-auto">
                 </div>
                 
                 <!-- Center Text -->
@@ -79,18 +79,16 @@
                     <h1 class="text-2xl font-bold text-gray-900">Technical Education and Skills Development Authority</h1>
                     <p class="text-lg text-gray-600">Region VII - Central Visayas</p>
                 </div>
-                
-                <!-- Right Logo -->
-                <div class="w-1/4 text-right">
-                    <img src="icons/TUV.png" alt="TESDA Logo" class="h-11.5 ml-auto">
+                <div class="w-1/4">
+                    <img src="icons/TUV.png" alt="TESDA Logo" class="h-20 ml-auto">
                 </div>
             </div>
         </div>
 
         <!-- Memo Container -->
-        <div class="relative">
+        <div class="flex flex-col lg:flex-row gap-6 relative">
             <!-- Left Side Info -->
-            <div class="absolute -left-64 top-0 w-60 space-y-6">
+            <div class="w-full lg:w-60 space-y-6 mb-6 lg:mb-0">
                 <div class="bg-white p-4 rounded-lg shadow flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">Signatory:</p>
@@ -404,7 +402,16 @@
 
                 // Update UI with memo details
                 let el = document.getElementById('memoNumber');
-                if (el) el.textContent = memo.memoNumber.split('-').pop();
+                if (el) {
+                    if (memo.antedated) {
+                        // Show last two segments joined by '-'
+                        const parts = memo.memoNumber.split('-');
+                        el.textContent = parts.slice(-2).join('-');
+                    } else {
+                        // Show only the last segment
+                        el.textContent = memo.memoNumber.split('-').pop();
+                    }
+                }
                 el = document.getElementById('title');
                 if (el) el.textContent = memo.title;
                 el = document.getElementById('department');
