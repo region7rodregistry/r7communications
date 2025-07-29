@@ -479,6 +479,29 @@
         .modern-memo-card[data-status="archived"] .card-accent { background: #6b7280; }
         .modern-memo-card[data-status="signed"] .card-accent { background: #f59e42; }
         .modern-memo-card[data-status="cancelled"] .card-accent { background: #ef4444; }
+        /* Add striped rows for table */
+        #memosTableBody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        #memosTableBody tr:hover {
+            background-color: #e0e7ff;
+            transition: background 0.2s;
+        }
+        /* Make table headers bold and larger */
+        #memosTableHead th {
+            font-weight: 800 !important;
+            font-size: 1.08rem !important;
+            color: #1e3a8a !important;
+            background: #e0e7ff !important;
+            letter-spacing: 0.04em;
+        }
+        /* Highlight active tab */
+        #pendingMemosTab.bg-white {
+            border-color: #2563eb !important;
+            color: #2563eb !important;
+            background: #f0f6ff !important;
+            box-shadow: 0 2px 8px 0 rgba(37,99,235,0.08);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -603,181 +626,152 @@
 
         <!-- Stats Cards -->
         <div id="statsCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-blue-100 to-blue-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-blue-100 rounded-lg">
-                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="file-text" class="w-8 h-8 text-blue-700"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Documents</p>
-                        <p id="totalMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    <div class="ml-5">
+                        <p class="text-base font-semibold text-blue-900/80">Total Documents</p>
+                        <p id="totalMemos" class="text-3xl font-extrabold text-blue-900 drop-shadow">0</p>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-yellow-100 to-yellow-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-yellow-100 rounded-lg">
-                        <i data-lucide="clock" class="w-6 h-6 text-yellow-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="clock" class="w-8 h-8 text-yellow-700"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Pending Memos</p>
-                        <p id="pendingMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    <div class="ml-5">
+                        <p class="text-base font-semibold text-yellow-900/80">Pending Memos</p>
+                        <p id="pendingMemos" class="text-3xl font-extrabold text-yellow-900 drop-shadow">0</p>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-red-100 to-red-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-green-100 rounded-lg">
-                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="edit-3" class="w-8 h-8 text-red-700"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Approved Memos</p>
-                        <p id="approvedMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    <div class="ml-5">
+                        <p class="text-base font-semibold text-red-900/80">Signed Memos</p>
+                        <p id="signedMemos" class="text-3xl font-extrabold text-red-900 drop-shadow">0</p>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-green-100 to-green-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-gray-100 rounded-lg">
-                        <i data-lucide="archive" class="w-6 h-6 text-gray-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-green-700"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Archived Memos</p>
-                        <p id="archivedMemos" class="text-2xl font-bold text-gray-900">0</p>
+                    <div class="ml-5">
+                        <p class="text-base font-semibold text-green-900/80">Approved Memos</p>
+                        <p id="approvedMemos" class="text-3xl font-extrabold text-green-900 drop-shadow">0</p>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-gray-100 to-gray-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-purple-100 rounded-lg">
-                        <i data-lucide="hash" class="w-6 h-6 text-purple-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="archive" class="w-8 h-8 text-gray-700"></i>
                     </div>
-                    <div class="ml-4 flex-grow">
-                        <p class="text-sm font-medium text-gray-600">PO-Number</p>
+                    <div class="ml-5">
+                        <p class="text-base font-semibold text-gray-900/80">Archived Memos</p>
+                        <p id="archivedMemos" class="text-3xl font-extrabold text-gray-900 drop-shadow">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="group relative bg-gradient-to-br from-purple-100 to-purple-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
+                <div class="flex items-center">
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="hash" class="w-8 h-8 text-purple-700"></i>
+                    </div>
+                    <div class="ml-5 flex-grow">
+                        <p class="text-base font-semibold text-purple-900/80">PO-Number</p>
                         <div class="flex items-center space-x-2">
-                            <p id="nextMemoNumber" class="text-2xl font-bold text-gray-900">0000</p>
-                            <button onclick="editMemoNumber('current')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                            </button>
+                            <p id="nextMemoNumber" class="text-3xl font-extrabold text-purple-900 drop-shadow">0000</p>
+                            <button onclick="editMemoNumber('current')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
                         </div>
                         <div id="memoNumberEdit" class="hidden mt-2">
                             <input type="number" id="memoNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            <button onclick="saveMemoNumber('current')" class="ml-2 text-green-600 hover:text-green-800">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="saveMemoNumber('current')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-700 hover:text-red-900"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-indigo-100 to-indigo-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-indigo-100 rounded-lg">
-                        <i data-lucide="hash" class="w-6 h-6 text-indigo-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="hash" class="w-8 h-8 text-indigo-700"></i>
                     </div>
-                    <div class="ml-4 flex-grow">
-                        <p class="text-sm font-medium text-gray-600">CO-Memo Number</p>
+                    <div class="ml-5 flex-grow">
+                        <p class="text-base font-semibold text-indigo-900/80">CO-Memo Number</p>
                         <div class="flex items-center space-x-2">
-                            <p id="nextCoMemoNumber" class="text-2xl font-bold text-gray-900">0000</p>
-                            <button onclick="editMemoNumber('coCurrent')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                            </button>
+                            <p id="nextCoMemoNumber" class="text-3xl font-extrabold text-indigo-900 drop-shadow">0000</p>
+                            <button onclick="editMemoNumber('coCurrent')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
                         </div>
                         <div id="coMemoNumberEdit" class="hidden mt-2">
                             <input type="number" id="coMemoNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            <button onclick="saveMemoNumber('coCurrent')" class="ml-2 text-green-600 hover:text-green-800">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="saveMemoNumber('coCurrent')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-700 hover:text-red-900"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Office Order - Number Card -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-pink-100 to-pink-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-pink-100 rounded-lg">
-                        <i data-lucide="hash" class="w-6 h-6 text-pink-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="hash" class="w-8 h-8 text-pink-700"></i>
                     </div>
-                    <div class="ml-4 flex-grow">
-                        <p class="text-sm font-medium text-gray-600">Office Order - Number</p>
+                    <div class="ml-5 flex-grow">
+                        <p class="text-base font-semibold text-pink-900/80">Office Order - Number</p>
                         <div class="flex items-center space-x-2">
-                            <p id="nextOfficeOrderNumber" class="text-2xl font-bold text-gray-900">0000</p>
-                            <button onclick="editMemoNumber('officeOrder')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                            </button>
+                            <p id="nextOfficeOrderNumber" class="text-3xl font-extrabold text-pink-900 drop-shadow">0000</p>
+                            <button onclick="editMemoNumber('officeOrder')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
                         </div>
                         <div id="officeOrderNumberEdit" class="hidden mt-2">
                             <input type="number" id="officeOrderNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            <button onclick="saveMemoNumber('officeOrder')" class="ml-2 text-green-600 hover:text-green-800">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="saveMemoNumber('officeOrder')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-700 hover:text-red-900"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Merge Advisory/Bulletin - Number Card -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-yellow-100 to-yellow-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-yellow-100 rounded-lg">
-                        <i data-lucide="hash" class="w-6 h-6 text-yellow-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="hash" class="w-8 h-8 text-yellow-700"></i>
                     </div>
-                    <div class="ml-4 flex-grow">
-                        <p class="text-sm font-medium text-gray-600">Advisory/Bulletin - Number</p>
+                    <div class="ml-5 flex-grow">
+                        <p class="text-base font-semibold text-yellow-900/80">Advisory/Bulletin - Number</p>
                         <div class="flex items-center space-x-2">
-                            <p id="nextAdvisoryBulletinNumber" class="text-2xl font-bold text-gray-900">0000</p>
-                            <button onclick="editMemoNumber('advisoryBulletin')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                            </button>
+                            <p id="nextAdvisoryBulletinNumber" class="text-3xl font-extrabold text-yellow-900 drop-shadow">0000</p>
+                            <button onclick="editMemoNumber('advisoryBulletin')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
                         </div>
                         <div id="advisoryBulletinNumberEdit" class="hidden mt-2">
                             <input type="number" id="advisoryBulletinNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            <button onclick="saveMemoNumber('advisoryBulletin')" class="ml-2 text-green-600 hover:text-green-800">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="saveMemoNumber('advisoryBulletin')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-700 hover:text-red-900"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="group relative bg-gradient-to-br from-orange-100 to-orange-300 rounded-2xl shadow-lg p-7 transition-transform transform hover:scale-105 hover:shadow-2xl">
                 <div class="flex items-center">
-                    <div class="p-2 bg-orange-100 rounded-lg">
-                        <i data-lucide="award" class="w-6 h-6 text-orange-600"></i>
+                    <div class="p-3 bg-white/70 rounded-full shadow-md">
+                        <i data-lucide="award" class="w-8 h-8 text-orange-700"></i>
                     </div>
-                    <div class="ml-4 flex-grow">
-                        <p class="text-sm font-medium text-gray-600">Acknowledgment</p>
+                    <div class="ml-5 flex-grow">
+                        <p class="text-base font-semibold text-orange-900/80">Acknowledgment</p>
                         <div class="flex items-center space-x-2">
-                            <p id="nextAcknowledgmentNumber" class="text-2xl font-bold text-gray-900">0000</p>
-                            <button onclick="editMemoNumber('acknowledgment')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                            </button>
+                            <p id="nextAcknowledgmentNumber" class="text-3xl font-extrabold text-orange-900 drop-shadow">0000</p>
+                            <button onclick="editMemoNumber('acknowledgment')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
                         </div>
                         <div id="acknowledgmentNumberEdit" class="hidden mt-2">
                             <input type="number" id="acknowledgmentNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
-                            <button onclick="saveMemoNumber('acknowledgment')" class="ml-2 text-green-600 hover:text-green-800">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-600 hover:text-red-800">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="saveMemoNumber('acknowledgment')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
+                            <button onclick="cancelMemoNumberEdit()" class="ml-1 text-red-700 hover:text-red-900"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                     </div>
                 </div>
@@ -789,22 +783,12 @@
             <div class="px-8 py-6 sm:px-10 border-b border-gray-200">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div class="flex items-center space-x-4 w-full sm:w-auto">
-                        <div class="flex space-x-2 bg-gray-100 p-2 rounded-lg">
-                            <button id="pendingMemosTab" class="px-6 py-3 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900">
-                                Pending Memos
-                            </button>
-                            <button id="signedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
-                                Signed Memos
-                            </button>
-                            <button id="approvedMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
-                                Approved Memos
-                            </button>
-                            <button id="archiveMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
-                                Archive
-                            </button>
-                            <button id="cancelledMemosTab" class="px-6 py-3 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900">
-                                Cancelled
-                            </button>
+                        <div class="flex items-center space-x-2 bg-gray-100 p-2 rounded-lg">
+                            <button id="pendingMemosTab" class="px-6 py-3 text-base font-bold rounded-md bg-white shadow-sm text-blue-900 border-2 border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">Pending Memos</button>
+                            <button id="signedMemosTab" class="px-6 py-3 text-base font-bold rounded-md text-gray-700 hover:text-blue-900 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 transition">Signed Memos</button>
+                            <button id="approvedMemosTab" class="px-6 py-3 text-base font-bold rounded-md text-gray-700 hover:text-blue-900 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 transition">Approved Memos</button>
+                            <button id="archiveMemosTab" class="px-6 py-3 text-base font-bold rounded-md text-gray-700 hover:text-blue-900 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 transition">Archive</button>
+                            <button id="cancelledMemosTab" class="px-6 py-3 text-base font-bold rounded-md text-gray-700 hover:text-blue-900 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 transition">Cancelled</button>
                         </div>
                         <!-- Add Toggle Switch and Action Taken Input (hidden by default) -->
                         <div id="actionToggleContainer" class="flex items-center space-x-4 hidden">
@@ -837,9 +821,14 @@
                                     <option value="title">Subject</option>
                                     <option value="department">Department</option>
                                     <option value="recipients">Recipients</option>
-                                    <option value="priority">Priority</option>
+
                                     <option value="status">Status</option>
+                                    <option value="createdAt">Created At</option>
+                                    <option value="releasedToRodFasd">Released to</option>
+                                    <option value="receivedByRodFasd">Received by</option>
                                 </select>
+                                <!-- Date filter -->
+                                <input type="date" id="dateFilter" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                                 <div class="relative flex-grow">
                                     <input type="text" id="searchInput" 
                                            class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -880,9 +869,11 @@
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 hidden sm:table">
-                    <thead id="memosTableHead" class="bg-gray-50 hidden sm:table-header-group"></thead>
-                    <tbody id="memosTableBody" class="bg-white divide-y divide-gray-200">
+                <table class="min-w-full bg-white rounded-xl shadow-lg overflow-hidden divide-y divide-gray-200 hidden sm:table">
+                    <thead id="memosTableHead" class="bg-blue-50 hidden sm:table-header-group">
+                        <!-- Table headers will be rendered here -->
+                    </thead>
+                    <tbody id="memosTableBody" class="bg-white divide-y divide-gray-100">
                         <!-- Table rows will be populated dynamically -->
                     </tbody>
                 </table>
@@ -1031,6 +1022,16 @@
                 const lastHeader = document.querySelector('th:last-child');
                 if (lastHeader) lastHeader.textContent = 'Actions';
             }
+
+            // Show/hide archive pagination
+            const archivePagination = document.getElementById('archivePagination');
+            if (archivePagination) {
+                if (currentView === 'archive') {
+                    archivePagination.style.display = '';
+                } else {
+                    archivePagination.style.display = 'none';
+                }
+            }
         }
 
         // Helper function to check if memo is archived
@@ -1070,7 +1071,13 @@
             }
         }
 
+        // Add this helper to reset archive pagination
+        function resetArchivePagination() {
+            archiveCurrentPage = 1;
+        }
+
         pendingMemosTab.addEventListener('click', () => {
+            if (currentView === 'archive') resetArchivePagination();
             currentView = 'pending';
             updateTabStyles();
             renderTableHeader();
@@ -1078,6 +1085,7 @@
         });
 
         signedMemosTab.addEventListener('click', () => {
+            if (currentView === 'archive') resetArchivePagination();
             currentView = 'signed';
             updateTabStyles();
             renderTableHeader();
@@ -1085,23 +1093,16 @@
         });
 
         approvedMemosTab.addEventListener('click', () => {
+            if (currentView === 'archive') resetArchivePagination();
             currentView = 'approved';
             updateTabStyles();
             renderTableHeader();
             const approvedMemos = getFilteredMemosForCurrentView();
             renderMemos(approvedMemos);
-
-            // Set row height based on log sheet preview state
-            const tableRows = document.querySelectorAll('tbody tr');
-            if (!isActionMode) { // If log sheet preview is on
-                tableRows.forEach(row => {
-                    row.style.height = '180px';
-                    row.style.minHeight = '180px';
-                });
-            }
         });
 
         archiveMemosTab.addEventListener('click', () => {
+            resetArchivePagination();
             currentView = 'archive';
             updateTabStyles();
             renderTableHeader();
@@ -1110,6 +1111,7 @@
         });
 
         cancelledMemosTab.addEventListener('click', () => {
+            if (currentView === 'archive') resetArchivePagination();
             currentView = 'cancelled';
             updateTabStyles();
             renderTableHeader();
@@ -1167,6 +1169,8 @@
                     // Update stats
                     if (totalMemos) totalMemos.textContent = allMemos.length;
                     if (pendingMemos) pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                    const signedMemos = document.getElementById('signedMemos');
+                    if (signedMemos) signedMemos.textContent = allMemos.filter(m => m.status === 'signed').length;
                     if (approvedMemos) approvedMemos.textContent = allMemos.filter(m => shouldShowInApprovedTab(m)).length;
                     if (archivedMemos) archivedMemos.textContent = allMemos.filter(m => m.status === 'archived').length;
 
@@ -1814,19 +1818,53 @@
         }
 
         function filterMemos(memos, searchTerm, filterField) {
-            if (!searchTerm) return memos;
-            
+            let filtered = memos;
+            const selectedDate = dateFilter && dateFilter.value ? new Date(dateFilter.value) : null;
+            // If a specific date field is selected, filter only by that field
+            if (["createdAt", "releasedToRodFasd", "receivedByRodFasd"].includes(filterField) && selectedDate) {
+                const selectedDateStr = selectedDate.toISOString().slice(0, 10);
+                filtered = filtered.filter(memo => {
+                    function getDateStr(ts) {
+                        if (!ts || !ts.toDate) return '';
+                        return ts.toDate().toISOString().slice(0, 10);
+                    }
+                    return getDateStr(memo[filterField]) === selectedDateStr;
+                });
+            } else if (selectedDate) {
+                // Otherwise, filter by any of the three date fields
+                const selectedDateStr = selectedDate.toISOString().slice(0, 10);
+                filtered = filtered.filter(memo => {
+                    function getDateStr(ts) {
+                        if (!ts || !ts.toDate) return '';
+                        return ts.toDate().toISOString().slice(0, 10);
+                    }
+                    return (
+                        getDateStr(memo.createdAt) === selectedDateStr ||
+                        getDateStr(memo.releasedToRodFasd) === selectedDateStr ||
+                        getDateStr(memo.receivedByRodFasd) === selectedDateStr
+                    );
+                });
+            }
+            // Existing search logic
+            if (!searchTerm) return filtered;
             searchTerm = searchTerm.toLowerCase().trim();
-            
-            // If specific field is selected, just filter by that field
             if (filterField !== 'all') {
-                return memos.filter(memo => 
+                // For date fields, compare as yyyy-mm-dd
+                if (["createdAt", "releasedToRodFasd", "receivedByRodFasd"].includes(filterField)) {
+                    return filtered.filter(memo => {
+                        function getDateStr(ts) {
+                            if (!ts || !ts.toDate) return '';
+                            return ts.toDate().toISOString().slice(0, 10);
+                        }
+                        return getDateStr(memo[filterField]).includes(searchTerm);
+                    });
+                }
+                return filtered.filter(memo => 
                     getSearchableValue(memo, filterField).includes(searchTerm)
                 );
             }
-
-            // For "all" search, prioritize results based on field matches
-            return memos.map(memo => {
+            // ... rest of original filterMemos ...
+            return filtered.map(memo => {
                 let score = 0;
                 const memoNumber = getSearchableValue(memo, 'memoNumber');
                 const title = getSearchableValue(memo, 'title');
@@ -1835,16 +1873,14 @@
                 const priority = getSearchableValue(memo, 'priority');
                 const status = getSearchableValue(memo, 'status');
                 const createdAt = getSearchableValue(memo, 'createdAt');
-
                 // Priority scoring (higher score = higher priority)
-                if (memoNumber.includes(searchTerm)) score += 100; // Highest priority
+                if (memoNumber.includes(searchTerm)) score += 100;
                 if (title.includes(searchTerm)) score += 80;
                 if (department.includes(searchTerm)) score += 60;
                 if (recipients.includes(searchTerm)) score += 40;
                 if (priority.includes(searchTerm)) score += 30;
                 if (status.includes(searchTerm)) score += 20;
-                if (createdAt.includes(searchTerm)) score += 10; // Lowest priority
-
+                if (createdAt.includes(searchTerm)) score += 10;
                 // Add exact match bonus
                 if (memoNumber === searchTerm) score += 50;
                 if (title === searchTerm) score += 40;
@@ -1853,12 +1889,11 @@
                 if (priority === searchTerm) score += 15;
                 if (status === searchTerm) score += 10;
                 if (createdAt === searchTerm) score += 5;
-
                 return { memo, score };
             })
-            .filter(item => item.score > 0) // Only include items that match
-            .sort((a, b) => b.score - a.score) // Sort by score in descending order
-            .map(item => item.memo); // Remove scores and return just the memos
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(item => item.memo);
         }
 
         function updateSearchSuggestions(memos, searchTerm) {
@@ -2846,6 +2881,7 @@
 
         // Show/hide archive type tabs on Archive tab click
         archiveMemosTab.addEventListener('click', () => {
+            resetArchivePagination();
             currentView = 'archive';
             updateTabStyles();
             if (archiveTypeTabs) archiveTypeTabs.classList.remove('hidden');
@@ -3219,6 +3255,18 @@
           let lastDoc = page > 1 ? tabCaches[tab][page - 1]?.lastDoc : null;
           let docs = await fetchPage(tab, page, lastDoc);
           renderEntries(docs);
+        }
+
+        // In <script type="module">, after let searchFilter = ...
+        const dateFilter = document.getElementById('dateFilter');
+
+        // Listen for date filter changes
+        if (dateFilter) {
+            dateFilter.addEventListener('change', () => {
+                // Trigger search input event to re-filter
+                const event = new Event('input');
+                searchInput.dispatchEvent(event);
+            });
         }
     </script>
     <script>
