@@ -714,16 +714,17 @@
             try {
                 const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
                 const year = new Date(selectedDate).getFullYear();
-                // --- 1. Query Firebase for memos for this type ---
+                // 1. Query Firebase for memos for this type and year
                 const q = query(
                     collection(db, "memos"),
-                    where("memoType", "==", memoType)
+                    where("memoType", "==", memoType),
+                    where("antedationDate", "==", selectedDate)
                 );
                 const querySnapshot = await getDocs(q);
-                // --- 2. Gather memos from Firebase ---
+                // 2. Gather memos from Firebase for this date
                 const firebaseMemos = querySnapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() }));
-                // --- 3. Gather memos from old system JSON cache ---
+                // 3. Gather memos from old system JSON cache (optional, for legacy support)
                 let oldMemos = [];
                 if (oldMemoLoaded) {
                     for (const year of OLD_JSON_YEARS) {
@@ -738,11 +739,14 @@
                             });
                         }
                         for (const rec of records) {
-                            oldMemos.push(rec);
+                            // Only include if date matches
+                            if (rec["Date Issued"] && new Date(rec["Date Issued"]).toISOString().split('T')[0] === selectedDate) {
+                                oldMemos.push(rec);
+                            }
                         }
                     }
                 }
-                // --- 4. Combine all memos ---
+                // 4. Combine all memos for this date
                 const allMemos = [
                     ...firebaseMemos.map(m => ({
                         memoNumber: m.memoNumber,
@@ -752,46 +756,37 @@
                         memoNumber: m["Memo No."] ? String(m["Memo No."]).trim() : null,
                         date: m["Date Issued"] ? new Date(m["Date Issued"]).toISOString().split('T')[0] : null
                     }))
-                ].filter(m => m.memoNumber && m.date);
-                // --- 5. Find all memos for the selected date ---
-                const memosForDate = allMemos.filter(m => m.date === selectedDate);
-                // --- 6. If memos exist for the date, find highest base and assign next suffix ---
-                if (memosForDate.length > 0) {
+                ].filter(m => m.memoNumber && m.date === selectedDate);
+                // 5. Find all base numbers and suffixes for this date
+                let baseNumber = null;
+                let highestBase = null;
+                let highestNum = -1;
+                let usedSuffixes = [];
+                if (allMemos.length > 0) {
                     // Extract base numbers and suffixes
-                    const baseNumberMap = {};
-                    memosForDate.forEach(memo => {
-                        const parts = String(memo.memoNumber).split('-');
-                        let base, lastPart;
-                        if (parts.length > 1) {
-                            base = parts.slice(0, -1).join('-');
-                            lastPart = parts[parts.length - 1];
-                        } else {
-                            const match = String(memo.memoNumber).match(/^(\d+)(?:-([A-Z]+))?$/);
-                            if (match) {
-                                base = match[1];
-                                lastPart = match[2] || 'BASE';
-                            } else {
-                                base = String(memo.memoNumber);
-                                lastPart = 'BASE';
+                    allMemos.forEach(memo => {
+                        const match = String(memo.memoNumber).match(/(\d{4})(?:-([A-Z]+))?$/);
+                        if (match) {
+                            const num = parseInt(match[1]);
+                            if (num > highestNum) {
+                                highestNum = num;
+                                highestBase = match[1];
                             }
                         }
-                        if (!baseNumberMap[base]) baseNumberMap[base] = [];
-                        baseNumberMap[base].push(lastPart);
                     });
-                    // Find the highest base number
-                    let highestBase = null;
-                    let highestNum = -1;
-                    Object.keys(baseNumberMap).forEach(baseNum => {
-                        const numPart = parseInt(baseNum.split('-').pop());
-                        if (numPart > highestNum) {
-                            highestNum = numPart;
-                            highestBase = baseNum;
-                        }
-                    });
-                    const usedSuffixes = baseNumberMap[highestBase] || [];
-                    if (usedSuffixes.length === 1 && usedSuffixes[0] === 'BASE') {
+                    // Collect all suffixes for the highest base
+                    usedSuffixes = allMemos
+                        .filter(memo => memo.memoNumber.includes(highestBase))
+                        .map(memo => {
+                            const match = String(memo.memoNumber).match(/\d{4}-([A-Z]+)$/);
+                            return match ? match[1] : null;
+                        })
+                        .filter(Boolean);
+                    // If no suffixes, first antedated is -A
+                    if (usedSuffixes.length === 0) {
                         return `${memoType}-${year}-${departmentCode}-${String(highestNum).padStart(4, '0')}-A`;
                     } else {
+                        // Find next available suffix
                         const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
                         for (let i = 0; i < suffixes.length; i++) {
                             if (!usedSuffixes.includes(suffixes[i])) {
@@ -800,23 +795,27 @@
                         }
                         throw new Error(`No more antedation suffixes available for #${highestNum} on ${selectedDate}.`);
                     }
-                }
-                // --- 7. If no memos for the date, find the last memo before the date ---
-                const memosBeforeDate = allMemos.filter(m => m.date < selectedDate && m.memoNumber && m.memoNumber.startsWith(`${memoType}-${year}-${departmentCode}`));
-                let lastBaseNum = 0;
-                if (memosBeforeDate.length > 0) {
-                    // Find the highest base number before the date
-                    memosBeforeDate.forEach(memo => {
-                        const match = String(memo.memoNumber).match(/(\d{4})(?:-[A-Z]+)?$/);
+                } else {
+                    // No memos for this date, find the last memo before this date
+                    const q2 = query(
+                        collection(db, "memos"),
+                        where("memoType", "==", memoType),
+                        where("antedationDate", "<", selectedDate)
+                    );
+                    const querySnapshot2 = await getDocs(q2);
+                    let lastBaseNum = 0;
+                    querySnapshot2.forEach(docSnap => {
+                        const m = docSnap.data();
+                        const match = String(m.memoNumber).match(/(\d{4})(?:-[A-Z]+)?$/);
                         if (match) {
                             const num = parseInt(match[1]);
                             if (num > lastBaseNum) lastBaseNum = num;
                         }
                     });
+                    // If found, continue sequence, else start at 0001
+                    const nextNum = lastBaseNum > 0 ? lastBaseNum + 1 : 1;
+                    return `${memoType}-${year}-${departmentCode}-${String(nextNum).padStart(4, '0')}`;
                 }
-                // If found, continue sequence, else start at 0001
-                const nextNum = lastBaseNum > 0 ? lastBaseNum + 1 : 1;
-                return `${memoType}-${year}-${departmentCode}-${String(nextNum).padStart(4, '0')}`;
             } catch (error) {
                 console.error('Error getting next antedated memo number:', error);
                 throw error;
@@ -829,26 +828,12 @@
                 try {
                     // Show loading state for antedated memo number
                     assignedMemoNumber.innerHTML = '<span class="text-gray-500">Calculating...</span>';
-                    
+
                     const generatedMemoNo = await getNextAntedatedMemoNumber(memoTypeSelect.value, antedationDate);
-                    const memoNumberPart = generatedMemoNo.split('-').pop();
-                    
-                    // Check if it has a suffix (A, B, C, etc.)
-                    const hasSuffix = /[A-Z]+$/.test(memoNumberPart);
-                    
-                    if (hasSuffix) {
-                        // Split the number and suffix for better display
-                        const match = memoNumberPart.match(/^(\d+)([A-Z]+)$/);
-                        if (match) {
-                            const number = match[1];
-                            const suffix = match[2];
-                            assignedMemoNumber.innerHTML = `${number}<span class="text-primary-600 font-bold">-${suffix}</span>`;
-                        } else {
-                            assignedMemoNumber.textContent = memoNumberPart;
-                        }
-                    } else {
-                        assignedMemoNumber.textContent = memoNumberPart;
-                    }
+                    // Show only the last two parts (e.g., 1700-A)
+                    const parts = generatedMemoNo.split('-');
+                    let display = parts.slice(-2).join('-');
+                    assignedMemoNumber.innerHTML = `<span class="font-bold">${display}</span>`;
                 } catch (error) {
                     console.error('Error updating antedated memo number:', error);
                     assignedMemoNumber.innerHTML = '<span class="text-red-500">Error calculating number</span>';
