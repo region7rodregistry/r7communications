@@ -154,7 +154,7 @@
             <div class="flex items-center gap-4">
                 <img src="icons/tlogo.png" alt="TESDA Logo" class="h-12 w-auto sm:h-16">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Create New Document</h1>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Create New Memo</h1>
                     <p class="mt-1 text-sm text-gray-500">Fill out the form below to create a new memo</p>
                 </div>
             </div>
@@ -296,15 +296,16 @@
 
                 <!-- Memo Type -->
                 <div class="relative">
-                    <label for="memoType" class="block text-sm font-medium text-gray-700 mb-1">Document Type <span class="text-red-500">*</span></label>
+                    <label for="memoType" class="block text-sm font-medium text-gray-700 mb-1">Memo / Document Type <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="memoType" name="memoType" required
                             class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
-                            <option value="">Document Type</option>
+                            <option value="">Select Memo / Document Type</option>
                             <option value="PO">PO (Provincial Office)</option>
                             <option value="CO">CO (Central Office)</option>
                             <option value="Office Order">Office Order</option>
-                            <option value="AdvisoryBulletin">Advisory/Bulletin</option>
+                            <option value="Advisory">Advisory</option>
+                            <option value="Bulletin">Bulletin</option>
                             <option value="Acknowledgment">Acknowledgment</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -313,35 +314,14 @@
                     </div>
                 </div>
 
-                <!-- Memo Number (Read-only for non-admins, editable for admins) -->
+                <!-- Memo Number (Read-only) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Document Number
-                        <span id="adminBadge" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Admin Only</span>
-                    </label>
-                    <div id="memoNumberContainer" class="flex items-center border border-gray-300 rounded-lg shadow-md py-2.5 px-3 bg-gray-50">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Document Number</label>
+                    <div class="flex items-center border border-gray-300 rounded-lg shadow-md py-2.5 px-3 bg-gray-50">
                         <i data-lucide="hash" class="h-4 w-4 text-gray-400 mr-2"></i>
-                        <span id="assignedMemoNumber" class="text-gray-700 font-medium">Select Document type first</span>
+                        <span id="assignedMemoNumber" class="text-gray-700 font-medium">Select memo type first</span>
                         <div id="antedationIndicator" class="hidden ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                             Antedated
-                        </div>
-                        <!-- Admin edit button (hidden by default) -->
-                        <button id="editMemoNumberBtn" class="hidden ml-auto text-blue-600 hover:text-blue-800 cursor-pointer" title="Edit Memo Number">
-                            <i data-lucide="pen" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                    <!-- Admin memo number input (hidden by default) -->
-                    <div id="memoNumberInputContainer" class="hidden mt-2">
-                        <input type="text" id="memoNumberInput" 
-                               class="block w-full border border-blue-300 rounded-lg shadow-md py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-base"
-                               placeholder="Enter custom memo number">
-                        <div class="flex gap-2 mt-2">
-                            <button id="saveMemoNumberBtn" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
-                                Save
-                            </button>
-                            <button id="cancelMemoNumberBtn" class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700">
-                                Cancel
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -355,32 +335,45 @@
                         </div>
                         <input type="text" id="title" name="title" required maxlength="200"
                             class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base"
-                            placeholder="Enter Document title">
+                            placeholder="Enter memo title">
                         <div class="absolute bottom-2 right-3 text-xs text-gray-500 select-none">
                             <span id="titleCharCount">0</span>/200 characters
                         </div>
                     </div>
                 </div>
 
-                <!-- Author/Focal -->
-                <div class="relative" id="authorFocalContainer"></div>
-
-                <!-- Signatory -->
-                <div class="relative" id="signatory-container">
+                <!-- Category -->
+                <div class="relative">
                     <label for="signatory" class="block text-sm font-medium text-gray-700 mb-1">Signatory <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="signatory" name="signatory" required
                             class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
-                            <option value="">Select Signatory</option>
                             <option value="Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.">Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.</option>
-                            <option value="Ivy Michelle T. Vasquez">Ivy Michelle T. Vasquez</option>
                             <option value="Jocelyn V. Cabahug">Jocelyn V. Cabahug</option>
+                            <option value="Ivy Michelle T. Vasquez">Ivy Michelle T. Vasquez</option>
                             <option value="Others">Other (Please specify)</option>
                         </select>
                         <div id="signatory-other-wrapper" class="hidden relative">
-                            <input type="text" id="signatory-other" name="signatory-other" placeholder="Enter custom Signatory" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <input type="text" id="signatory-other" name="signatory-other" placeholder="Enter custom signatory" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
                             <button type="button" id="signatory-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
                         </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="relative">
+                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Priority <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select id="priority" name="priority" required
+                            class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
+                            <option value="">Select Priority</option>
+                            <option value="High" class="text-red-600">High</option>
+                            <option value="Medium" class="text-yellow-600">Medium</option>
+                            <option value="Low" class="text-green-600">Low</option>
+                        </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -400,14 +393,14 @@
                             <option value="ORD">Office of the Regional Director</option>
                             <option value="ROD">Regional Operations Division</option>
                             <option value="FASD">Finance and Administrative Services Division</option>
-                            <option value="Central Office">Central Office</option>
+                            <option value="CO">Central Office</option>
                             <option value="AOUs">All Operating Units</option>
                             <option value="APOs">All Provincial Offices</option>
                             <option value="TTIs">All TTIs / TTI</option>
-                            <option value="PO Cebu">Provincial Office - Cebu</option>
-                            <option value="PO Bohol">Provincial Office - Bohol</option>
-                            <option value="PO Siquijor">Provincial Office - Siquijor</option>
-                            <option value="PO Negros Oriental">Provincial Office - Negros Oriental</option>
+                            <option value="PO">Provincial Office - Cebu</option>
+                            <option value="PO">Provincial Office - Bohol</option>
+                            <option value="PO">Provincial Office - Siquijor</option>
+                            <option value="PO">Provincial Office - Negros Oriental</option>
                             <option value="LTI">Lazi Technical Institute</option>
                             <option value="RTC">Regional Training Center VII</option>
                             <option value="Others">Other (Please specify on Description)</option>
@@ -483,19 +476,6 @@
         const continueBtn = document.getElementById('continueBtn');
         const createAnotherBtn = document.getElementById('createAnotherBtn');
 
-        // Admin memo number editing elements
-        const editMemoNumberBtn = document.getElementById('editMemoNumberBtn');
-        const memoNumberInputContainer = document.getElementById('memoNumberInputContainer');
-        const memoNumberInput = document.getElementById('memoNumberInput');
-        const saveMemoNumberBtn = document.getElementById('saveMemoNumberBtn');
-        const cancelMemoNumberBtn = document.getElementById('cancelMemoNumberBtn');
-        const memoNumberContainer = document.getElementById('memoNumberContainer');
-
-        // User role and admin status
-        let isAdmin = false;
-        let customMemoNumber = null;
-        const adminBadge = document.getElementById('adminBadge');
-
         // Antedation state variables
         let isAntedated = false;
         let antedationDate = null;
@@ -510,7 +490,8 @@
             'PO': 'current',
             'CO': 'coCurrent',
             'Office Order': 'officeOrder',
-            'AdvisoryBulletin': 'advisoryBulletin',
+            'Advisory': 'advisory',
+            'Bulletin': 'bulletin',
             'Acknowledgment': 'acknowledgment',
         };
 
@@ -531,7 +512,19 @@
             unsubscribeMemoNumber = onSnapshot(memoNumberRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const number = docSnap.data().number;
-                    assignedMemoNumber.textContent = String(number).padStart(4, '0');
+                    // Get user data to construct the full memo number format
+                    const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+                    if (userData) {
+                        const departmentCode = userData.department.substring(0, 3).toUpperCase();
+                        const currentYear = new Date().getFullYear();
+                        const fullMemoNumber = `${type}-${currentYear}-${departmentCode}-${String(number).padStart(4, '0')}`;
+                        // Show last 2 prefixes: DEP-1554
+                        const parts = fullMemoNumber.split('-');
+                        const lastTwoParts = parts.slice(-2).join('-');
+                        assignedMemoNumber.textContent = lastTwoParts;
+                    } else {
+                        assignedMemoNumber.textContent = String(number).padStart(4, '0');
+                    }
                 } else {
                     assignedMemoNumber.textContent = 'Not available';
                 }
@@ -557,98 +550,6 @@
                 assignedMemoNumber.textContent = 'Select memo type first';
             } else {
                 updateMemoNumberDisplay();
-            }
-
-            // Author/Focal field logic (dropdown with 'Others' option)
-            const authorFocalContainer = document.getElementById('authorFocalContainer');
-            if (authorFocalContainer) {
-                authorFocalContainer.innerHTML = `
-                    <label for="authorFocal" class="block text-sm font-medium text-gray-700 mb-1">Author/Focal <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <select id="authorFocal" name="authorFocal" required
-                            class="appearance-none block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base">
-                            <option value="">Select Author/Focal</option>
-                            <!-- ROD -->
-                            <option value="AGBAY, ANNALIE B.">AGBAY, ANNALIE B.</option>
-                            <option value="CABAHUG, JOCELYN V">CABAHUG, JOCELYN V</option>
-                            <option value="CALAGO, ZHAIRAH P">CALAGO, ZHAIRAH P</option>
-                            <option value="GAYAS, PRISCILLA B.">GAYAS, PRISCILLA B.</option>
-                            <option value="NAVARRO, CHRISTINE A.">NAVARRO, CHRISTINE A.</option>
-                            <option value="SAROMINES, KISSYLEN G.">SAROMINES, KISSYLEN G.</option>
-                            <option value="SERINAS, KATRINA MAE CELESTE G.">SERINAS, KATRINA MAE CELESTE G.</option>
-                            <option value="SOON, CHEYENNE S.">SOON, CHEYENNE S.</option>
-                            <option value="TECSON, GERARD RANDOLF G.">TECSON, GERARD RANDOLF G.</option>
-                            <option value="DAMOLO, JAMINEL A.">DAMOLO, JAMINEL A.</option>
-                            <!-- FASD -->
-                            <option value="AKIATAN, JOSEPHINE F.">AKIATAN, JOSEPHINE F.</option>
-                            <option value="ALCERA, RIVA JANE D.">ALCERA, RIVA JANE D.</option>
-                            <option value="DALIGDIG, ALEXANDER A.">DALIGDIG, ALEXANDER A.</option>
-                            <option value="MACACHOR, DONNE MAR L.">MACACHOR, DONNE MAR L.</option>
-                            <option value="MOLDE, MARK ERVIN D.">MOLDE, MARK ERVIN D.</option>
-                            <option value="PARBA, MARLOU G.">PARBA, MARLOU G.</option>
-                            <option value="RECESIO, LIRA M.">RECESIO, LIRA M.</option>
-                            <option value="VASQUEZ, IVY MICHELLE T.">VASQUEZ, IVY MICHELLE T.</option>
-                            <option value="VERDEFLOR, JASMIN S.">VERDEFLOR, JASMIN S.</option>
-                            <!-- ORD -->
-                            <option value="Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.">Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.</option>
-                            <option value="Alexander A. Daligdig">Alexander A. Daligdig</option>
-                            <option value="Marlou G. Parba">Marlou G. Parba</option>
-                            <option value="Others">Other (Please specify)</option>
-                        </select>
-                        <div id="authorFocal-other-wrapper" class="hidden relative">
-                            <input type="text" id="authorFocal-other" name="authorFocal-other" placeholder="Enter custom Author/Focal" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
-                            <button type="button" id="authorFocal-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
-                        </div>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </div>
-                    </div>
-                `;
-                // Re-initialize Lucide icons if needed
-                if (window.lucide) lucide.createIcons();
-            }
-
-            // Author/Focal dropdown logic for 'Others'
-            const authorFocalSelect = document.getElementById('authorFocal');
-            const authorFocalOtherInput = document.getElementById('authorFocal-other');
-            const authorFocalOtherWrapper = document.getElementById('authorFocal-other-wrapper');
-            const authorFocalBackBtn = document.getElementById('authorFocal-back-btn');
-
-            if (authorFocalSelect && authorFocalOtherInput && authorFocalOtherWrapper && authorFocalBackBtn) {
-                authorFocalSelect.addEventListener('change', function() {
-                    if (this.value === 'Others') {
-                        authorFocalSelect.classList.add('hidden');
-                        authorFocalOtherWrapper.classList.remove('hidden');
-                        authorFocalOtherInput.setAttribute('required', 'required');
-                        authorFocalOtherInput.focus();
-                    } else {
-                        authorFocalOtherInput.classList.add('hidden');
-                        authorFocalOtherInput.removeAttribute('required');
-                        authorFocalOtherWrapper.classList.add('hidden');
-                        authorFocalSelect.classList.remove('hidden');
-                    }
-                });
-
-                authorFocalOtherInput.addEventListener('blur', function() {
-                    setTimeout(() => {
-                        if (authorFocalOtherInput.value.trim() === '') {
-                            authorFocalOtherInput.classList.add('hidden');
-                            authorFocalOtherInput.removeAttribute('required');
-                            authorFocalOtherWrapper.classList.add('hidden');
-                            authorFocalSelect.classList.remove('hidden');
-                            authorFocalSelect.value = '';
-                        }
-                    }, 100);
-                });
-
-                authorFocalBackBtn.addEventListener('click', function() {
-                    authorFocalOtherInput.classList.add('hidden');
-                    authorFocalOtherInput.removeAttribute('required');
-                    authorFocalOtherWrapper.classList.add('hidden');
-                    authorFocalSelect.classList.remove('hidden');
-                    authorFocalSelect.value = '';
-                    authorFocalSelect.focus();
-                });
             }
         });
 
@@ -709,112 +610,91 @@
             }
         });
 
+        // Helper function to generate A-Z suffixes
+        function generateSuffix(index) {
+            if (index < 26) {
+                return String.fromCharCode(65 + index); // A-Z
+            } else {
+                // For AA, AB, etc. (index 26 = AA, 27 = AB, etc.)
+                const firstChar = String.fromCharCode(65 + Math.floor((index - 26) / 26));
+                const secondChar = String.fromCharCode(65 + ((index - 26) % 26));
+                return firstChar + secondChar;
+            }
+        }
+
         // Function to get the next antedated memo number (A-Z only, error if all used)
         async function getNextAntedatedMemoNumber(memoType, selectedDate) {
             try {
                 const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
                 const year = new Date(selectedDate).getFullYear();
-                // 1. Query Firebase for memos for this type and year
+                
+                // Query memos for the specific memo type and date
                 const q = query(
                     collection(db, "memos"),
-                    where("memoType", "==", memoType),
-                    where("antedationDate", "==", selectedDate)
+                    where("memoType", "==", memoType)
                 );
                 const querySnapshot = await getDocs(q);
-                // 2. Gather memos from Firebase for this date
-                const firebaseMemos = querySnapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }));
-                // 3. Gather memos from old system JSON cache (optional, for legacy support)
-                let oldMemos = [];
-                if (oldMemoLoaded) {
-                    for (const year of OLD_JSON_YEARS) {
-                        const data = window.oldSystemRawData && window.oldSystemRawData[year];
-                        if (!data) continue;
-                        let records = [];
-                        if (Array.isArray(data)) {
-                            records = data;
-                        } else if (typeof data === 'object' && data !== null) {
-                            Object.values(data).forEach(arr => {
-                                if (Array.isArray(arr)) records = records.concat(arr);
-                            });
-                        }
-                        for (const rec of records) {
-                            // Only include if date matches
-                            if (rec["Date Issued"] && new Date(rec["Date Issued"]).toISOString().split('T')[0] === selectedDate) {
-                                oldMemos.push(rec);
-                            }
-                        }
+                
+                // Filter memos for the specific date AND memo type
+                const memosForDate = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(memo => {
+                        // Only include memos of the same type AND same date
+                        const memoDate = memo.antedationDate || (memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toISOString().split('T')[0] : null);
+                        return memoDate === selectedDate && memo.memoType === memoType;
+                    });
+                
+                // Extract base numbers and suffixes
+                const baseNumberMap = {};
+                memosForDate.forEach(memo => {
+                    // Memo number format: PO-2025-DEP-1554 or PO-2025-DEP-1554-A
+                    const parts = memo.memoNumber.split('-');
+                    const base = parts.slice(0, -1).join('-');
+                    const lastPart = parts[parts.length - 1];
+                    // If last part is a single letter, it's a suffix
+                    if (/^[A-Z]$/.test(lastPart)) {
+                        const baseNum = parts.slice(0, -1).join('-');
+                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
+                        baseNumberMap[baseNum].push(lastPart);
+                    } else {
+                        // No suffix, treat as base
+                        const baseNum = memo.memoNumber;
+                        if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
                     }
-                }
-                // 4. Combine all memos for this date
-                const allMemos = [
-                    ...firebaseMemos.map(m => ({
-                        memoNumber: m.memoNumber,
-                        date: m.antedationDate || (m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toISOString().split('T')[0] : null)
-                    })),
-                    ...oldMemos.map(m => ({
-                        memoNumber: m["Memo No."] ? String(m["Memo No."]).trim() : null,
-                        date: m["Date Issued"] ? new Date(m["Date Issued"]).toISOString().split('T')[0] : null
-                    }))
-                ].filter(m => m.memoNumber && m.date === selectedDate);
-                // 5. Find all base numbers and suffixes for this date
-                let baseNumber = null;
+                });
+                
+                // Find the highest base number (numeric part)
                 let highestBase = null;
                 let highestNum = -1;
-                let usedSuffixes = [];
-                if (allMemos.length > 0) {
-                    // Extract base numbers and suffixes
-                    allMemos.forEach(memo => {
-                        const match = String(memo.memoNumber).match(/(\d{4})(?:-([A-Z]+))?$/);
-                        if (match) {
-                            const num = parseInt(match[1]);
-                            if (num > highestNum) {
-                                highestNum = num;
-                                highestBase = match[1];
-                            }
-                        }
-                    });
-                    // Collect all suffixes for the highest base
-                    usedSuffixes = allMemos
-                        .filter(memo => memo.memoNumber.includes(highestBase))
-                        .map(memo => {
-                            const match = String(memo.memoNumber).match(/\d{4}-([A-Z]+)$/);
-                            return match ? match[1] : null;
-                        })
-                        .filter(Boolean);
-                    // If no suffixes, first antedated is -A
-                    if (usedSuffixes.length === 0) {
-                        return `${memoType}-${year}-${departmentCode}-${String(highestNum).padStart(4, '0')}-A`;
-                    } else {
-                        // Find next available suffix
-                        const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-                        for (let i = 0; i < suffixes.length; i++) {
-                            if (!usedSuffixes.includes(suffixes[i])) {
-                                return `${memoType}-${year}-${departmentCode}-${String(highestNum).padStart(4, '0')}-${suffixes[i]}`;
-                            }
-                        }
-                        throw new Error(`No more antedation suffixes available for #${highestNum} on ${selectedDate}.`);
+                Object.keys(baseNumberMap).forEach(baseNum => {
+                    // baseNum: PO-2025-DEP-1554
+                    const numPart = parseInt(baseNum.split('-').pop());
+                    if (numPart > highestNum) {
+                        highestNum = numPart;
+                        highestBase = baseNum;
                     }
+                });
+                
+                if (!highestBase) {
+                    // No memos for this date/type, start with 0001
+                    return `${memoType}-${year}-${departmentCode}-0001`;
+                }
+                
+                // Check if the base number itself (no suffix) is available
+                const usedSuffixes = baseNumberMap[highestBase];
+                if (usedSuffixes.length === 0) {
+                    // Base number exists, assign -A
+                    return `${highestBase}-A`;
                 } else {
-                    // No memos for this date, find the last memo before this date
-                    const q2 = query(
-                        collection(db, "memos"),
-                        where("memoType", "==", memoType),
-                        where("antedationDate", "<", selectedDate)
-                    );
-                    const querySnapshot2 = await getDocs(q2);
-                    let lastBaseNum = 0;
-                    querySnapshot2.forEach(docSnap => {
-                        const m = docSnap.data();
-                        const match = String(m.memoNumber).match(/(\d{4})(?:-[A-Z]+)?$/);
-                        if (match) {
-                            const num = parseInt(match[1]);
-                            if (num > lastBaseNum) lastBaseNum = num;
+                    // Find next available suffix A-Z
+                    const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    for (let i = 0; i < suffixes.length; i++) {
+                        if (!usedSuffixes.includes(suffixes[i])) {
+                            return `${highestBase}-${suffixes[i]}`;
                         }
-                    });
-                    // If found, continue sequence, else start at 0001
-                    const nextNum = lastBaseNum > 0 ? lastBaseNum + 1 : 1;
-                    return `${memoType}-${year}-${departmentCode}-${String(nextNum).padStart(4, '0')}`;
+                    }
+                    // All suffixes used
+                    throw new Error(`No more antedation suffixes available for PO #${highestBase.split('-').pop()} on ${selectedDate}.`);
                 }
             } catch (error) {
                 console.error('Error getting next antedated memo number:', error);
@@ -828,12 +708,29 @@
                 try {
                     // Show loading state for antedated memo number
                     assignedMemoNumber.innerHTML = '<span class="text-gray-500">Calculating...</span>';
-
+                    
                     const generatedMemoNo = await getNextAntedatedMemoNumber(memoTypeSelect.value, antedationDate);
-                    // Show only the last two parts (e.g., 1700-A)
+                    
+                    // Show last 2 prefixes for antedated memos
                     const parts = generatedMemoNo.split('-');
-                    let display = parts.slice(-2).join('-');
-                    assignedMemoNumber.innerHTML = `<span class="font-bold">${display}</span>`;
+                    const lastTwoParts = parts.slice(-2).join('-');
+                    
+                    // Check if it has a suffix (A, B, C, etc.)
+                    const hasSuffix = /[A-Z]+$/.test(lastTwoParts);
+                    
+                    if (hasSuffix) {
+                        // Split the number and suffix for better display
+                        const match = lastTwoParts.match(/^(\d+)([A-Z]+)$/);
+                        if (match) {
+                            const number = match[1];
+                            const suffix = match[2];
+                            assignedMemoNumber.innerHTML = `${number}<span class="text-primary-600 font-bold">-${suffix}</span>`;
+                        } else {
+                            assignedMemoNumber.textContent = lastTwoParts;
+                        }
+                    } else {
+                        assignedMemoNumber.textContent = lastTwoParts;
+                    }
                 } catch (error) {
                     console.error('Error updating antedated memo number:', error);
                     assignedMemoNumber.innerHTML = '<span class="text-red-500">Error calculating number</span>';
@@ -865,20 +762,6 @@
                     throw new Error('Please select an antedation date');
                 }
 
-                // Validate antedation against old system
-                if (isAntedated && oldMemoLoaded) {
-                    let memoNo = null;
-                    if (memoNumberInputContainer && !memoNumberInputContainer.classList.contains('hidden')) {
-                        memoNo = memoNumberInput.value.trim();
-                    } else {
-                        memoNo = assignedMemoNumber.textContent.trim();
-                    }
-                    const antedationCheck = checkAntedationOldSystem(memoNo, antedationDate);
-                    if (antedationCheck && antedationCheck.antedated) {
-                        throw new Error(`Antedated: This Memo No. was already issued on ${antedationCheck.oldDate.toLocaleDateString()} in the old system.`);
-                    }
-                }
-
                 // Get current user
                 const currentUser = auth.currentUser;
                 if (!currentUser) {
@@ -896,10 +779,7 @@
                 const memoType = formData.get('memoType');
                 let generatedMemoNo;
 
-                // Check if admin has provided a custom memo number
-                if (isAdmin && customMemoNumber) {
-                    generatedMemoNo = customMemoNumber;
-                } else if (isAntedated && antedationDate) {
+                if (isAntedated && antedationDate) {
                     // Generate antedated memo number
                     generatedMemoNo = await getNextAntedatedMemoNumber(memoType, antedationDate);
                 } else {
@@ -915,8 +795,8 @@
                         case 'Office Order':
                             memoNumberKey = 'officeOrder';
                             break;
-                        case 'AdvisoryBulletin':
-                            memoNumberKey = 'advisoryBulletin';
+                        case 'Advisory':
+                            memoNumberKey = 'advisory';
                             break;
                         case 'Bulletin':
                             memoNumberKey = 'bulletin';
@@ -942,40 +822,18 @@
 
                 // Determine recipients value
                 let recipientsValue = '';
-                if (recipientsSelect && !recipientsSelect.classList.contains('hidden')) {
+                if (!recipientsSelect.classList.contains('hidden')) {
                     recipientsValue = formData.get('recipients');
-                } else if (recipientsOtherInput) {
+                } else {
                     recipientsValue = recipientsOtherInput.value.trim();
                 }
 
                 // Determine signatory value
                 let signatoryValue = '';
-                const signatorySelect = document.getElementById('signatory');
-                const signatoryOtherInput = document.getElementById('signatory-other');
-                if (signatorySelect && signatoryOtherInput) {
-                    if (!signatorySelect.classList.contains('hidden')) {
-                        signatoryValue = formData.get('signatory');
-                    } else {
-                        signatoryValue = signatoryOtherInput.value.trim();
-                    }
+                if (!signatorySelect.classList.contains('hidden')) {
+                    signatoryValue = formData.get('signatory');
                 } else {
-                    // fallback: try to get from formData
-                    signatoryValue = formData.get('signatory') || '';
-                }
-
-                // Determine authorFocal value
-                let authorFocalValue = '';
-                const authorFocalSelect = document.getElementById('authorFocal');
-                const authorFocalOtherInput = document.getElementById('authorFocal-other');
-                if (authorFocalSelect && authorFocalOtherInput) {
-                    if (!authorFocalSelect.classList.contains('hidden')) {
-                        authorFocalValue = formData.get('authorFocal');
-                    } else {
-                        authorFocalValue = authorFocalOtherInput.value.trim();
-                    }
-                } else {
-                    // fallback: try to get from formData
-                    authorFocalValue = formData.get('authorFocal') || '';
+                    signatoryValue = signatoryOtherInput.value.trim();
                 }
 
                 // Create memo data object with the assigned number
@@ -984,7 +842,7 @@
                     description: formData.get('description'),
                     department: userData.department,
                     recipients: recipientsValue ? [recipientsValue] : [],
-                    authorFocal: authorFocalValue,
+                    priority: formData.get('priority'),
                     signatory: signatoryValue,
                     createdBy: userData.username,
                     memoType: memoType,
@@ -997,8 +855,8 @@
                 // Create memo
                 const memoRef = await createMemo(memoData);
                 
-                // Only increment the normal memo number counter if this is NOT an antedated memo AND NOT a custom admin memo
-                if (!isAntedated && !(isAdmin && customMemoNumber)) {
+                // Only increment the normal memo number counter if this is NOT an antedated memo
+                if (!isAntedated) {
                     // Get the memo number key for normal memos
                     let memoNumberKey;
                     switch (memoType) {
@@ -1011,8 +869,8 @@
                         case 'Office Order':
                             memoNumberKey = 'officeOrder';
                             break;
-                        case 'AdvisoryBulletin':
-                            memoNumberKey = 'advisoryBulletin';
+                        case 'Advisory':
+                            memoNumberKey = 'advisory';
                             break;
                         case 'Bulletin':
                             memoNumberKey = 'bulletin';
@@ -1254,21 +1112,19 @@
         const signatoryOtherWrapper = document.getElementById('signatory-other-wrapper');
         const signatoryBackBtn = document.getElementById('signatory-back-btn');
 
-        if (signatorySelect) {
-            signatorySelect.addEventListener('change', function() {
-                if (this.value === 'Others') {
-                    signatorySelect.classList.add('hidden');
-                    signatoryOtherWrapper.classList.remove('hidden');
-                    signatoryOtherInput.setAttribute('required', 'required');
-                    signatoryOtherInput.focus();
-                } else {
-                    signatoryOtherInput.classList.add('hidden');
-                    signatoryOtherInput.removeAttribute('required');
-                    signatoryOtherWrapper.classList.add('hidden');
-                    signatorySelect.classList.remove('hidden');
-                }
-            });
-        }
+        signatorySelect.addEventListener('change', function() {
+            if (this.value === 'Others') {
+                signatorySelect.classList.add('hidden');
+                signatoryOtherWrapper.classList.remove('hidden');
+                signatoryOtherInput.setAttribute('required', 'required');
+                signatoryOtherInput.focus();
+            } else {
+                signatoryOtherInput.classList.add('hidden');
+                signatoryOtherInput.removeAttribute('required');
+                signatoryOtherWrapper.classList.add('hidden');
+                signatorySelect.classList.remove('hidden');
+            }
+        });
 
         signatoryOtherInput.addEventListener('blur', function() {
             setTimeout(() => {
@@ -1290,144 +1146,6 @@
             signatorySelect.value = '';
             signatorySelect.focus();
         });
-
-        // Check user role and setup admin functionality
-        function checkUserRole() {
-            const userData = JSON.parse(localStorage.getItem('tesdaUser'));
-            if (userData && (userData.role === 'Administrator' || userData.role === 'admin')) {
-                isAdmin = true;
-                // Show edit button and admin badge for admins
-                editMemoNumberBtn.classList.remove('hidden');
-                adminBadge.classList.remove('hidden');
-            }
-        }
-
-        // Admin memo number editing functionality
-        editMemoNumberBtn.addEventListener('click', function() {
-            if (!isAdmin) return;
-            
-            // Show input container
-            memoNumberInputContainer.classList.remove('hidden');
-            memoNumberInput.value = assignedMemoNumber.textContent;
-            memoNumberInput.focus();
-        });
-
-        saveMemoNumberBtn.addEventListener('click', function() {
-            if (!isAdmin) return;
-            
-            const newMemoNumber = memoNumberInput.value.trim();
-            if (newMemoNumber) {
-                customMemoNumber = newMemoNumber;
-                assignedMemoNumber.textContent = newMemoNumber;
-                memoNumberInputContainer.classList.add('hidden');
-                // Show success indicator
-                assignedMemoNumber.classList.add('text-green-600');
-                setTimeout(() => {
-                    assignedMemoNumber.classList.remove('text-green-600');
-                }, 2000);
-            }
-        });
-
-        cancelMemoNumberBtn.addEventListener('click', function() {
-            if (!isAdmin) return;
-            
-            memoNumberInputContainer.classList.add('hidden');
-            memoNumberInput.value = '';
-            customMemoNumber = null;
-        });
-
-        // Initialize role checking
-        checkUserRole();
-
-        // --- BEGIN: Old System Data Loader and Antedation Checker ---
-        const OLD_JSON_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
-        const oldMemoCache = {};
-        let oldMemoLoaded = false;
-
-        async function loadOldSystemData() {
-            const promises = OLD_JSON_YEARS.map(year => fetch(`oldsystem/${year}.json`).then(r => r.json().catch(() => null)));
-            const allData = await Promise.all(promises);
-            for (let i = 0; i < OLD_JSON_YEARS.length; i++) {
-                const year = OLD_JSON_YEARS[i];
-                const data = allData[i];
-                if (!data) continue;
-                // If data is grouped by department, flatten
-                let records = [];
-                if (Array.isArray(data)) {
-                    records = data;
-                } else if (typeof data === 'object' && data !== null) {
-                    Object.values(data).forEach(arr => {
-                        if (Array.isArray(arr)) records = records.concat(arr);
-                    });
-                }
-                for (const rec of records) {
-                    // Memo No. may be a number or string
-                    const memoNo = String(rec["Memo No."]).trim();
-                    const dateIssued = rec["Date Issued"] ? new Date(rec["Date Issued"]) : null;
-                    if (memoNo && dateIssued) {
-                        // Only keep the earliest date for each Memo No.
-                        if (!oldMemoCache[memoNo] || oldMemoCache[memoNo] > dateIssued) {
-                            oldMemoCache[memoNo] = dateIssued;
-                        }
-                    }
-                }
-            }
-            oldMemoLoaded = true;
-        }
-        // Start loading old data ASAP
-        loadOldSystemData();
-
-        // Helper: check if a memo is antedated compared to old system
-        function checkAntedationOldSystem(memoNo, userDateIssued) {
-            if (!oldMemoLoaded) return null; // Not ready
-            const oldDate = oldMemoCache[String(memoNo).trim()];
-            if (!oldDate) return null; // Not found in old system
-            const userDate = new Date(userDateIssued);
-            if (isNaN(userDate.getTime())) return null;
-            // If user date is before old date, it's antedated
-            if (userDate < oldDate) return { antedated: true, oldDate };
-            return { antedated: false, oldDate };
-        }
-        // --- END: Old System Data Loader and Antedation Checker ---
-
-        // Add this after DOMContentLoaded or where Memo No. and Date Issued are input/selected
-        // For this example, let's assume you have inputs with IDs 'memoNumberInput' and 'antedationDate' (already present)
-
-        function updateAntedationVisualCue() {
-            // Only run if both fields are present and loaded
-            if (!oldMemoLoaded) return;
-            let memoNo = null;
-            let dateIssued = null;
-            // Try to get from admin input, else from assignedMemoNumber
-            if (memoNumberInputContainer && !memoNumberInputContainer.classList.contains('hidden')) {
-                memoNo = memoNumberInput.value.trim();
-            } else {
-                memoNo = assignedMemoNumber.textContent.trim();
-            }
-            dateIssued = antedationDateInput.value;
-            if (!memoNo || !dateIssued) {
-                antedationDateInput.classList.remove('border-red-500');
-                antedationDateInput.title = '';
-                return;
-            }
-            const result = checkAntedationOldSystem(memoNo, dateIssued);
-            if (result && result.antedated) {
-                antedationDateInput.classList.add('border-red-500');
-                antedationDateInput.title = `Antedated: Old system has this Memo No. issued on ${result.oldDate.toLocaleDateString()}`;
-            } else {
-                antedationDateInput.classList.remove('border-red-500');
-                antedationDateInput.title = '';
-            }
-        }
-        // Hook up to relevant events
-        if (antedationDateInput) {
-            antedationDateInput.addEventListener('input', updateAntedationVisualCue);
-        }
-        if (memoNumberInput) {
-            memoNumberInput.addEventListener('input', updateAntedationVisualCue);
-        }
-        // Also call after memo number is assigned/generated
-        memoTypeSelect.addEventListener('change', () => setTimeout(updateAntedationVisualCue, 200));
     </script>
 </body>
 </html>
