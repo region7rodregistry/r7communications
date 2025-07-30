@@ -664,13 +664,28 @@
             }
         }
 
-        // Function to get the next antedated memo number with unlimited suffixes
+        // Enhanced function to get the next antedated memo number with improved logic
         async function getNextAntedatedMemoNumber(memoType, selectedDate) {
             try {
-                const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
+                // Validate inputs
+                if (!memoType || !selectedDate) {
+                    console.error('Invalid inputs to getNextAntedatedMemoNumber:', { memoType, selectedDate });
+                    throw new Error('Invalid memo type or selected date');
+                }
+
+                // Get user data with validation
+                const userData = JSON.parse(localStorage.getItem('tesdaUser'));
+                if (!userData || !userData.department) {
+                    console.error('User data not found or invalid');
+                    throw new Error('User data not found');
+                }
+
+                const departmentCode = userData.department.substring(0, 3).toUpperCase();
                 const year = new Date(selectedDate).getFullYear();
                 
-                // Query memos for the specific memo type and date
+                console.log(`Generating antedated memo number for: ${memoType} on ${selectedDate}`);
+                
+                // Query all memos for the specific memo type
                 const q = query(
                     collection(db, "memos"),
                     where("memoType", "==", memoType)
@@ -686,6 +701,205 @@
                         return memoDate === selectedDate && memo.memoType === memoType;
                     });
                 
+                console.log(`Found ${memosForDate.length} memos for the selected date`);
+                
+                // If memos exist for the selected date, use the existing logic
+                if (memosForDate.length > 0) {
+                    console.log('Using existing date logic');
+                    const generatedNumber = await getNextSuffixForExistingDate(memosForDate, memoType, year, departmentCode);
+                    
+                    // Validate uniqueness
+                    const isUnique = await validateMemoNumberUniqueness(generatedNumber, memoType);
+                    if (!isUnique) {
+                        console.error('Generated memo number is not unique:', generatedNumber);
+                        throw new Error('Generated memo number already exists');
+                    }
+                    
+                    return generatedNumber;
+                }
+                
+                // No memos for selected date - search for the latest previous date
+                const allMemosOfType = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(memo => memo.memoType === memoType);
+                
+                console.log(`Searching through ${allMemosOfType.length} total memos of type ${memoType}`);
+                
+                const latestPreviousMemo = await findLatestPreviousMemo(allMemosOfType, selectedDate);
+                
+                if (latestPreviousMemo) {
+                    console.log('Using latest previous memo as base');
+                    // Use the base number from the latest previous memo and add suffix
+                    const generatedNumber = await generateNextSuffixFromBase(latestPreviousMemo.memoNumber, memoType, year, departmentCode);
+                    
+                    // Validate uniqueness
+                    const isUnique = await validateMemoNumberUniqueness(generatedNumber, memoType);
+                    if (!isUnique) {
+                        console.error('Generated memo number is not unique:', generatedNumber);
+                        throw new Error('Generated memo number already exists');
+                    }
+                    
+                    return generatedNumber;
+                } else {
+                    console.log('No previous memos found, starting with 0001');
+                    // No previous memos found for this type, start with 0001
+                    const generatedNumber = `${memoType}-${year}-${departmentCode}-0001`;
+                    
+                    // Validate uniqueness
+                    const isUnique = await validateMemoNumberUniqueness(generatedNumber, memoType);
+                    if (!isUnique) {
+                        console.error('Generated memo number is not unique:', generatedNumber);
+                        throw new Error('Generated memo number already exists');
+                    }
+                    
+                    return generatedNumber;
+                }
+                
+            } catch (error) {
+                console.error('Error getting next antedated memo number:', error);
+                throw error;
+            }
+        }
+
+        // Helper function to find the latest previous memo before the selected date
+        async function findLatestPreviousMemo(allMemos, selectedDate) {
+            try {
+                // Validate inputs
+                if (!selectedDate || !allMemos || !Array.isArray(allMemos)) {
+                    console.error('Invalid inputs to findLatestPreviousMemo:', { selectedDate, allMemos });
+                    return null;
+                }
+
+                const selectedDateObj = new Date(selectedDate);
+                
+                // Validate the date
+                if (isNaN(selectedDateObj.getTime())) {
+                    console.error('Invalid selected date:', selectedDate);
+                    return null;
+                }
+                
+                let latestMemo = null;
+                let latestDate = null;
+                
+                allMemos.forEach(memo => {
+                    try {
+                        const memoDate = memo.antedationDate || (memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toISOString().split('T')[0] : null);
+                        
+                        if (memoDate) {
+                            const memoDateObj = new Date(memoDate);
+                            
+                            // Validate the memo date
+                            if (!isNaN(memoDateObj.getTime())) {
+                                // Only consider dates before the selected date
+                                if (memoDateObj < selectedDateObj) {
+                                    if (!latestDate || memoDateObj > latestDate) {
+                                        latestDate = memoDateObj;
+                                        latestMemo = memo;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing memo date:', error, memo);
+                        // Continue processing other memos
+                    }
+                });
+                
+                if (latestMemo) {
+                    console.log(`Found latest previous memo: ${latestMemo.memoNumber} from date: ${latestDate}`);
+                } else {
+                    console.log('No previous memos found for the selected date');
+                }
+                
+                return latestMemo;
+                
+            } catch (error) {
+                console.error('Error in findLatestPreviousMemo:', error);
+                return null;
+            }
+        }
+
+        // Helper function to generate next suffix from a base memo number
+        async function generateNextSuffixFromBase(baseMemoNumber, memoType, year, departmentCode) {
+            try {
+                // Validate base memo number
+                if (!baseMemoNumber || typeof baseMemoNumber !== 'string') {
+                    console.error('Invalid base memo number:', baseMemoNumber);
+                    throw new Error('Invalid base memo number');
+                }
+
+                // Query all memos to check for existing suffixes of this base number
+                const q = query(
+                    collection(db, "memos"),
+                    where("memoType", "==", memoType)
+                );
+                const querySnapshot = await getDocs(q);
+                
+                const allMemosOfType = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(memo => memo.memoType === memoType);
+                
+                // Find all memos that use this base number with suffixes
+                const baseNumberPattern = baseMemoNumber.replace(/[A-Z]+$/, ''); // Remove any existing suffix
+                
+                // Validate base number pattern
+                if (!baseNumberPattern || baseNumberPattern.length === 0) {
+                    console.error('Invalid base number pattern:', baseNumberPattern);
+                    throw new Error('Invalid base number pattern');
+                }
+                
+                const memosWithBaseNumber = allMemosOfType.filter(memo => {
+                    const memoNumber = memo.memoNumber;
+                    // Check if memo number starts with the base number pattern
+                    return memoNumber && memoNumber.startsWith(baseNumberPattern) && memoNumber !== baseNumberPattern;
+                });
+                
+                // Extract existing suffixes
+                const existingSuffixes = [];
+                memosWithBaseNumber.forEach(memo => {
+                    const memoNumber = memo.memoNumber;
+                    if (memoNumber && memoNumber.length > baseNumberPattern.length + 1) {
+                        const suffix = memoNumber.substring(baseNumberPattern.length + 1); // +1 for the dash
+                        if (/^[A-Z]+$/.test(suffix)) {
+                            existingSuffixes.push(suffix);
+                        }
+                    }
+                });
+                
+                // Find the highest suffix index
+                let highestSuffixIndex = -1;
+                existingSuffixes.forEach(suffix => {
+                    const index = suffixToIndex(suffix);
+                    if (index > highestSuffixIndex) {
+                        highestSuffixIndex = index;
+                    }
+                });
+                
+                // Generate next suffix
+                const nextSuffix = indexToSuffix(highestSuffixIndex + 1);
+                
+                // Validate the generated suffix
+                if (!nextSuffix || nextSuffix.length === 0) {
+                    console.error('Failed to generate valid suffix');
+                    throw new Error('Failed to generate valid suffix');
+                }
+                
+                const result = `${baseNumberPattern}-${nextSuffix}`;
+                console.log(`Generated memo number: ${result} from base: ${baseMemoNumber}`);
+                return result;
+                
+            } catch (error) {
+                console.error('Error generating next suffix from base:', error);
+                // Fallback: just add -A to the base number
+                const fallbackResult = `${baseMemoNumber}-A`;
+                console.log(`Using fallback memo number: ${fallbackResult}`);
+                return fallbackResult;
+            }
+        }
+
+        // Helper function to get next suffix for existing date (original logic)
+        async function getNextSuffixForExistingDate(memosForDate, memoType, year, departmentCode) {
+            try {
                 // Extract base numbers and suffixes
                 const baseNumberMap = {};
                 memosForDate.forEach(memo => {
@@ -743,8 +957,30 @@
                     return `${highestBase}-${nextSuffix}`;
                 }
             } catch (error) {
-                console.error('Error getting next antedated memo number:', error);
+                console.error('Error in getNextSuffixForExistingDate:', error);
                 throw error;
+            }
+        }
+
+        // Helper function to validate memo number uniqueness
+        async function validateMemoNumberUniqueness(generatedMemoNumber, memoType) {
+            try {
+                const q = query(
+                    collection(db, "memos"),
+                    where("memoNumber", "==", generatedMemoNumber),
+                    where("memoType", "==", memoType)
+                );
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.docs.length > 0) {
+                    console.warn(`Duplicate memo number detected: ${generatedMemoNumber}`);
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error validating memo number uniqueness:', error);
+                return false;
             }
         }
 
