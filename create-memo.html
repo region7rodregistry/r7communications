@@ -284,8 +284,9 @@
                                     <p class="font-medium mb-1">Antedation Information:</p>
                                     <ul class="space-y-1">
                                         <li>• Memo will be dated with the selected past date</li>
-                                        <li>• Memo number will include a suffix (A, B, C, etc.)</li>
+                                        <li>• Memo number will include a suffix (A, B, C, ..., Z, AA, AB, etc.)</li>
                                         <li>• Example: If last memo on that date was 1405, this becomes 1405-A</li>
+                                        <li>• After Z, continues with AA, AB, AC, etc. (unlimited)</li>
                                         <li>• Normal memos continue with sequential numbering</li>
                                     </ul>
                                 </div>
@@ -640,8 +641,19 @@
             }
         });
 
-        // Helper function to generate A-Z suffixes
-        function generateSuffix(index) {
+        // Helper function to convert suffix to index (A=0, B=1, ..., Z=25, AA=26, AB=27, etc.)
+        function suffixToIndex(suffix) {
+            if (!suffix) return -1;
+            let index = 0;
+            for (let i = 0; i < suffix.length; i++) {
+                index = index * 26 + (suffix.charCodeAt(i) - 65);
+            }
+            return index;
+        }
+
+        // Helper function to convert index to suffix (0=A, 1=B, ..., 25=Z, 26=AA, 27=AB, etc.)
+        function indexToSuffix(index) {
+            if (index < 0) return '';
             if (index < 26) {
                 return String.fromCharCode(65 + index); // A-Z
             } else {
@@ -652,7 +664,7 @@
             }
         }
 
-        // Function to get the next antedated memo number (A-Z only, error if all used)
+        // Function to get the next antedated memo number with unlimited suffixes
         async function getNextAntedatedMemoNumber(memoType, selectedDate) {
             try {
                 const departmentCode = JSON.parse(localStorage.getItem('tesdaUser')).department.substring(0, 3).toUpperCase();
@@ -677,12 +689,13 @@
                 // Extract base numbers and suffixes
                 const baseNumberMap = {};
                 memosForDate.forEach(memo => {
-                    // Memo number format: PO-2025-DEP-1554 or PO-2025-DEP-1554-A
+                    // Memo number format: PO-2025-DEP-1554 or PO-2025-DEP-1554-A or PO-2025-DEP-1554-AA
                     const parts = memo.memoNumber.split('-');
-                    const base = parts.slice(0, -1).join('-');
                     const lastPart = parts[parts.length - 1];
-                    // If last part is a single letter, it's a suffix
-                    if (/^[A-Z]$/.test(lastPart)) {
+                    
+                    // Check if last part is a suffix (A, B, C, ..., Z, AA, AB, etc.)
+                    if (/^[A-Z]+$/.test(lastPart)) {
+                        // Has suffix
                         const baseNum = parts.slice(0, -1).join('-');
                         if (!baseNumberMap[baseNum]) baseNumberMap[baseNum] = [];
                         baseNumberMap[baseNum].push(lastPart);
@@ -716,15 +729,18 @@
                     // Base number exists, assign -A
                     return `${highestBase}-A`;
                 } else {
-                    // Find next available suffix A-Z
-                    const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-                    for (let i = 0; i < suffixes.length; i++) {
-                        if (!usedSuffixes.includes(suffixes[i])) {
-                            return `${highestBase}-${suffixes[i]}`;
+                    // Find the highest suffix index
+                    let highestSuffixIndex = -1;
+                    usedSuffixes.forEach(suffix => {
+                        const index = suffixToIndex(suffix);
+                        if (index > highestSuffixIndex) {
+                            highestSuffixIndex = index;
                         }
-                    }
-                    // All suffixes used
-                    throw new Error(`No more antedation suffixes available for PO #${highestBase.split('-').pop()} on ${selectedDate}.`);
+                    });
+                    
+                    // Generate next suffix
+                    const nextSuffix = indexToSuffix(highestSuffixIndex + 1);
+                    return `${highestBase}-${nextSuffix}`;
                 }
             } catch (error) {
                 console.error('Error getting next antedated memo number:', error);
@@ -745,12 +761,12 @@
                     const parts = generatedMemoNo.split('-');
                     const lastTwoParts = parts.slice(-2).join('-');
                     
-                    // Check if it has a suffix (A, B, C, etc.)
-                    const hasSuffix = /[A-Z]+$/.test(lastTwoParts);
+                    // Check if it has a suffix (A, B, C, AA, AB, etc.)
+                    const hasSuffix = /-[A-Z]+$/.test(lastTwoParts);
                     
                     if (hasSuffix) {
                         // Split the number and suffix for better display
-                        const match = lastTwoParts.match(/^(\d+)([A-Z]+)$/);
+                        const match = lastTwoParts.match(/^(\d+)-([A-Z]+)$/);
                         if (match) {
                             const number = match[1];
                             const suffix = match[2];
