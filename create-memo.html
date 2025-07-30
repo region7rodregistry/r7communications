@@ -398,7 +398,12 @@
                                 <option value="Alexander A. Daligdig">Alexander A. Daligdig</option>
                                 <option value="Marlou G. Parba">Marlou G. Parba</option>
                             </optgroup>
+                            <option value="Others">Other (Please specify)</option>
                         </select>
+                        <div id="authorFocal-other-wrapper" class="hidden relative">
+                            <input type="text" id="authorFocal-other" name="authorFocal-other" placeholder="Enter custom focal/author" class="block w-full border border-gray-300 rounded-lg shadow-md py-2.5 pl-3 pr-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-base" />
+                            <button type="button" id="authorFocal-back-btn" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary-600 hover:underline focus:outline-none">Back to Select</button>
+                        </div>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </div>
@@ -861,13 +866,21 @@
                     signatoryValue = signatoryOtherInput.value.trim();
                 }
 
+                // Determine authorFocal value
+                let authorFocalValue = '';
+                if (!authorFocalSelect.classList.contains('hidden')) {
+                    authorFocalValue = formData.get('authorFocal');
+                } else {
+                    authorFocalValue = authorFocalOtherInput.value.trim();
+                }
+
                 // Create memo data object with the assigned number
                 const memoData = {
                     title: formData.get('title'),
                     description: formData.get('description'),
                     department: userData.department,
                     recipients: recipientsValue ? [recipientsValue] : [],
-                    authorFocal: formData.get('authorFocal'),
+                    authorFocal: authorFocalValue,
                     signatory: signatoryValue,
                     createdBy: userData.username,
                     memoType: memoType,
@@ -1170,6 +1183,47 @@
             signatorySelect.classList.remove('hidden');
             signatorySelect.value = '';
             signatorySelect.focus();
+        });
+
+        // Focals/Author "Others" functionality
+        const authorFocalSelect = document.getElementById('authorFocal');
+        const authorFocalOtherInput = document.getElementById('authorFocal-other');
+        const authorFocalOtherWrapper = document.getElementById('authorFocal-other-wrapper');
+        const authorFocalBackBtn = document.getElementById('authorFocal-back-btn');
+
+        authorFocalSelect.addEventListener('change', function() {
+            if (this.value === 'Others') {
+                authorFocalSelect.classList.add('hidden');
+                authorFocalOtherWrapper.classList.remove('hidden');
+                authorFocalOtherInput.setAttribute('required', 'required');
+                authorFocalOtherInput.focus();
+            } else {
+                authorFocalOtherInput.classList.add('hidden');
+                authorFocalOtherInput.removeAttribute('required');
+                authorFocalOtherWrapper.classList.add('hidden');
+                authorFocalSelect.classList.remove('hidden');
+            }
+        });
+
+        authorFocalOtherInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (authorFocalOtherInput.value.trim() === '') {
+                    authorFocalOtherInput.classList.add('hidden');
+                    authorFocalOtherInput.removeAttribute('required');
+                    authorFocalOtherWrapper.classList.add('hidden');
+                    authorFocalSelect.classList.remove('hidden');
+                    authorFocalSelect.value = '';
+                }
+            }, 100);
+        });
+
+        authorFocalBackBtn.addEventListener('click', function() {
+            authorFocalOtherInput.classList.add('hidden');
+            authorFocalOtherInput.removeAttribute('required');
+            authorFocalOtherWrapper.classList.add('hidden');
+            authorFocalSelect.classList.remove('hidden');
+            authorFocalSelect.value = '';
+            authorFocalSelect.focus();
         });
     </script>
 </body>
