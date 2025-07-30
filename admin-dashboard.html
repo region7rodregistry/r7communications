@@ -748,7 +748,7 @@
                         <div class="flex items-center space-x-2">
                             <p id="nextAdvisoryBulletinNumber" class="text-3xl font-extrabold text-yellow-900 drop-shadow">0000</p>
                             <button onclick="editMemoNumber('advisoryBulletin')" class="text-blue-700 hover:text-blue-900 transition"><i data-lucide="edit-2" class="w-5 h-5"></i></button>
-                        </div>
+                        </div>  
                         <div id="advisoryBulletinNumberEdit" class="hidden mt-2">
                             <input type="number" id="advisoryBulletinNumberInput" class="w-24 px-2 py-1 border rounded" min="0">
                             <button onclick="saveMemoNumber('advisoryBulletin')" class="ml-2 text-green-700 hover:text-green-900"><i data-lucide="check" class="w-5 h-5"></i></button>
@@ -2565,13 +2565,15 @@
                 showSuccessToast('Action taken updated for all visible memos');
                 actionTakenInput.value = '';
 
-                // Hide the apply button and replace the input with plain text
+                // Hide the apply button and replace the input with a double-clickable span
                 if (applyBtn) applyBtn.style.display = 'none';
                 if (actionTakenInput) {
                     const parent = actionTakenInput.parentNode;
                     const textSpan = document.createElement('span');
                     textSpan.textContent = actionTaken;
-                    textSpan.className = 'ml-2 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 w-64 inline-block';
+                    textSpan.className = 'ml-2 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 w-64 inline-block cursor-pointer hover:bg-gray-200 transition-colors';
+                    textSpan.setAttribute('data-action-taken', actionTaken);
+                    textSpan.setAttribute('ondblclick', 'showClearButton(this)');
                     parent.replaceChild(textSpan, actionTakenInput);
                 }
 
@@ -2587,6 +2589,52 @@
             } finally {
                 loadingModal.classList.add('hidden');
             }
+        };
+
+        // Show clear button when double-clicking the action taken field
+        window.showClearButton = function(element) {
+            // Remove any existing clear button
+            const existingClearBtn = document.querySelector('.clear-action-taken-btn');
+            if (existingClearBtn) {
+                existingClearBtn.remove();
+            }
+
+            // Create clear button
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'clear-action-taken-btn ml-2 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2';
+            clearBtn.textContent = 'Clear';
+            clearBtn.onclick = function() {
+                clearActionTaken(element);
+            };
+
+            // Insert clear button after the element
+            element.parentNode.insertBefore(clearBtn, element.nextSibling);
+        };
+
+        // Clear the action taken field
+        window.clearActionTaken = function(element) {
+            // Remove the clear button
+            const clearBtn = document.querySelector('.clear-action-taken-btn');
+            if (clearBtn) {
+                clearBtn.remove();
+            }
+
+            // Replace the span with the original input
+            const parent = element.parentNode;
+            const actionTakenInput = document.createElement('input');
+            actionTakenInput.type = 'text';
+            actionTakenInput.id = 'actionTakenInput';
+            actionTakenInput.className = 'px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-64';
+            actionTakenInput.placeholder = 'Enter Series Number...';
+
+            // Show the apply button again
+            const applyBtn = document.getElementById('applyActionTakenBtn');
+            if (applyBtn) {
+                applyBtn.style.display = 'inline-block';
+            }
+
+            // Replace the span with the input
+            parent.replaceChild(actionTakenInput, element);
         };
 
         // Handle select all checkbox functionality
