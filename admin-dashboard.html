@@ -1417,7 +1417,7 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                        ${currentView !== 'cancelled' ? `
+                        ${currentView !== 'cancelled' && currentView !== 'approved' ? `
                         <td class=\"px-6 py-3 whitespace-nowrap\">
                             <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
                                 ${memo.status}
@@ -1566,10 +1566,12 @@
                             <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
                             <span class="block text-sm text-gray-900">${memo.recipients}</span>
                         </div>
+                        ${currentView !== 'approved' ? `
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
                             <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
                         </div>
+                        ` : ''}
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
                             <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A'}</span>
