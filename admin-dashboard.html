@@ -1283,7 +1283,12 @@
                     const row = document.createElement('tr');
                     row.className = 'bg-white';
                     row.innerHTML = `
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <div class="flex items-center">
+                                <span>${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                                ${memo.pdfUrl ? `<i data-lucide="file-text" class="w-4 h-4 ml-2 text-orange-500" title="PDF uploaded"></i>` : ''}
+                            </div>
+                        </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
@@ -1307,6 +1312,7 @@
                                 <div id="actionButtons_${memo.id}" class="action-buttons">
                                     <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
                                     <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                    ${memo.pdfUrl ? `<button onclick="viewPDF('${memo.pdfUrl}')" class="text-orange-600 hover:text-orange-900">View PDF</button>` : ''}
                                     <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
                                 </div>
                             </div>
@@ -1320,7 +1326,10 @@
                         card.innerHTML = `
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-xs font-bold text-gray-500 uppercase">Memo No.:</span>
-                                <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-gray-900">${formatMemoNumberForDisplay(memo.memoNumber, memo.isAntedated)}</span>
+                                    ${memo.pdfUrl ? `<i data-lucide="file-text" class="w-4 h-4 ml-2 text-orange-500" title="PDF uploaded"></i>` : ''}
+                                </div>
                             </div>
                             <div class="mb-1">
                                 <span class="block text-xs font-bold text-gray-500 uppercase">Subject:</span>
@@ -1333,10 +1342,6 @@
                             <div class="mb-1">
                                 <span class="block text-xs font-bold text-gray-500 uppercase">Recipients:</span>
                                 <span class="block text-sm text-gray-900">${memo.recipients}</span>
-                            </div>
-                            <div class="mb-1">
-                                <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
-                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
                             </div>
                             <div class="mb-1">
                                 <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
@@ -1353,6 +1358,8 @@
                             <div class="flex space-x-2 mt-2">
                                 <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
                                 <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
+                                ${currentView !== 'pending' ? `<button onclick="openUploadModal('${memo.id}')" class="text-purple-600 hover:text-purple-900 font-medium">Upload PDF</button>` : ''}
+                                ${memo.pdfUrl ? `<button onclick="viewPDF('${memo.pdfUrl}')" class="text-orange-600 hover:text-orange-900 font-medium">View PDF</button>` : ''}
                                 <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
                             </div>
                         `;
@@ -1417,13 +1424,6 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 compressed-subject">${memo.title}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">${memo.department}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 recipients-col">${memo.recipients}</td>
-                        ${currentView !== 'cancelled' && currentView !== 'approved' ? `
-                        <td class=\"px-6 py-3 whitespace-nowrap\">
-                            <span class=\"px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(memo.status)}\">
-                                ${memo.status}
-                            </span>
-                        </td>
-                        ` : ''}
                         <td class="px-6 py-3 text-sm text-gray-900 w-48">
                             ${memo.createdAt.toDate().toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -1491,6 +1491,8 @@
                                 <div id="actionButtons_${memo.id}" class="action-buttons">
                                     <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
                                     <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                    ${currentView !== 'pending' ? `<button onclick="openUploadModal('${memo.id}')" class="text-purple-600 hover:text-purple-900">Upload PDF</button>` : ''}
+                                    ${memo.pdfUrl ? `<button onclick="viewPDF('${memo.pdfUrl}')" class="text-orange-600 hover:text-orange-900">View PDF</button>` : ''}
                                     <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
                                 </div>
                                 ` : ''}
@@ -1570,6 +1572,7 @@
                         <div class="mb-1">
                             <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
                             <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
+                            ${memo.pdfUrl ? `<span class="ml-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 px-2 py-1"><i data-lucide="file-text" class="w-3 h-3 mr-1"></i>PDF</span>` : ''}
                         </div>
                         ` : ''}
                         <div class="mb-1">
@@ -1587,6 +1590,7 @@
                         <div class="flex space-x-2 mt-2">
                             <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
                             <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
+                            ${currentView !== 'pending' ? `<button onclick="openUploadModal('${memo.id}')" class="text-purple-600 hover:text-purple-900 font-medium">Upload PDF</button>` : ''}
                             <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
                         </div>
                     `;
@@ -2835,7 +2839,6 @@
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider subject-col compressed-subject">Subject</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">From</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider recipients-col">Recipients</th>`;
-                headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-48">Created At</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col w-48">Released to</th>`;
                 headerHtml += `<th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider rod-fasd-col">Received by (Date + Name)</th>`;
@@ -3197,6 +3200,7 @@
                                 <div id="actionButtons_${memo.id}" class="action-buttons">
                                     <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900">View</button>
                                     <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900">Status</button>
+                                    ${currentView !== 'pending' ? `<button onclick="openUploadModal('${memo.id}')" class="text-purple-600 hover:text-purple-900">Upload PDF</button>` : ''}
                                     <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900">Delete</button>
                                 </div>
                             </div>
@@ -3225,10 +3229,6 @@
                                 <span class="block text-sm text-gray-900">${memo.recipients}</span>
                             </div>
                             <div class="mb-1">
-                                <span class="block text-xs font-bold text-gray-500 uppercase">Status:</span>
-                                <span class="inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(memo.status)} px-2 py-1">${memo.status}</span>
-                            </div>
-                            <div class="mb-1">
                                 <span class="block text-xs font-bold text-gray-500 uppercase">Created At:</span>
                                 <span class="block text-sm text-gray-900">${memo.createdAt && memo.createdAt.toDate ? memo.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A'}</span>
                             </div>
@@ -3243,6 +3243,7 @@
                             <div class="flex space-x-2 mt-2">
                                 <button onclick="viewMemo('${memo.id}')" class="text-blue-600 hover:text-blue-900 font-medium">View</button>
                                 <button onclick="changeStatus('${memo.id}', '${memo.status}')" class="text-green-600 hover:text-green-900 font-medium">Status</button>
+                                ${currentView !== 'pending' ? `<button onclick="openUploadModal('${memo.id}')" class="text-purple-600 hover:text-purple-900 font-medium">Upload PDF</button>` : ''}
                                 <button onclick="deleteMemo('${memo.id}')" class="text-red-600 hover:text-red-900 font-medium">Delete</button>
                             </div>
                         `;
@@ -3384,6 +3385,183 @@
                 openArchiveFolderModal(label, memos);
             }
         });
+
+        // PDF Upload Modal Functions
+        function openUploadModal(memoId) {
+            const modal = document.getElementById('uploadModal');
+            const modalContent = document.getElementById('uploadModalContent');
+            const memoIdInput = document.getElementById('memoId');
+            
+            // Set memo ID
+            memoIdInput.value = memoId;
+            
+            // Reset modal state
+            resetUploadModal();
+            
+            // Show modal with animation
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            const modalContent = document.getElementById('uploadModalContent');
+            
+            // Hide modal with animation
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function resetUploadModal() {
+            // Reset file input
+            document.getElementById('pdfFile').value = '';
+            
+            // Reset progress
+            document.getElementById('uploadProgress').style.width = '0%';
+            document.getElementById('uploadPercent').textContent = '0%';
+            document.getElementById('uploadProgressContainer').classList.add('hidden');
+            
+            // Reset messages
+            document.getElementById('uploadMessage').classList.add('hidden');
+            document.getElementById('uploadSuccess').classList.add('hidden');
+            document.getElementById('uploadError').classList.add('hidden');
+            
+            // Enable submit button
+            document.getElementById('uploadSubmit').disabled = false;
+        }
+
+        // PDF View Function
+        function viewPDF(pdfUrl) {
+            if (!pdfUrl) {
+                alert('No PDF available for this memo.');
+                return;
+            }
+            
+            // Open PDF in a new tab
+            window.open(pdfUrl, '_blank');
+        }
+
+        // Initialize upload functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('pdfFile');
+            const uploadBtn = document.getElementById('uploadSubmit');
+            const dropZone = document.getElementById('dropZone');
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgress');
+            const progressPercent = document.getElementById('uploadPercent');
+            const messageContainer = document.getElementById('uploadMessage');
+            const successMessage = document.getElementById('uploadSuccess');
+            const errorMessage = document.getElementById('uploadError');
+            const errorText = document.getElementById('errorMessage');
+
+            // File input change handler
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Drag and drop functionality
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            });
+
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect();
+                }
+            });
+
+            // Upload button click handler
+            uploadBtn.addEventListener('click', handleUpload);
+
+            function handleFileSelect() {
+                const file = fileInput.files[0];
+                if (file) {
+                    // Validate file type
+                    if (file.type !== 'application/pdf') {
+                        showError('Please select a PDF file.');
+                        return;
+                    }
+                    
+                    // Validate file size (10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        showError('File size must be less than 10MB.');
+                        return;
+                    }
+                    
+                    // Enable upload button
+                    uploadBtn.disabled = false;
+                }
+            }
+
+            async function handleUpload() {
+                const file = fileInput.files[0];
+                const memoId = document.getElementById('memoId').value;
+                
+                if (!file) {
+                    showError('Please select a file to upload.');
+                    return;
+                }
+
+                // Disable upload button and show progress
+                uploadBtn.disabled = true;
+                progressContainer.classList.remove('hidden');
+                messageContainer.classList.add('hidden');
+
+                try {
+                    // Import uploadPDF function from firebase-config
+                    const { uploadPDF } = await import('./firebase-config.js');
+                    
+                    await uploadPDF(memoId, file, (percent) => {
+                        progressBar.style.width = `${percent}%`;
+                        progressPercent.textContent = `${Math.round(percent)}%`;
+                    });
+
+                    // Show success message
+                    showSuccess();
+                    
+                    // Close modal after 2 seconds
+                    setTimeout(() => {
+                        closeUploadModal();
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showError(error.message || 'Upload failed. Please try again.');
+                }
+            }
+
+            function showSuccess() {
+                messageContainer.classList.remove('hidden');
+                successMessage.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+            }
+
+            function showError(message) {
+                messageContainer.classList.remove('hidden');
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                errorText.textContent = message;
+                
+                // Re-enable upload button
+                uploadBtn.disabled = false;
+                progressContainer.classList.add('hidden');
+            }
+        });
     </script>
 
     <!-- Footer -->
@@ -3394,6 +3572,66 @@
             </p>
         </div>
     </footer>
+
+    <!-- PDF Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-lg relative transform transition-all duration-300 scale-95 opacity-0" id="uploadModalContent">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-blue-700">Upload PDF for Memo</h2>
+                <button onclick="closeUploadModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <input type="hidden" id="memoId" />
+            
+            <div class="mt-4 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors" id="dropZone">
+                <div class="mb-4">
+                    <i data-lucide="upload-cloud" class="w-12 h-12 text-blue-400 mx-auto mb-2"></i>
+                    <p class="text-gray-600 mb-2">Drag and drop your PDF file here</p>
+                    <p class="text-sm text-gray-500">or</p>
+                </div>
+                <input type="file" id="pdfFile" accept="application/pdf" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border file:border-blue-200 file:rounded file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                <p class="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mt-4 hidden" id="uploadProgressContainer">
+                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Uploading...</span>
+                    <span id="uploadPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="uploadProgress" class="h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div id="uploadMessage" class="mt-4 hidden">
+                <div id="uploadSuccess" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                    <div class="flex items-center">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                        <span>PDF uploaded successfully!</span>
+                    </div>
+                </div>
+                <div id="uploadError" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <div class="flex items-center">
+                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                        <span id="errorMessage">Upload failed. Please try again.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeUploadModal()" class="text-blue-700 border border-blue-300 px-4 py-2 rounded hover:bg-blue-50 transition-colors">
+                    Cancel
+                </button>
+                <button id="uploadSubmit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Upload
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Set current year in footer

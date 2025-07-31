@@ -1,7 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, runTransaction, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, runTransaction, orderBy, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -18,6 +19,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 // Memo Functions
 async function createMemo(memoData) {
@@ -452,6 +454,58 @@ async function incrementAnalyticsCounter(type) {
     });
 }
 
+// Upload PDF function
+async function uploadPDF(memoId, file, onProgress) {
+    try {
+        // Validate file
+        if (!file || file.type !== "application/pdf") {
+            throw new Error("Only PDF files are allowed.");
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            throw new Error("File exceeds 10MB limit.");
+        }
+
+        // Create storage reference
+        const storageRef = ref(storage, `memos/${memoId}/${file.name}`);
+        
+        // Upload file with progress tracking
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        return new Promise((resolve, reject) => {
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    if (onProgress) onProgress(percent);
+                },
+                (error) => {
+                    reject(error);
+                },
+                async () => {
+                    try {
+                        // Get download URL
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        
+                        // Update Firestore document
+                        const memoRef = doc(db, "memos", memoId);
+                        await updateDoc(memoRef, { 
+                            pdfUrl: downloadURL,
+                            pdfUploadedAt: new Date()
+                        });
+                        
+                        resolve(downloadURL);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            );
+        });
+    } catch (error) {
+        console.error("Error uploading PDF:", error);
+        throw error;
+    }
+}
+
 // Export functions
 export {
     db,
@@ -468,5 +522,6 @@ export {
     logoutUser,
     initializeUsers,
     getCurrentMemoNumber,
-    incrementAnalyticsCounter
+    incrementAnalyticsCounter,
+    uploadPDF
 }; 
