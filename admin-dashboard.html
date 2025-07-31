@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-storage-compat.js"></script>
     <link rel="icon" type="image/png" href="icons/t7logo.png">
     <script type="module" src="firebase-config.js"></script>
     <style>
@@ -59,6 +61,45 @@
             animation: fadeSlideOut 0.3s ease-in forwards;
         }
 
+        /* Enhanced Upload Modal Styles */
+        .drop-zone-active {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone-active .upload-cloud {
+            color: #3b82f6 !important;
+        }
+        
+        .file-preview-enter {
+            animation: slideDown 0.3s ease-out forwards;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .progress-bar-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
         /* Responsive styles */
         @media (max-width: 1024px) {
             .max-w-7xl {
@@ -886,6 +927,9 @@
     </div>
 
     <script type="module">
+        // Global variable for selected memo ID - declared at the very top
+        let selectedMemoId = null;
+        
         import { logoutUser, auth, deleteMemoFromFirestore, deleteActivityLogsForMemos, cleanupOrphanedActivityLogs } from './firebase-config.js';
         import { doc, updateDoc, serverTimestamp, collection, query, orderBy, deleteDoc, setDoc, getDocs, getDoc, onSnapshot, startAfter, limit } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { db } from './firebase-config.js';
@@ -3322,12 +3366,18 @@
     </script>
     <script>
         // Modal logic for archive folder view
-        const archiveFolderModal = document.getElementById('archiveFolderModal');
-        const archiveFolderModalContent = document.getElementById('archiveFolderModalContent');
-        const archiveFolderModalBody = document.getElementById('archiveFolderModalBody');
-        const closeArchiveFolderModal = document.getElementById('closeArchiveFolderModal');
+        // Archive folder modal elements will be accessed when needed
 
         function openArchiveFolderModal(label, memos) {
+            const archiveFolderModal = document.getElementById('archiveFolderModal');
+            const archiveFolderModalContent = document.getElementById('archiveFolderModalContent');
+            const archiveFolderModalBody = document.getElementById('archiveFolderModalBody');
+            
+            if (!archiveFolderModal || !archiveFolderModalContent || !archiveFolderModalBody) {
+                console.error('❌ Archive folder modal elements not found');
+                return;
+            }
+            
             // Build modal content
             let html = `<div class='text-xl font-bold mb-2 text-center'>${label}</div>`;
             if (memos.length === 0) {
@@ -3364,16 +3414,32 @@
             }, 10);
         }
         function closeArchiveFolderModalFn() {
+            const archiveFolderModal = document.getElementById('archiveFolderModal');
+            const archiveFolderModalContent = document.getElementById('archiveFolderModalContent');
+            
+            if (!archiveFolderModal || !archiveFolderModalContent) {
+                console.error('❌ Archive folder modal elements not found for closing');
+                return;
+            }
+            
             archiveFolderModalContent.classList.remove('opacity-100', 'scale-100');
             archiveFolderModalContent.classList.add('opacity-0', 'scale-95');
             setTimeout(() => {
                 archiveFolderModal.classList.add('hidden');
             }, 250);
         }
-        closeArchiveFolderModal.onclick = closeArchiveFolderModalFn;
-        archiveFolderModal.onclick = function(e) {
-            if (e.target === archiveFolderModal) closeArchiveFolderModalFn();
-        };
+        // Set up archive folder modal event listeners
+        const closeArchiveFolderModal = document.getElementById('closeArchiveFolderModal');
+        const archiveFolderModal = document.getElementById('archiveFolderModal');
+        
+        if (closeArchiveFolderModal) {
+            closeArchiveFolderModal.onclick = closeArchiveFolderModalFn;
+        }
+        if (archiveFolderModal) {
+            archiveFolderModal.onclick = function(e) {
+                if (e.target === archiveFolderModal) closeArchiveFolderModalFn();
+            };
+        }
         // Delegate click for view-folder-btn
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('view-folder-btn')) {
@@ -3388,6 +3454,7 @@
 
         // PDF Upload Modal Functions
         function openUploadModal(memoId) {
+            selectedMemoId = memoId;
             const modal = document.getElementById('uploadModal');
             const modalContent = document.getElementById('uploadModalContent');
             const memoIdInput = document.getElementById('memoId');
@@ -3419,21 +3486,137 @@
         }
 
         function resetUploadModal() {
-            // Reset file input
-            document.getElementById('pdfFile').value = '';
+            const modalContent = document.getElementById('uploadModalContent');
             
-            // Reset progress
-            document.getElementById('uploadProgress').style.width = '0%';
-            document.getElementById('uploadPercent').textContent = '0%';
-            document.getElementById('uploadProgressContainer').classList.add('hidden');
+            // Reset modal background
+            modalContent.classList.remove('bg-green-500');
+            modalContent.classList.add('bg-white');
             
-            // Reset messages
-            document.getElementById('uploadMessage').classList.add('hidden');
-            document.getElementById('uploadSuccess').classList.add('hidden');
-            document.getElementById('uploadError').classList.add('hidden');
-            
-            // Enable submit button
-            document.getElementById('uploadSubmit').disabled = false;
+            // Restore original modal content if it was replaced
+            if (!document.getElementById('dropZone')) {
+                modalContent.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-blue-700">Upload PDF for Memo</h2>
+                        <button onclick="closeUploadModal()" class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" id="memoId" value="${selectedMemoId || ''}" />
+                    
+                    <!-- Drop Zone with Enhanced UI -->
+                    <div class="mt-4 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors" id="dropZone">
+                        <div class="mb-4">
+                            <i data-lucide="upload-cloud" class="w-12 h-12 text-blue-400 mx-auto mb-2"></i>
+                            <p class="text-gray-600 mb-2 font-medium">Drag and drop your PDF file here</p>
+                            <p class="text-sm text-gray-500">or</p>
+                        </div>
+                        <input type="file" id="pdfFile" accept="application/pdf" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border file:border-blue-200 file:rounded file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                        <p class="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+                        
+                        <!-- File Preview -->
+                        <div id="filePreview" class="mt-3 hidden">
+                            <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                                <div class="flex items-center">
+                                    <i data-lucide="file-text" class="w-5 h-5 text-blue-600 mr-2"></i>
+                                    <span id="fileName" class="text-sm font-medium text-blue-800"></span>
+                                </div>
+                                <div class="flex items-center mt-1">
+                                    <span id="fileSize" class="text-xs text-blue-600"></span>
+                                    <button onclick="removeFile()" class="ml-auto text-red-500 hover:text-red-700 text-xs">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Progress Bar -->
+                    <div class="mt-4 hidden" id="uploadProgressContainer">
+                        <div class="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Uploading PDF...</span>
+                            <span id="uploadPercent">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="uploadProgress" class="h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 flex items-center justify-center" style="width: 0%">
+                                <span class="text-white text-xs font-medium" id="progressText">0%</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span id="uploadedBytes">0 KB</span>
+                            <span id="totalBytes">0 KB</span>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Success/Error Messages -->
+                    <div id="uploadMessage" class="mt-4 hidden">
+                        <div id="uploadSuccess" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                                <span>PDF uploaded successfully!</span>
+                            </div>
+                        </div>
+                        <div id="uploadError" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                                <span id="errorMessage">Upload failed. Please try again.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-6 flex justify-end space-x-2">
+                        <button onclick="closeUploadModal()" class="text-blue-700 border border-blue-300 px-4 py-2 rounded hover:bg-blue-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button id="uploadSubmit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                            Upload PDF
+                        </button>
+                    </div>
+                `;
+                
+                // Re-initialize event listeners for the new elements
+                setTimeout(() => {
+                    initializeUploadFunctionality();
+                }, 100);
+            } else {
+                // Reset file input and preview
+                const fileInput = document.getElementById('pdfFile');
+                const filePreview = document.getElementById('filePreview');
+                const uploadBtn = document.getElementById('uploadSubmit');
+                
+                if (fileInput) fileInput.value = '';
+                if (filePreview) filePreview.classList.add('hidden');
+                if (uploadBtn) uploadBtn.disabled = true;
+                
+                // Reset progress
+                const progressBar = document.getElementById('uploadProgress');
+                const progressPercent = document.getElementById('uploadPercent');
+                const progressText = document.getElementById('progressText');
+                const uploadedBytes = document.getElementById('uploadedBytes');
+                const totalBytes = document.getElementById('totalBytes');
+                const progressContainer = document.getElementById('uploadProgressContainer');
+                
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                    progressBar.style.minWidth = '0px';
+                }
+                if (progressPercent) progressPercent.textContent = '0%';
+                if (progressText) progressText.textContent = '0%';
+                if (uploadedBytes) uploadedBytes.textContent = '0 KB';
+                if (totalBytes) totalBytes.textContent = '0 KB';
+                if (progressContainer) progressContainer.classList.add('hidden');
+                
+                // Reset messages
+                const messageContainer = document.getElementById('uploadMessage');
+                const successMessage = document.getElementById('uploadSuccess');
+                const errorMessage = document.getElementById('uploadError');
+                
+                if (messageContainer) messageContainer.classList.add('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+                if (errorMessage) errorMessage.classList.add('hidden');
+            }
         }
 
         // PDF View Function
@@ -3489,34 +3672,58 @@
             console.log('✅ File input change listener attached');
 
             // Drag and drop functionality
-            dropZone.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                dropZone.classList.add('border-blue-500', 'bg-blue-50');
-            });
+            if (dropZone) {
+                dropZone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('drop-zone-active');
+                });
 
-            dropZone.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-            });
+                dropZone.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Only remove highlight if we're leaving the drop zone entirely
+                    if (!dropZone.contains(e.relatedTarget)) {
+                        dropZone.classList.remove('drop-zone-active');
+                    }
+                });
 
-            dropZone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    fileInput.files = files;
-                    handleFileSelect();
-                }
-            });
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('drop-zone-active');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const fileInput = document.getElementById('pdfFile');
+                        if (fileInput) {
+                            fileInput.files = files;
+                            handleFileSelect();
+                        }
+                    }
+                });
+            }
 
             // Upload button click handler
-            uploadBtn.addEventListener('click', handleUpload);
-            console.log('✅ Upload button click listener attached');
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', handleUpload);
+                console.log('✅ Upload button click listener attached');
+            }
             console.log('🎉 Upload functionality initialization complete!');
 
             function handleFileSelect() {
                 console.log('📂 File selection handler triggered');
+                
+                const fileInput = document.getElementById('pdfFile');
+                const uploadBtn = document.getElementById('uploadSubmit');
+                const filePreview = document.getElementById('filePreview');
+                const fileName = document.getElementById('fileName');
+                const fileSize = document.getElementById('fileSize');
+                
+                if (!fileInput) {
+                    console.error('❌ File input not found');
+                    return;
+                }
                 
                 const file = fileInput.files[0];
                 console.log('📁 Selected file:', file ? {
@@ -3546,20 +3753,63 @@
                     
                     console.log('✅ File size is acceptable');
                     
+                    // Show file preview with animation
+                    if (filePreview && fileName && fileSize) {
+                        fileName.textContent = file.name;
+                        fileSize.textContent = formatFileSize(file.size);
+                        filePreview.classList.remove('hidden');
+                        filePreview.classList.add('file-preview-enter');
+                    }
+                    
                     // Enable upload button
-                    uploadBtn.disabled = false;
+                    if (uploadBtn) uploadBtn.disabled = false;
                     console.log('✅ Upload button enabled');
                 } else {
                     console.log('❌ No file selected');
-                    uploadBtn.disabled = true;
+                    if (uploadBtn) uploadBtn.disabled = true;
+                    if (filePreview) filePreview.classList.add('hidden');
                 }
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function removeFile() {
+                const fileInput = document.getElementById('pdfFile');
+                const filePreview = document.getElementById('filePreview');
+                const uploadBtn = document.getElementById('uploadSubmit');
+                
+                if (fileInput) fileInput.value = '';
+                if (filePreview) filePreview.classList.add('hidden');
+                if (uploadBtn) uploadBtn.disabled = true;
+                
+                // Hide any error messages
+                const messageContainer = document.getElementById('uploadMessage');
+                if (messageContainer) messageContainer.classList.add('hidden');
             }
 
             async function handleUpload() {
                 console.log('🚀 Upload process started');
                 
+                const fileInput = document.getElementById('pdfFile');
+                const uploadBtn = document.getElementById('uploadSubmit');
+                const progressContainer = document.getElementById('uploadProgressContainer');
+                const messageContainer = document.getElementById('uploadMessage');
+                const progressBar = document.getElementById('uploadProgress');
+                const progressPercent = document.getElementById('uploadPercent');
+                
+                if (!fileInput) {
+                    console.error('❌ File input not found');
+                    return;
+                }
+                
                 const file = fileInput.files[0];
-                const memoId = document.getElementById('memoId').value;
+                const memoId = selectedMemoId || document.getElementById('memoId')?.value;
                 
                 console.log('📁 File details:', {
                     file: file ? {
@@ -3585,74 +3835,207 @@
                 console.log('✅ File validation passed, starting upload...');
 
                 // Disable upload button and show progress
-                uploadBtn.disabled = true;
-                progressContainer.classList.remove('hidden');
-                messageContainer.classList.add('hidden');
+                if (uploadBtn) uploadBtn.disabled = true;
+                if (progressContainer) progressContainer.classList.remove('hidden');
+                if (messageContainer) messageContainer.classList.add('hidden');
+                
+                // Add pulsing effect to progress bar
+                if (progressBar) progressBar.classList.add('progress-bar-pulse');
                 
                 console.log('🔄 Upload button disabled, progress shown');
 
                 try {
                     console.log('📦 Attempting to import firebase-config.js...');
                     
-                    // Import uploadPDF function from firebase-config
-                    const { uploadPDF } = await import('./firebase-config.js');
+                    // Import uploadPDF function and auth from firebase-config
+                    const { uploadPDF, auth } = await import('./firebase-config.js');
                     
                     console.log('✅ Firebase config imported successfully');
+                    
+                    // Check authentication before upload
+                    const currentUser = auth.currentUser;
+                    if (!currentUser) {
+                        throw new Error('User not authenticated. Please log in again.');
+                    }
+                    
+                    console.log('✅ User authenticated:', currentUser.uid);
                     console.log('📤 Starting PDF upload to Firebase...');
                     
-                    await uploadPDF(memoId, file, (percent) => {
+                    // Sanitize filename - replace spaces with underscores
+                    const originalName = file.name;
+                    const sanitizedName = originalName.replace(/\s+/g, '_');
+                    
+                    // Create a new file object with sanitized name if needed
+                    let fileToUpload = file;
+                    if (originalName !== sanitizedName) {
+                        fileToUpload = new File([file], sanitizedName, { type: file.type });
+                        console.log(`📝 Filename sanitized: "${originalName}" → "${sanitizedName}"`);
+                    }
+                    
+                    await uploadPDF(memoId, fileToUpload, (percent, bytesTransferred, totalBytes) => {
                         console.log(`📊 Upload progress: ${Math.round(percent)}%`);
-                        progressBar.style.width = `${percent}%`;
-                        progressPercent.textContent = `${Math.round(percent)}%`;
+                        if (progressBar) {
+                            progressBar.style.width = `${percent}%`;
+                            progressBar.style.minWidth = '20px'; // Ensure text is visible even at low percentages
+                        }
+                        if (progressPercent) progressPercent.textContent = `${Math.round(percent)}%`;
+                        if (progressText) progressText.textContent = `${Math.round(percent)}%`;
+                        
+                        // Update byte counters if available
+                        if (uploadedBytes && totalBytes) {
+                            uploadedBytes.textContent = formatFileSize(bytesTransferred || 0);
+                            totalBytes.textContent = formatFileSize(totalBytes || file.size);
+                        }
                     });
 
                     console.log('✅ Upload completed successfully');
                     
+                    // Remove pulsing effect
+                    if (progressBar) progressBar.classList.remove('progress-bar-pulse');
+                    
                     // Show success message
                     showSuccess();
                     
-                    // Close modal after 2 seconds
+                    // Close modal after 1.8 seconds
                     setTimeout(() => {
                         closeUploadModal();
-                    }, 2000);
+                    }, 1800);
 
                 } catch (error) {
                     console.error('❌ Upload error details:', {
                         message: error.message,
                         stack: error.stack,
                         name: error.name,
-                        code: error.code
+                        code: error.code,
+                        fullError: error
                     });
                     
                     // Re-enable upload button on error
-                    uploadBtn.disabled = false;
-                    progressContainer.classList.add('hidden');
+                    if (uploadBtn) uploadBtn.disabled = false;
+                    if (progressContainer) progressContainer.classList.add('hidden');
                     
-                    showError(error.message || 'Upload failed. Please try again.');
+                    // Remove pulsing effect
+                    if (progressBar) progressBar.classList.remove('progress-bar-pulse');
+                    
+                    // Show specific error message
+                    let errorMessage = error.message || 'Upload failed. Please try again.';
+                    
+                    // Add debugging information for common issues
+                    if (error.code === 'storage/unauthorized') {
+                        errorMessage += '\n\nDebugging info: Check if Firebase Storage rules allow authenticated users to write to /memos/{memoId}/{fileName}';
+                    } else if (error.code === 'storage/unknown') {
+                        errorMessage += '\n\nDebugging info: This might be a network issue. Check your internet connection and try again.';
+                    } else if (error.message && error.message.includes('authenticated')) {
+                        errorMessage += '\n\nDebugging info: Authentication token may have expired. Please refresh the page and log in again.';
+                    }
+                    
+                    showError(errorMessage);
+                    
+                    // If it's an authentication error, provide specific guidance
+                    if (error.message && error.message.includes('authenticated')) {
+                        console.log('🔐 Authentication error detected. Checking auth status...');
+                        checkAuthStatus().then(isAuthenticated => {
+                            if (!isAuthenticated) {
+                                showError('Authentication failed. Please refresh the page and log in again.');
+                            }
+                        });
+                    }
                 }
             }
 
             function showSuccess() {
-                messageContainer.classList.remove('hidden');
-                successMessage.classList.remove('hidden');
-                errorMessage.classList.add('hidden');
+                const modalContent = document.getElementById('uploadModalContent');
+                const messageContainer = document.getElementById('uploadMessage');
+                const successMessage = document.getElementById('uploadSuccess');
+                const errorMessage = document.getElementById('uploadError');
+                
+                // Change modal background to green
+                modalContent.classList.remove('bg-white');
+                modalContent.classList.add('bg-green-500');
+                
+                // Hide all other content
+                messageContainer.classList.add('hidden');
+                document.getElementById('uploadProgressContainer').classList.add('hidden');
+                document.getElementById('dropZone').classList.add('hidden');
+                document.querySelector('.mt-6.flex.justify-end.space-x-2').classList.add('hidden');
+                
+                // Show animated checkmark
+                const checkmarkHTML = `
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <div class="flex justify-center items-center mb-4">
+                            <svg class="w-16 h-16 text-white animate-ping" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <p class="text-white text-lg font-semibold">PDF uploaded successfully!</p>
+                    </div>
+                `;
+                
+                // Replace modal content with checkmark
+                modalContent.innerHTML = checkmarkHTML;
             }
 
             function showError(message) {
-                messageContainer.classList.remove('hidden');
-                errorMessage.classList.remove('hidden');
-                successMessage.classList.add('hidden');
-                errorText.textContent = message;
+                const messageContainer = document.getElementById('uploadMessage');
+                const errorMessage = document.getElementById('uploadError');
+                const successMessage = document.getElementById('uploadSuccess');
+                const errorText = document.getElementById('errorMessage');
+                const uploadBtn = document.getElementById('uploadSubmit');
+                const progressContainer = document.getElementById('uploadProgressContainer');
+                
+                if (messageContainer) messageContainer.classList.remove('hidden');
+                if (errorMessage) errorMessage.classList.remove('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+                if (errorText) errorText.textContent = message;
                 
                 // Re-enable upload button
-                uploadBtn.disabled = false;
-                progressContainer.classList.add('hidden');
+                if (uploadBtn) uploadBtn.disabled = false;
+                if (progressContainer) progressContainer.classList.add('hidden');
+            }
+        }
+
+        // Simple uploadPDF function for direct button calls
+        async function uploadPDF() {
+            console.log('📤 uploadPDF function called directly');
+            const uploadBtn = document.getElementById('uploadSubmit');
+            if (uploadBtn) {
+                uploadBtn.click();
+            } else {
+                console.error('❌ Upload button not found');
+            }
+        }
+
+        // Function to check authentication status
+        async function checkAuthStatus() {
+            try {
+                const { auth } = await import('./firebase-config.js');
+                const currentUser = auth.currentUser;
+                
+                if (currentUser) {
+                    console.log('✅ User is authenticated:', {
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        emailVerified: currentUser.emailVerified
+                    });
+                    return true;
+                } else {
+                    console.error('❌ No user is signed in');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Error checking auth status:', error);
+                return false;
             }
         }
 
         // Initialize upload functionality when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             initializeUploadFunctionality();
+            
+            // Check authentication status on page load
+            setTimeout(() => {
+                checkAuthStatus();
+            }, 1000);
         });
     </script>
 
@@ -3664,6 +4047,21 @@
             </p>
         </div>
     </footer>
+
+    <!-- Archive Folder Modal -->
+    <div id="archiveFolderModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-6xl p-6 shadow-lg relative transform transition-all duration-300 scale-95 opacity-0" id="archiveFolderModalContent">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-blue-700">Archive Folder Contents</h2>
+                <button id="closeArchiveFolderModal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="archiveFolderModalBody" class="max-h-96 overflow-y-auto">
+                <!-- Content will be dynamically populated -->
+            </div>
+        </div>
+    </div>
 
     <!-- PDF Upload Modal -->
     <div id="uploadModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
@@ -3677,28 +4075,51 @@
             
             <input type="hidden" id="memoId" />
             
+            <!-- Drop Zone with Enhanced UI -->
             <div class="mt-4 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors" id="dropZone">
                 <div class="mb-4">
                     <i data-lucide="upload-cloud" class="w-12 h-12 text-blue-400 mx-auto mb-2"></i>
-                    <p class="text-gray-600 mb-2">Drag and drop your PDF file here</p>
+                    <p class="text-gray-600 mb-2 font-medium">Drag and drop your PDF file here</p>
                     <p class="text-sm text-gray-500">or</p>
                 </div>
                 <input type="file" id="pdfFile" accept="application/pdf" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border file:border-blue-200 file:rounded file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                 <p class="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+                
+                <!-- File Preview -->
+                <div id="filePreview" class="mt-3 hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                        <div class="flex items-center">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-600 mr-2"></i>
+                            <span id="fileName" class="text-sm font-medium text-blue-800"></span>
+                        </div>
+                        <div class="flex items-center mt-1">
+                            <span id="fileSize" class="text-xs text-blue-600"></span>
+                            <button onclick="removeFile()" class="ml-auto text-red-500 hover:text-red-700 text-xs">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Progress Bar -->
+            <!-- Enhanced Progress Bar -->
             <div class="mt-4 hidden" id="uploadProgressContainer">
                 <div class="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>Uploading...</span>
+                    <span>Uploading PDF...</span>
                     <span id="uploadPercent">0%</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="uploadProgress" class="h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div id="uploadProgress" class="h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 flex items-center justify-center" style="width: 0%">
+                        <span class="text-white text-xs font-medium" id="progressText">0%</span>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span id="uploadedBytes">0 KB</span>
+                    <span id="totalBytes">0 KB</span>
                 </div>
             </div>
 
-            <!-- Success/Error Messages -->
+            <!-- Enhanced Success/Error Messages -->
             <div id="uploadMessage" class="mt-4 hidden">
                 <div id="uploadSuccess" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                     <div class="flex items-center">
@@ -3714,12 +4135,14 @@
                 </div>
             </div>
 
+            <!-- Action Buttons -->
             <div class="mt-6 flex justify-end space-x-2">
                 <button onclick="closeUploadModal()" class="text-blue-700 border border-blue-300 px-4 py-2 rounded hover:bg-blue-50 transition-colors">
                     Cancel
                 </button>
-                <button id="uploadSubmit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-                    Upload
+                <button id="uploadSubmit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                    Upload PDF
                 </button>
             </div>
         </div>

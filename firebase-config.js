@@ -457,6 +457,23 @@ async function incrementAnalyticsCounter(type) {
 // Upload PDF function
 async function uploadPDF(memoId, file, onProgress) {
     try {
+        // Check authentication first
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            throw new Error("User not authenticated. Please log in again.");
+        }
+        
+        console.log("✅ Authentication verified for user:", currentUser.uid);
+        
+        // Force refresh auth token to ensure it's valid
+        try {
+            await currentUser.getIdToken(true);
+            console.log("✅ Auth token refreshed successfully");
+        } catch (tokenError) {
+            console.warn("⚠️ Token refresh failed:", tokenError);
+            // Continue anyway as the token might still be valid
+        }
+        
         // Validate file
         if (!file || file.type !== "application/pdf") {
             throw new Error("Only PDF files are allowed.");
@@ -465,8 +482,15 @@ async function uploadPDF(memoId, file, onProgress) {
             throw new Error("File exceeds 10MB limit.");
         }
 
-        // Create storage reference
-        const storageRef = ref(storage, `memos/${memoId}/${file.name}`);
+        // Sanitize filename for storage
+        const sanitizedName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+        console.log(`📝 Using sanitized filename: "${sanitizedName}"`);
+
+        // Create storage reference with sanitized filename
+        const storageRef = ref(storage, `memos/${memoId}/${sanitizedName}`);
+        
+        console.log("📤 Starting upload to:", storageRef.fullPath);
+        console.log("🔧 Storage bucket:", storageRef.bucket);
         
         // Upload file with progress tracking
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -476,25 +500,72 @@ async function uploadPDF(memoId, file, onProgress) {
                 "state_changed",
                 (snapshot) => {
                     const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    if (onProgress) onProgress(percent);
+                    console.log(`📊 Upload progress: ${Math.round(percent)}% (${snapshot.bytesTransferred}/${snapshot.totalBytes} bytes)`);
+                    if (onProgress) onProgress(percent, snapshot.bytesTransferred, snapshot.totalBytes);
                 },
                 (error) => {
-                    reject(error);
+                    console.error("❌ Upload error:", {
+                        code: error.code,
+                        message: error.message,
+                        serverResponse: error.serverResponse,
+                        name: error.name
+                    });
+                    
+                    // Provide more specific error messages
+                    let errorMessage = "Upload failed. Please try again.";
+                    
+                    switch (error.code) {
+                        case 'storage/unauthorized':
+                            errorMessage = "Access denied. Please check your authentication and permissions.";
+                            break;
+                        case 'storage/quota-exceeded':
+                            errorMessage = "Storage quota exceeded. Please contact administrator.";
+                            break;
+                        case 'storage/canceled':
+                            errorMessage = "Upload was canceled.";
+                            break;
+                        case 'storage/unknown':
+                            errorMessage = "Unknown error occurred. Please check your internet connection.";
+                            break;
+                        case 'storage/invalid-checksum':
+                            errorMessage = "File corruption detected. Please try uploading again.";
+                            break;
+                        case 'storage/retry-limit-exceeded':
+                            errorMessage = "Upload failed after multiple attempts. Please try again later.";
+                            break;
+                        case 'storage/invalid-format':
+                            errorMessage = "Invalid file format. Please ensure it's a valid PDF.";
+                            break;
+                        case 'storage/invalid-url':
+                            errorMessage = "Invalid storage URL. Please contact administrator.";
+                            break;
+                        default:
+                            errorMessage = `Upload failed: ${error.message}`;
+                    }
+                    
+                    reject(new Error(errorMessage));
                 },
                 async () => {
                     try {
+                        console.log("✅ File uploaded successfully, getting download URL...");
+                        
                         // Get download URL
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        
+                        console.log("✅ Download URL obtained:", downloadURL);
                         
                         // Update Firestore document
                         const memoRef = doc(db, "memos", memoId);
                         await updateDoc(memoRef, { 
                             pdfUrl: downloadURL,
-                            pdfUploadedAt: new Date()
+                            pdfUploadedAt: new Date(),
+                            pdfFileName: sanitizedName
                         });
                         
+                        console.log("✅ Firestore document updated successfully");
                         resolve(downloadURL);
                     } catch (error) {
+                        console.error("❌ Error in upload completion:", error);
                         reject(error);
                     }
                 }

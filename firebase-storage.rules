@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read and write to memos folder
+    match /memos/{memoId}/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write to any folder (for development/debugging)
+    // IMPORTANT: Remove this rule in production and use more specific rules above
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Additional debugging rule - allow access to test files
+    match /test/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+  }
+} 
