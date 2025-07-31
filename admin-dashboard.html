@@ -3448,7 +3448,9 @@
         }
 
         // Initialize upload functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeUploadFunctionality() {
+            console.log('🔧 Initializing upload functionality...');
+            
             const fileInput = document.getElementById('pdfFile');
             const uploadBtn = document.getElementById('uploadSubmit');
             const dropZone = document.getElementById('dropZone');
@@ -3460,8 +3462,31 @@
             const errorMessage = document.getElementById('uploadError');
             const errorText = document.getElementById('errorMessage');
 
+            console.log('🔍 Checking for required elements:', {
+                fileInput: !!fileInput,
+                uploadBtn: !!uploadBtn,
+                dropZone: !!dropZone,
+                progressContainer: !!progressContainer,
+                progressBar: !!progressBar,
+                progressPercent: !!progressPercent,
+                messageContainer: !!messageContainer,
+                successMessage: !!successMessage,
+                errorMessage: !!errorMessage,
+                errorText: !!errorText
+            });
+
+            // Check if elements exist before adding event listeners
+            if (!fileInput || !uploadBtn || !dropZone) {
+                console.warn('❌ Upload modal elements not found, retrying in 100ms...');
+                setTimeout(initializeUploadFunctionality, 100);
+                return;
+            }
+
+            console.log('✅ All required elements found, setting up event listeners...');
+
             // File input change handler
             fileInput.addEventListener('change', handleFileSelect);
+            console.log('✅ File input change listener attached');
 
             // Drag and drop functionality
             dropZone.addEventListener('dragover', function(e) {
@@ -3487,50 +3512,102 @@
 
             // Upload button click handler
             uploadBtn.addEventListener('click', handleUpload);
+            console.log('✅ Upload button click listener attached');
+            console.log('🎉 Upload functionality initialization complete!');
 
             function handleFileSelect() {
+                console.log('📂 File selection handler triggered');
+                
                 const file = fileInput.files[0];
+                console.log('📁 Selected file:', file ? {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                } : 'No file');
+                
                 if (file) {
+                    console.log('🔍 Validating file...');
+                    
                     // Validate file type
                     if (file.type !== 'application/pdf') {
+                        console.log('❌ Invalid file type:', file.type);
                         showError('Please select a PDF file.');
                         return;
                     }
                     
+                    console.log('✅ File type is PDF');
+                    
                     // Validate file size (10MB)
                     if (file.size > 10 * 1024 * 1024) {
+                        console.log('❌ File too large:', file.size, 'bytes');
                         showError('File size must be less than 10MB.');
                         return;
                     }
                     
+                    console.log('✅ File size is acceptable');
+                    
                     // Enable upload button
                     uploadBtn.disabled = false;
+                    console.log('✅ Upload button enabled');
+                } else {
+                    console.log('❌ No file selected');
+                    uploadBtn.disabled = true;
                 }
             }
 
             async function handleUpload() {
+                console.log('🚀 Upload process started');
+                
                 const file = fileInput.files[0];
                 const memoId = document.getElementById('memoId').value;
                 
+                console.log('📁 File details:', {
+                    file: file ? {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type
+                    } : 'No file selected',
+                    memoId: memoId
+                });
+                
                 if (!file) {
+                    console.log('❌ No file selected');
                     showError('Please select a file to upload.');
                     return;
                 }
+
+                if (!memoId) {
+                    console.log('❌ No memo ID found');
+                    showError('Memo ID not found. Please try again.');
+                    return;
+                }
+
+                console.log('✅ File validation passed, starting upload...');
 
                 // Disable upload button and show progress
                 uploadBtn.disabled = true;
                 progressContainer.classList.remove('hidden');
                 messageContainer.classList.add('hidden');
+                
+                console.log('🔄 Upload button disabled, progress shown');
 
                 try {
+                    console.log('📦 Attempting to import firebase-config.js...');
+                    
                     // Import uploadPDF function from firebase-config
                     const { uploadPDF } = await import('./firebase-config.js');
                     
+                    console.log('✅ Firebase config imported successfully');
+                    console.log('📤 Starting PDF upload to Firebase...');
+                    
                     await uploadPDF(memoId, file, (percent) => {
+                        console.log(`📊 Upload progress: ${Math.round(percent)}%`);
                         progressBar.style.width = `${percent}%`;
                         progressPercent.textContent = `${Math.round(percent)}%`;
                     });
 
+                    console.log('✅ Upload completed successfully');
+                    
                     // Show success message
                     showSuccess();
                     
@@ -3540,7 +3617,17 @@
                     }, 2000);
 
                 } catch (error) {
-                    console.error('Upload error:', error);
+                    console.error('❌ Upload error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        name: error.name,
+                        code: error.code
+                    });
+                    
+                    // Re-enable upload button on error
+                    uploadBtn.disabled = false;
+                    progressContainer.classList.add('hidden');
+                    
                     showError(error.message || 'Upload failed. Please try again.');
                 }
             }
@@ -3561,6 +3648,11 @@
                 uploadBtn.disabled = false;
                 progressContainer.classList.add('hidden');
             }
+        }
+
+        // Initialize upload functionality when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeUploadFunctionality();
         });
     </script>
 

@@ -523,5 +523,6 @@ export {
     initializeUsers,
     getCurrentMemoNumber,
     incrementAnalyticsCounter,
-    uploadPDF
+    uploadPDF,
+    storage
 }; 
