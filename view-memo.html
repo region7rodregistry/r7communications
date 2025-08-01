@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script type="module" src="firebase-config.js"></script>
-    <link rel="icon" type="image/png" href="./icons/tlogo.png"> 
+    <link rel="icon" type="image/png" href="./icons/memlogo.png"> 
     <style>
         @media print {
             .no-print {
@@ -58,15 +58,11 @@
             <div class="flex gap-4">
                 <button id="downloadPdfBtn" onclick="downloadPDF()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed opacity-50" disabled>
                     <i data-lucide="download" class="w-4 h-4 mr-2"></i>
-                    Download PDF
+                    View PDF
                 </button>
                 <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
                     <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
                     Print
-                </button>
-                <button onclick="window.history.back()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                    <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
-                    Back
                 </button>
             </div>
         </div>
@@ -803,7 +799,7 @@
                 }
 
                 // Show success message
-                errorMessage.textContent = 'PDF downloaded successfully!';
+                errorMessage.textContent = 'PDF viewed successfully!';
                 errorMessage.className = 'fixed top-4 right-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-md shadow-lg z-50';
                 errorMessage.classList.remove('hidden');
                 
