@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Memo - TESDA DBMS</title>
+    <title id="pageTitle">View Memo - TESDA DBMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script type="module" src="firebase-config.js"></script>
@@ -250,6 +250,76 @@
                 animation: none !important;
             }
         }
+
+        /* Edit button styles */
+        .edit-btn {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .edit-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            color: #2563eb !important;
+        }
+
+        .edit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .edit-btn:disabled:hover {
+            transform: none;
+            color: #9ca3af !important;
+        }
+
+        /* Tooltip for disabled edit buttons */
+        .edit-btn:disabled::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #374151;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .edit-btn:disabled:hover::after {
+            opacity: 1;
+        }
+
+        /* Antedated badge styling */
+        #antedatedBadge {
+            animation: pulse-orange 2s infinite;
+        }
+
+        @keyframes pulse-orange {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(245, 101, 101, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 101, 101, 0);
+            }
+        }
+
+        /* Full memo number styling */
+        #fullMemoNumber {
+            font-family: monospace;
+            background: #fef3c7;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #fbbf24;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -465,7 +535,7 @@
                                 <p class="text-xs text-blue-600 font-medium uppercase tracking-wide">Signatory</p>
                                 <span id="signatory" class="text-sm text-gray-900 font-medium block mt-1"></span>
                             </div>
-                            <button id="edit-signatory" class="edit-btn text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit Signatory">
+                            <button id="edit-signatory" class="edit-btn text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit Signatory" title="Edit Signatory">
                                 <i data-lucide="pen" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -478,7 +548,7 @@
                                 <p class="text-xs text-blue-600 font-medium uppercase tracking-wide">Author/Focal</p>
                                 <span id="authorFocal" class="text-sm text-gray-900 font-medium block mt-1"></span>
                             </div>
-                            <button id="edit-authorFocal" class="edit-btn text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit Author/Focal">
+                            <button id="edit-authorFocal" class="edit-btn text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit Author/Focal" title="Edit Author/Focal">
                                 <i data-lucide="pen" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -529,12 +599,15 @@
                                     <p class="text-sm text-blue-600 font-medium flex items-center mb-2">
                                         Memo No.:
                                         <span id="adminBadge" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Admin Only</span>
-                                        <button id="edit-memoNumber" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit Memo Number">
+                                        <span id="antedatedBadge" class="hidden ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">Antedated</span>
+                                        <button id="edit-memoNumber" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit Memo Number" title="Edit Memo Number">
                                             <i data-lucide="pen" class="w-4 h-4"></i>
                                         </button>
                                     </p>
                                     <span id="memoNumberWrapper">
                                       <p id="memoNumber" class="text-xl font-mono font-bold text-blue-700"></p>
+                                      <p id="fullMemoNumber" class="text-xs text-gray-500 mt-1 hidden"></p>
+                                     
                                     </span>
                                 </div>
                             </div>
@@ -551,7 +624,7 @@
                             <p class="text-sm text-blue-600 font-medium mb-2">From:</p>
                             <span id="department" class="text-lg text-gray-900 font-medium inline-block"></span>
                         </div>
-                        <button id="edit-department" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit From">
+                        <button id="edit-department" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit From" title="Edit From">
                             <i data-lucide="pen" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -562,7 +635,7 @@
                             <p class="text-sm text-blue-600 font-medium mb-2">To:</p>
                             <span id="recipients" class="text-lg text-gray-900 font-medium inline-block"></span>
                         </div>
-                        <button id="edit-recipients" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit To">
+                        <button id="edit-recipients" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit To" title="Edit To">
                             <i data-lucide="pen" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -573,7 +646,7 @@
                             <p class="text-sm text-blue-600 font-medium mb-2">Subject:</p>
                             <span id="title" class="text-lg font-semibold text-gray-900 inline-block leading-relaxed"></span>
                         </div>
-                        <button id="edit-title" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit Subject">
+                        <button id="edit-title" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit Subject" title="Edit Subject">
                             <i data-lucide="pen" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -586,7 +659,7 @@
                                 <span id="description" class="text-base text-gray-900 whitespace-pre-wrap inline-block leading-relaxed"></span>
                             </div>
                         </div>
-                        <button id="edit-description" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" title="Edit Description">
+                        <button id="edit-description" class="edit-btn ml-2 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors" data-original-title="Edit Description" title="Edit Description">
                             <i data-lucide="pen" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -638,6 +711,388 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const errorMessage = document.getElementById('errorMessage');
         const activityLogBody = document.getElementById('activityLogBody');
+
+        // Set up edit button event listeners
+        function setupEditButtons() {
+            // Memo Number edit
+            document.getElementById('edit-memoNumber').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('memoNumber', 'Memo Number', 'text');
+            });
+
+            // Department edit
+            document.getElementById('edit-department').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('department', 'Department', 'text');
+            });
+
+            // Recipients edit
+            document.getElementById('edit-recipients').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('recipients', 'Recipients', 'text');
+            });
+
+            // Title edit
+            document.getElementById('edit-title').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('title', 'Subject', 'text');
+            });
+
+            // Description edit
+            document.getElementById('edit-description').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('description', 'Description', 'textarea');
+            });
+
+            // Signatory edit
+            document.getElementById('edit-signatory').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('signatory', 'Signatory', 'text');
+            });
+
+            // Author/Focal edit
+            document.getElementById('edit-authorFocal').addEventListener('click', function() {
+                if (this.disabled) return;
+                editField('authorFocal', 'Author/Focal', 'text');
+            });
+
+            // Add hover tooltips showing current values
+            addEditButtonTooltips();
+        }
+
+        // Function to add tooltips to edit buttons
+        function addEditButtonTooltips() {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(btn => {
+                const fieldId = btn.id.replace('edit-', '');
+                const fieldElement = document.getElementById(fieldId);
+                if (fieldElement) {
+                    const currentValue = fieldElement.textContent;
+                    if (currentValue && currentValue.trim() !== '') {
+                        btn.title = `${btn.getAttribute('data-original-title')} - Current: ${currentValue.substring(0, 50)}${currentValue.length > 50 ? '...' : ''}`;
+                    }
+                }
+            });
+        }
+
+        // Function to detect if memo number is antedated and extract display value
+        function processMemoNumber(memoNumber) {
+            if (!memoNumber) return { displayValue: '', isAntedated: false, fullValue: '' };
+            
+            // Split memo number by hyphens
+            const parts = memoNumber.split('-');
+            
+            // Check if it's a valid memo number format (should have at least 2 parts)
+            if (parts.length < 2) {
+                return { displayValue: memoNumber, isAntedated: false, fullValue: memoNumber };
+            }
+            
+            // Always show only the last two parts
+            const lastTwoParts = parts.slice(-2).join('-');
+            return {
+                displayValue: lastTwoParts,
+                isAntedated: false,
+                fullValue: memoNumber
+            };
+        }
+
+        // Function to validate memo number format
+        function validateMemoNumber(memoNumber) {
+            if (!memoNumber) return { isValid: false, message: 'Memo number cannot be empty' };
+            
+            // Check if it contains hyphens (required for proper format)
+            if (!memoNumber.includes('-')) {
+                return { isValid: false, message: 'Memo number should contain hyphens (e.g., 2024-001)' };
+            }
+            
+            // Split by hyphens
+            const parts = memoNumber.split('-');
+            
+            // Check if it has at least 2 parts
+            if (parts.length < 2) {
+                return { isValid: false, message: 'Memo number should have at least year and series (e.g., 2024-001)' };
+            }
+            
+            // Check if first part is a valid year
+            const year = parseInt(parts[0]);
+            if (isNaN(year) || year < 1900 || year > 2100) {
+                return { isValid: false, message: 'First part should be a valid year between 1900-2100' };
+            }
+            
+            // Check if second part is a valid series number
+            const series = parseInt(parts[1]);
+            if (isNaN(series) || series < 1) {
+                return { isValid: false, message: 'Second part should be a valid series number' };
+            }
+            
+            return { isValid: true, message: 'Valid memo number format' };
+        }
+
+        // Function to update antedated display elements
+        function updateAntedatedDisplay(processed) {
+            // Since we're always showing full memo numbers, hide these elements
+            const antedatedBadge = document.getElementById('antedatedBadge');
+            if (antedatedBadge) {
+                antedatedBadge.classList.add('hidden');
+            }
+            
+            const fullMemoNumber = document.getElementById('fullMemoNumber');
+            if (fullMemoNumber) {
+                fullMemoNumber.classList.add('hidden');
+            }
+        }
+
+        // Function to edit a field
+        function editField(fieldId, fieldName, inputType) {
+            const fieldElement = document.getElementById(fieldId);
+            let currentValue = fieldElement.textContent;
+            
+            // Special handling for memo number - check admin privileges
+            if (fieldId === 'memoNumber' && !isAdmin) {
+                alert('Only administrators can edit memo numbers');
+                return;
+            }
+            
+            // Special confirmation for memo number
+            if (fieldId === 'memoNumber' && isAdmin) {
+                const confirmed = confirm('Warning: Changing the memo number may affect tracking and references. Are you sure you want to proceed?');
+                if (!confirmed) return;
+            }
+            
+            // Special confirmation for title/subject
+            if (fieldId === 'title') {
+                const confirmed = confirm('Are you sure you want to edit the subject of this memo?');
+                if (!confirmed) return;
+            }
+            
+            // Create input element
+            let inputElement;
+            if (inputType === 'textarea') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 4;
+                inputElement.className = 'w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+                
+                // Add character counter for description
+                const charCounter = document.createElement('div');
+                charCounter.className = 'text-xs text-gray-500 mt-1 text-right';
+                charCounter.textContent = `${currentValue.length}/2000 characters`;
+                
+                // Update counter on input
+                inputElement.addEventListener('input', () => {
+                    charCounter.textContent = `${inputElement.value.length}/2000 characters`;
+                    if (inputElement.value.length > 1800) {
+                        charCounter.className = 'text-xs text-orange-500 mt-1 text-right';
+                    } else if (inputElement.value.length > 2000) {
+                        charCounter.className = 'text-xs text-red-500 mt-1 text-right';
+                    } else {
+                        charCounter.className = 'text-xs text-gray-500 mt-1 text-right';
+                    }
+                });
+            } else {
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+            }
+            
+            // For memo number, show the full value in input, not the processed display value
+            if (fieldId === 'memoNumber' && memoGlobal && memoGlobal.memoNumber) {
+                inputElement.value = memoGlobal.memoNumber;
+            } else {
+                inputElement.value = currentValue;
+            }
+            
+            // Create save and cancel buttons
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors mr-2';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
+            
+            // Create button container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'mt-2 flex gap-2';
+            buttonContainer.appendChild(saveBtn);
+            buttonContainer.appendChild(cancelBtn);
+            
+            // Replace field content with input
+            fieldElement.innerHTML = '';
+            fieldElement.appendChild(inputElement);
+            
+            // Add character counter for textarea fields
+            if (inputType === 'textarea') {
+                const charCounter = document.createElement('div');
+                charCounter.className = 'text-xs text-gray-500 mt-1 text-right';
+                charCounter.textContent = `${currentValue.length}/2000 characters`;
+                fieldElement.appendChild(charCounter);
+            }
+            
+            fieldElement.appendChild(buttonContainer);
+            
+            // Focus on input
+            inputElement.focus();
+            inputElement.select();
+            
+            // Save button click handler
+            saveBtn.addEventListener('click', async () => {
+                const newValue = inputElement.value.trim();
+                if (newValue === '') {
+                    alert(`${fieldName} cannot be empty`);
+                    return;
+                }
+                
+                // Additional validation for description
+                if (fieldId === 'description' && newValue.length > 2000) {
+                    alert('Description is too long. Please keep it under 2000 characters.');
+                    return;
+                }
+                
+                // Additional validation for memo number
+                if (fieldId === 'memoNumber') {
+                    const validation = validateMemoNumber(newValue);
+                    if (!validation.isValid) {
+                        alert(`Invalid memo number: ${validation.message}`);
+                        return;
+                    }
+                }
+                
+                // Show loading state
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+                saveBtn.className = 'px-3 py-1 text-sm font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed mr-2';
+                
+                try {
+                    // Update in Firestore
+                    const memoRef = doc(db, 'memos', memoIdGlobal);
+                    const updateData = {};
+                    
+                    // Special handling for different field types
+                    if (fieldId === 'recipients') {
+                        // Handle recipients as array
+                        updateData[fieldId] = newValue.split(',').map(r => r.trim()).filter(r => r);
+                    } else {
+                        updateData[fieldId] = newValue;
+                    }
+                    
+                    await updateDoc(memoRef, updateData);
+                    
+                    // Update UI - handle recipients specially
+                    if (fieldId === 'recipients') {
+                        const recipientsArray = newValue.split(',').map(r => r.trim()).filter(r => r);
+                        fieldElement.textContent = recipientsArray.join(', ');
+                    } else if (fieldId === 'memoNumber') {
+                        // Special handling for memo number - process antedated logic
+                        const processed = processMemoNumber(newValue);
+                        fieldElement.textContent = processed.displayValue;
+                        
+                        // Update page title
+                        const pageTitle = document.getElementById('pageTitle');
+                        if (pageTitle) {
+                            pageTitle.textContent = `Memo No. ${processed.displayValue} - TESDA DBMS`;
+                        }
+                        
+                        // Update global memo data
+                        if (memoGlobal) {
+                            memoGlobal.memoNumber = newValue;
+                            memoGlobal.antedated = processed.isAntedated;
+                        }
+                        
+                        // Update antedated badge and full memo number display
+                        updateAntedatedDisplay(processed);
+                    } else {
+                        fieldElement.textContent = newValue;
+                    }
+                    
+                    // Log the activity
+                    const user = auth.currentUser;
+                    if (user) {
+                        await logMemoActivity(memoIdGlobal, `Updated ${fieldName}`, user);
+                    }
+                    
+                    // Show success message
+                    showSuccessMessage(`${fieldName} updated successfully`);
+                    
+                    // Refresh tooltips after update
+                    addEditButtonTooltips();
+                    
+                } catch (error) {
+                    console.error('Error updating field:', error);
+                    alert('Error updating field. Please try again.');
+                    // Restore original value
+                    fieldElement.textContent = currentValue;
+                } finally {
+                    // Reset button state
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save';
+                    saveBtn.className = 'px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors mr-2';
+                }
+            });
+            
+            // Cancel button click handler
+            cancelBtn.addEventListener('click', () => {
+                fieldElement.textContent = currentValue;
+            });
+            
+            // Handle Enter key for save, Escape key for cancel
+            inputElement.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveBtn.click();
+                } else if (e.key === 'Escape') {
+                    cancelBtn.click();
+                }
+            });
+        }
+
+        // Function to show success message
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg shadow-lg z-50';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        // Function to show archived banner
+        function showArchivedBanner() {
+            // Check if banner already exists
+            if (document.getElementById('archivedBanner')) return;
+            
+            const banner = document.createElement('div');
+            banner.id = 'archivedBanner';
+            banner.className = 'bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg';
+            banner.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="archive" class="w-5 h-5 text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Memo Archived:</strong> This memo has been archived and cannot be edited. All edit buttons have been disabled.
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            // Insert banner after the header
+            const header = document.querySelector('.max-w-7xl');
+            header.insertBefore(banner, header.firstChild);
+            
+            // Recreate Lucide icons
+            lucide.createIcons();
+        }
+
+        // Function to remove archived banner
+        function removeArchivedBanner() {
+            const banner = document.getElementById('archivedBanner');
+            if (banner) {
+                banner.remove();
+            }
+        }
 
         let memoGlobal = null;
         let memoIdGlobal = null;
@@ -1216,16 +1671,38 @@
                 memoGlobal = memo;
                 memoIdGlobal = memoId;
 
+                // Update page title with memo number
+                const pageTitle = document.getElementById('pageTitle');
+                if (pageTitle) {
+                    // Use the memo number from memo data, not the document ID
+                    let displayNumber = memoId; // fallback to document ID
+                    
+                    if (memo.memoNumber) {
+                        // Process memo number to handle antedated logic
+                        const processed = processMemoNumber(memo.memoNumber);
+                        displayNumber = processed.displayValue;
+                        
+                        // Update memo data with antedated flag
+                        memo.antedated = processed.isAntedated;
+                    }
+                    
+                    pageTitle.textContent = `Memo No. ${displayNumber} - TESDA DBMS`;
+                }
+
                 // Update UI with memo details
                 let el = document.getElementById('memoNumber');
                 if (el) {
-                    if (memo.antedated) {
-                        // Show last two segments joined by '-'
-                        const parts = memo.memoNumber.split('-');
-                        el.textContent = parts.slice(-2).join('-');
+                    console.log('Memo number:', memo.memoNumber, 'Antedated:', memo.antedated);
+                    if (memo.memoNumber) {
+                        // Process memo number to handle antedated logic
+                        const processed = processMemoNumber(memo.memoNumber);
+                        console.log('Processed memo number:', processed);
+                        el.textContent = processed.displayValue;
+                        
+                        // Update antedated display elements
+                        updateAntedatedDisplay(processed);
                     } else {
-                        // Show only the last segment
-                        el.textContent = memo.memoNumber.split('-').pop();
+                        el.textContent = memoId;
                     }
                 }
                 el = document.getElementById('title');
@@ -1269,12 +1746,24 @@
                         btn.classList.add('text-gray-300', 'cursor-not-allowed');
                         btn.disabled = true;
                         btn.style.pointerEvents = 'none';
+                        btn.title = 'Cannot edit archived memo';
                     } else {
                         btn.classList.remove('text-gray-300', 'cursor-not-allowed');
                         btn.disabled = false;
                         btn.style.pointerEvents = '';
+                        btn.title = btn.getAttribute('data-original-title') || 'Edit';
                     }
                 });
+
+                // Set up edit button functionality
+                setupEditButtons();
+
+                // Show archived status banner if memo is archived
+                if (isArchived) {
+                    showArchivedBanner();
+                } else {
+                    removeArchivedBanner();
+                }
             } catch (error) {
                 console.error('Error loading memo details:', error);
                 errorMessage.textContent = error.message || 'Error loading memo details. Please try again.';
