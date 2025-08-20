@@ -248,22 +248,40 @@
         document.getElementById('mobileDarkToggle')?.addEventListener('click', toggleDarkMode);
         // Logout buttons
         function handleLogout() {
-            cleanup();
+            // Clear any active listeners or subscriptions
+            if (memosUnsubscribe) {
+                memosUnsubscribe();
+                memosUnsubscribe = null;
+            }
+            
+            // Clear local storage
+            localStorage.removeItem('tesdaUser');
+            localStorage.removeItem('tesdaMemos');
+            
+            // Sign out from Firebase
             logoutUser().then(() => {
-                localStorage.removeItem('tesdaUser');
                 showSuccessToast('Logged out successfully');
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1000);
             }).catch((error) => {
                 console.error('Error logging out:', error);
-                errorMessage.textContent = 'Error logging out. Please try again.';
-                errorMessage.classList.remove('hidden');
+                // Even if Firebase logout fails, redirect to login page
+                showErrorToast('Error logging out, but session cleared');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
             });
         }
+        // Add logout event listeners when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
         });
+        
+        // Also add logout functionality to any other logout buttons that might exist
         document.getElementById('sidebarLogoutBtn')?.addEventListener('click', handleLogout);
         document.getElementById('mobileLogoutBtn')?.addEventListener('click', handleLogout);
         // View Drafts button (sidebar/mobile)
@@ -297,42 +315,103 @@
         const rowsPerPage = 15;
         let filteredMemosCache = [];
         let memosUnsubscribe = null;
+        let sessionTimeout = null;
+        const SESSION_TIMEOUT_MINUTES = 30; // 30 minutes of inactivity
 
         // Check authentication and load memos
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
-                if (memosUnsubscribe) memosUnsubscribe();
+                // User is not authenticated, redirect to login
+                if (memosUnsubscribe) {
+                    memosUnsubscribe();
+                    memosUnsubscribe = null;
+                }
+                // Clear any stored user data
+                localStorage.removeItem('tesdaUser');
+                localStorage.removeItem('tesdaMemos');
                 window.location.href = 'index.html';
                 return;
             }
-            // Display user info
+            
+            // Check if user data exists in localStorage
             const userData = JSON.parse(localStorage.getItem('tesdaUser'));
-            if (userData) {
-                userInfo.textContent = `${userData.username} (${userData.department})`;
-                // Update welcome message based on department
-                updateWelcomeMessage(userData.department);
+            if (!userData) {
+                // No user data in localStorage, redirect to login
+                console.log('No user data found, redirecting to login');
+                await logoutUser();
+                window.location.href = 'index.html';
+                return;
             }
+            
+            // Display user info
+            userInfo.textContent = `${userData.username} (${userData.department})`;
+            // Update welcome message based on department
+            updateWelcomeMessage(userData.department);
+            
             // Real-time memos listener
             if (memosUnsubscribe) memosUnsubscribe();
             loadingModal.classList.remove('hidden');
             errorMessage.classList.add('hidden');
-            memosUnsubscribe = getMemosByDepartment(userData.department, (memos) => {
-                allMemos = memos;
-                // Sort memos by creation date (newest first)
-                allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-                // Update stats and table
-                totalMemos.textContent = allMemos.length;
-                pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
-                signedMemos.textContent = allMemos.filter(m => m.status && m.status.toLowerCase() === 'signed').length;
-                approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
-                filteredMemosCache = allMemos;
-                currentPage = 1;
-                updateTable(allMemos);
+            
+            try {
+                memosUnsubscribe = getMemosByDepartment(userData.department, (memos) => {
+                    allMemos = memos;
+                    // Sort memos by creation date (newest first)
+                    allMemos.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+                    // Update stats and table
+                    totalMemos.textContent = allMemos.length;
+                    pendingMemos.textContent = allMemos.filter(m => m.status === 'pending').length;
+                    signedMemos.textContent = allMemos.filter(m => m.status && m.status.toLowerCase() === 'signed').length;
+                    approvedArchivedMemos.textContent = allMemos.filter(m => m.status === 'approved' || m.status === 'archived').length;
+                    filteredMemosCache = allMemos;
+                    currentPage = 1;
+                    updateTable(allMemos);
+                    loadingModal.classList.add('hidden');
+                });
+            } catch (error) {
+                console.error('Error setting up memos listener:', error);
                 loadingModal.classList.add('hidden');
-            });
+                errorMessage.textContent = 'Error loading memos. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+            
             // Add search input event listener
             searchInput.addEventListener('input', filterMemos);
+            
+            // Set up session timeout
+            setupSessionTimeout();
         });
+        
+        // Session timeout functionality
+        function setupSessionTimeout() {
+            // Clear existing timeout
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+            }
+            
+            // Set new timeout
+            sessionTimeout = setTimeout(() => {
+                console.log('Session timeout reached, logging out user');
+                handleLogout();
+            }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
+            
+            // Reset timeout on user activity
+            const resetTimeout = () => {
+                if (sessionTimeout) {
+                    clearTimeout(sessionTimeout);
+                }
+                sessionTimeout = setTimeout(() => {
+                    console.log('Session timeout reached, logging out user');
+                    handleLogout();
+                }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
+            };
+            
+            // Add event listeners for user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetTimeout, true);
+            });
+        }
 
         // Function to update welcome message based on department
         function updateWelcomeMessage(department) {
