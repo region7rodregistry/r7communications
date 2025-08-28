@@ -139,8 +139,12 @@
     </style>
 </head>
 <body class="min-h-screen w-full relative overflow-hidden">
-    <!-- Animated background -->
-    <div class="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-100"></div>
+    <!-- Video background -->
+    <video autoplay muted loop class="fixed inset-0 w-full h-full object-cover z-0">
+        <source src="icons/bluememo.mp4" type="video/mp4">
+        <!-- Fallback background if video fails to load -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-100"></div>
+    </video>
     
     <!-- Animated dots pattern -->
     <div class="dots-bg"></div>
