@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="icon" type="image/png" href="icons/memlogo.png">
     <script type="module" src="firebase-config.js"></script>
     <style>
@@ -904,6 +905,9 @@
                             </button>
                             <button onclick="exportArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                                 Export
+                            </button>
+                            <button onclick="downloadPdfArchiveData()" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                                Download All Memos (ZIP)
                             </button>
                         </div>
                     </div>
@@ -4028,6 +4032,8 @@
             }
         }
 
+
+
         // Initialize upload functionality when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             initializeUploadFunctionality();
@@ -4151,6 +4157,186 @@
     <script>
         // Set current year in footer
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Global function to download all memos from Firebase and create a ZIP file
+        async function downloadPdfArchiveData() {
+            try {
+                // Check if user is authenticated
+                const { auth } = await import('./firebase-config.js');
+                if (!auth.currentUser) {
+                    alert('Please log in to download memos.');
+                    return;
+                }
+                
+                // Show confirmation dialog
+                const confirmed = confirm('This will check each memo for available PDFs and download them into a ZIP file. This may take some time depending on the number of memos. Continue?');
+                if (!confirmed) {
+                    return;
+                }
+                
+                // Show loading state - get button element from the onclick context
+                const button = document.querySelector('button[onclick="downloadPdfArchiveData()"]');
+                if (!button) {
+                    throw new Error('Button element not found');
+                }
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Checking memos...';
+                button.disabled = true;
+                
+                // Import Firebase functions
+                const { getAllMemos, storage } = await import('./firebase-config.js');
+                const { ref, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js');
+                
+                console.log('📥 Starting memo PDF availability check...');
+                
+                // Get all memos from Firestore
+                const memos = await getAllMemos();
+                console.log(`📋 Found ${memos.length} memos to check`);
+                
+                if (memos.length === 0) {
+                    alert('No memos found to check');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                
+                // Check if JSZip is available
+                if (typeof JSZip === 'undefined') {
+                    throw new Error('JSZip library not loaded. Please refresh the page and try again.');
+                }
+                
+                // Create a new JSZip instance
+                const zip = new JSZip();
+                
+                // Counter for successful downloads and checks
+                let downloadedCount = 0;
+                let failedCount = 0;
+                let noPdfCount = 0;
+                let availablePdfs = [];
+                
+                // First pass: Check which memos actually have available PDFs
+                button.innerHTML = '🔍 Checking PDF availability...';
+                console.log('🔍 Checking PDF availability for each memo...');
+                
+                for (let i = 0; i < memos.length; i++) {
+                    const memo = memos[i];
+                    const progress = Math.round(((i + 1) / memos.length) * 100);
+                    button.innerHTML = `🔍 Checking ${i + 1}/${memos.length} (${progress}%)`;
+                    
+                    try {
+                        if (memo.pdfUrl) {
+                            // Test if the PDF URL is actually accessible
+                            const response = await fetch(memo.pdfUrl, { method: 'HEAD' });
+                            if (response.ok) {
+                                availablePdfs.push(memo);
+                                console.log(`✅ PDF available for memo: ${memo.memoNumber || memo.id}`);
+                            } else {
+                                console.log(`⚠️ PDF URL exists but not accessible for memo: ${memo.memoNumber || memo.id}`);
+                                noPdfCount++;
+                            }
+                        } else {
+                            console.log(`❌ No PDF URL for memo: ${memo.memoNumber || memo.id}`);
+                            noPdfCount++;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Error checking PDF for memo ${memo.memoNumber || memo.id}:`, error.message);
+                        noPdfCount++;
+                    }
+                }
+                
+                console.log(`📊 Found ${availablePdfs.length} memos with accessible PDFs out of ${memos.length} total`);
+                
+                if (availablePdfs.length === 0) {
+                    alert(`No accessible PDFs found. Checked ${memos.length} memos.`);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                
+                // Second pass: Download the available PDFs
+                button.innerHTML = '📥 Downloading available PDFs...';
+                console.log(`📥 Starting download of ${availablePdfs.length} available PDFs...`);
+                
+                for (let i = 0; i < availablePdfs.length; i++) {
+                    const memo = availablePdfs[i];
+                    try {
+                        // Update progress
+                        const progress = Math.round(((i + 1) / availablePdfs.length) * 100);
+                        button.innerHTML = `📥 Downloading ${i + 1}/${availablePdfs.length} (${progress}%)`;
+                        
+                        console.log(`📄 Downloading PDF for memo: ${memo.memoNumber || memo.id}`);
+                        
+                        // Download the PDF from Firebase Storage
+                        const response = await fetch(memo.pdfUrl);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const pdfBlob = await response.blob();
+                        
+                        // Create filename with memo details
+                        const memoNumber = memo.memoNumber || memo.id;
+                        const subject = memo.subject || 'No Subject';
+                        const sanitizedSubject = subject.replace(/[^a-zA-Z0-9\s-_]/g, '').substring(0, 50);
+                        const date = memo.createdAt ? new Date(memo.createdAt.toDate ? memo.createdAt.toDate() : memo.createdAt).toISOString().split('T')[0] : 'UnknownDate';
+                        const filename = `${memoNumber}_${sanitizedSubject}_${date}.pdf`;
+                        
+                        // Add PDF to zip
+                        zip.file(filename, pdfBlob);
+                        downloadedCount++;
+                        
+                        console.log(`✅ Downloaded: ${filename}`);
+                    } catch (error) {
+                        console.error(`❌ Error downloading memo ${memo.memoNumber || memo.id}:`, error);
+                        failedCount++;
+                    }
+                }
+                
+                if (downloadedCount === 0) {
+                    alert('Failed to download any PDFs despite them being available');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                
+                console.log(`📦 Creating ZIP file with ${downloadedCount} PDFs...`);
+                button.innerHTML = `📦 Creating ZIP file...`;
+                
+                // Generate ZIP file
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                
+                // Create download link
+                const downloadUrl = URL.createObjectURL(zipBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = downloadUrl;
+                downloadLink.download = `TESDA_Memos_Archive_${new Date().toISOString().split('T')[0]}.zip`;
+                
+                // Trigger download
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                // Clean up
+                URL.revokeObjectURL(downloadUrl);
+                
+                // Show detailed success message
+                const message = `Download complete!\n\n✅ Successfully downloaded: ${downloadedCount} PDFs\n❌ Failed downloads: ${failedCount}\n⚠️ No PDF available: ${noPdfCount}\n📋 Total memos checked: ${memos.length}`;
+                alert(message);
+                
+                console.log(`✅ Download complete: ${downloadedCount} PDFs downloaded, ${failedCount} failed, ${noPdfCount} no PDF`);
+                
+            } catch (error) {
+                console.error('❌ Error in downloadPdfArchiveData:', error);
+                alert(`Download failed: ${error.message}`);
+            } finally {
+                // Reset button state
+                const button = document.querySelector('button[onclick="downloadPdfArchiveData()"]');
+                if (button) {
+                    button.innerHTML = 'Download All Memos (ZIP)';
+                    button.disabled = false;
+                }
+            }
+        }
     </script>
 </body>
 </html>
