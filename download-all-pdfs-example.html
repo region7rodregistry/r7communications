@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download All PDFs as ZIP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .button:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Download All PDFs as ZIP</h1>
+    
+    <!-- Button HTML -->
+    <button id="downloadBtn" class="button" onclick="downloadAllPDFs()">
+        📥 Download All PDFs as ZIP
+    </button>
+    
+    <div id="status" class="status" style="display: none;"></div>
+
+    <!-- Required Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Firebase Config (adjust path as needed) -->
+    <script type="module" src="firebase-config.js"></script>
+
+    <script type="module">
+        /**
+         * PRODUCTION-READY FUNCTION: Download All PDFs as ZIP
+         * 
+         * How it works:
+         * 1. Fetches all document references from Firestore (or lists Storage folder)
+         * 2. For each document, retrieves the PDF download URL
+         * 3. Downloads each PDF as a blob
+         * 4. Adds all PDFs to a JSZip instance
+         * 5. Generates ZIP file and triggers browser download
+         * 
+         * Requirements:
+         * - JSZip library (included via CDN)
+         * - Firebase v9+ modular SDK
+         * - Firebase Storage rules must allow read access
+         */
+
+        // Make function globally available
+        window.downloadAllPDFs = async function() {
+            const button = document.getElementById('downloadBtn');
+            const statusDiv = document.getElementById('status');
+            const originalButtonText = button.innerHTML;
+            
+            try {
+                // 1. Authentication Check
+                const { auth, storage } = await import('./firebase-config.js');
+                if (!auth.currentUser) {
+                    alert('Please log in to download PDFs.');
+                    return;
+                }
+
+                // 2. User Confirmation
+                const confirmed = confirm(
+                    'This will download all PDFs from Firebase Storage and zip them. ' +
+                    'This may take some time. Continue?'
+                );
+                if (!confirmed) return;
+
+                // 3. Initialize UI State
+                button.disabled = true;
+                button.innerHTML = '⏳ Checking PDFs...';
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = 'Starting download process...';
+
+                // 4. Check JSZip Availability
+                if (typeof JSZip === 'undefined') {
+                    throw new Error('JSZip library not loaded. Please refresh the page.');
+                }
+
+                // 5. Import Firebase Functions
+                const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+                const { ref, getDownloadURL, listAll } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js');
+                const { db } = await import('./firebase-config.js');
+
+                // 6. Create ZIP Instance
+                const zip = new JSZip();
+
+                // 7. Option A: Fetch PDFs from Firestore (if metadata stored there)
+                // This is the recommended approach if you store pdfUrl in Firestore
+                const memosSnapshot = await getDocs(collection(db, 'memos'));
+                const memos = memosSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                statusDiv.textContent = `Found ${memos.length} documents. Checking for PDFs...`;
+                button.innerHTML = '🔍 Checking PDF availability...';
+
+                // 8. Collect all PDF URLs
+                const pdfFiles = [];
+                let checkedCount = 0;
+
+                for (const memo of memos) {
+                    checkedCount++;
+                    button.innerHTML = `🔍 Checking ${checkedCount}/${memos.length}...`;
+                    
+                    let pdfUrl = null;
+
+                    try {
+                        // Try to get PDF URL from Firestore document
+                        if (memo.pdfUrl) {
+                            // Verify URL is accessible
+                            const response = await fetch(memo.pdfUrl, { method: 'HEAD' });
+                            if (response.ok) {
+                                pdfUrl = memo.pdfUrl;
+                            }
+                        }
+
+                        // If no pdfUrl in Firestore, check Firebase Storage directly
+                        if (!pdfUrl) {
+                            try {
+                                const storageRef = ref(storage, `memos/${memo.id}`);
+                                const result = await listAll(storageRef);
+                                const pdfFile = result.items.find(item => 
+                                    item.name.toLowerCase().endsWith('.pdf')
+                                );
+                                
+                                if (pdfFile) {
+                                    pdfUrl = await getDownloadURL(pdfFile);
+                                }
+                            } catch (storageError) {
+                                console.warn(`No PDF in Storage for memo ${memo.id}:`, storageError);
+                            }
+                        }
+
+                        if (pdfUrl) {
+                            pdfFiles.push({
+                                url: pdfUrl,
+                                filename: `${memo.memoNumber || memo.id}_${(memo.subject || 'memo').replace(/[^a-zA-Z0-9-_]/g, '_').substring(0, 50)}.pdf`
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error processing memo ${memo.id}:`, error);
+                    }
+                }
+
+                if (pdfFiles.length === 0) {
+                    alert('No PDFs found to download.');
+                    button.innerHTML = originalButtonText;
+                    button.disabled = false;
+                    statusDiv.style.display = 'none';
+                    return;
+                }
+
+                // 9. Download All PDFs
+                statusDiv.textContent = `Downloading ${pdfFiles.length} PDFs...`;
+                button.innerHTML = '📥 Downloading PDFs...';
+
+                let downloadedCount = 0;
+                let failedCount = 0;
+
+                for (let i = 0; i < pdfFiles.length; i++) {
+                    const pdfFile = pdfFiles[i];
+                    
+                    try {
+                        button.innerHTML = `📥 Downloading ${i + 1}/${pdfFiles.length}...`;
+                        statusDiv.textContent = `Downloading: ${pdfFile.filename}`;
+
+                        // Fetch PDF as blob
+                        const response = await fetch(pdfFile.url);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        const blob = await response.blob();
+
+                        // Add to ZIP
+                        zip.file(pdfFile.filename, blob);
+                        downloadedCount++;
+                    } catch (error) {
+                        console.error(`Failed to download ${pdfFile.filename}:`, error);
+                        failedCount++;
+                    }
+                }
+
+                if (downloadedCount === 0) {
+                    throw new Error('Failed to download any PDFs.');
+                }
+
+                // 10. Generate ZIP File
+                statusDiv.textContent = 'Creating ZIP file...';
+                button.innerHTML = '📦 Creating ZIP...';
+
+                const zipBlob = await zip.generateAsync({ 
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+
+                // 11. Trigger Download
+                const timestamp = new Date().toISOString()
+                    .replace(/[:.]/g, '-')
+                    .split('T')
+                    .join('_')
+                    .split('.')[0];
+                
+                const filename = `All_PDFs_${timestamp}.zip`;
+
+                const downloadUrl = URL.createObjectURL(zipBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = downloadUrl;
+                downloadLink.download = filename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(downloadUrl);
+
+                // 12. Success Message
+                statusDiv.textContent = `✅ Successfully downloaded ${downloadedCount} PDFs${failedCount > 0 ? ` (${failedCount} failed)` : ''}`;
+                statusDiv.style.background = '#d1fae5';
+                statusDiv.style.color = '#065f46';
+                
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
+
+            } catch (error) {
+                console.error('Error downloading PDFs:', error);
+                alert(`Download failed: ${error.message}`);
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
+            }
+        };
+
+        /**
+         * ALTERNATIVE APPROACH: List PDFs directly from Storage folder
+         * Use this if you want to bypass Firestore and list files directly
+         */
+        async function downloadAllPDFsFromStorageFolder() {
+            const { storage } = await import('./firebase-config.js');
+            const { ref, listAll, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js');
+            
+            const zip = new JSZip();
+            const folderRef = ref(storage, 'memos'); // Adjust path as needed
+            
+            // List all files in the folder recursively
+            const result = await listAll(folderRef);
+            
+            // Get download URLs for all PDFs
+            const pdfPromises = result.items
+                .filter(item => item.name.toLowerCase().endsWith('.pdf'))
+                .map(async (item) => {
+                    const url = await getDownloadURL(item);
+                    return { url, name: item.name };
+                });
+            
+            const pdfFiles = await Promise.all(pdfPromises);
+            
+            // Download and add to ZIP
+            for (const pdf of pdfFiles) {
+                const response = await fetch(pdf.url);
+                const blob = await response.blob();
+                zip.file(pdf.name, blob);
+            }
+            
+            // Generate and download ZIP
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const downloadUrl = URL.createObjectURL(zipBlob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `All_PDFs_${Date.now()}.zip`;
+            link.click();
+            URL.revokeObjectURL(downloadUrl);
+        }
+    </script>
+</body>
+</html>
