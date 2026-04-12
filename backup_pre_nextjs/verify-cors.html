@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Firebase Storage CORS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Storage CORS Verification</h1>
+    <div id="status"></div>
+    <button onclick="testCORS()">Test CORS Configuration</button>
+    <button onclick="showInstructions()">Show Setup Instructions</button>
+    
+    <div id="instructions" style="display: none; margin-top: 20px;">
+        <h2>How to Configure CORS (Google Cloud Console Method)</h2>
+        <ol>
+            <li>Go to <a href="https://console.cloud.google.com/storage/browser" target="_blank">Google Cloud Console - Storage</a></li>
+            <li>Select your project: <code>ro7mbms</code></li>
+            <li>Click on your bucket: <code>ro7mbms.firebasestorage.app</code> or <code>ro7mbms.appspot.com</code></li>
+            <li>Click the <strong>Configuration</strong> tab</li>
+            <li>Scroll to <strong>CORS configuration</strong></li>
+            <li>Click <strong>Edit CORS configuration</strong></li>
+            <li>Paste this JSON:
+                <pre style="background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto;">
+[
+  {
+    "origin": [
+      "https://r7communications.vercel.app",
+      "http://localhost:5500",
+      "http://127.0.0.1:5500",
+      "http://localhost:3000"
+    ],
+    "method": ["GET", "HEAD", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"],
+    "maxAgeSeconds": 3600
+  }
+]</pre>
+            </li>
+            <li>Click <strong>Save</strong></li>
+            <li>Wait 2-5 minutes for changes to propagate</li>
+            <li>Test again using the button above</li>
+        </ol>
+    </div>
+
+    <script>
+        async function testCORS() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div class="info">Testing CORS configuration...</div>';
+            
+            try {
+                // Try to fetch a test file from Firebase Storage
+                // This will fail if CORS is not configured
+                const testUrl = 'https://firebasestorage.googleapis.com/v0/b/ro7mbms.firebasestorage.app/o/memos%2Ftest%2Ftest.pdf?alt=media';
+                
+                const response = await fetch(testUrl, {
+                    method: 'HEAD',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="success">✅ CORS is properly configured! Your domain can access Firebase Storage.</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ CORS test failed. Status: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                if (error.message.includes('CORS') || error.message.includes('Access-Control')) {
+                    statusDiv.innerHTML = '<div class="error">❌ CORS is NOT configured. The error is: ' + error.message + '<br><br>Please follow the instructions below to configure CORS.</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Error testing CORS: ' + error.message + '<br><br>This might mean CORS is not configured, or the test file doesn\'t exist.</div>';
+                }
+            }
+        }
+        
+        function showInstructions() {
+            const instructions = document.getElementById('instructions');
+            instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(testCORS, 1000);
+        });
+    </script>
+</body>
+</html>

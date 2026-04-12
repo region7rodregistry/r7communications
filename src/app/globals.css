@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties ──────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+/* ─── Base styles ──────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-600;
+}
+
+/* ─── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide all UI chrome */
+  .print\:hidden,
+  aside,
+  header,
+  nav,
+  [data-sidebar],
+  [data-header] {
+    display: none !important;
+  }
+
+  /* Reset body */
+  html, body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Log sheet overlay: let it fill the page naturally when printing */
+  .fixed.inset-0.z-50.bg-white {
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  /* Expand main content to full width when sidebar is hidden */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Make cards flat for print */
+  .shadow-sm, .shadow, .shadow-md, .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  /* Show print-only elements */
+  .hidden.print\:block,
+  [class*="print:block"] {
+    display: block !important;
+  }
+
+  /* Borders print-friendly */
+  .border, .border-gray-100, .border-gray-200 {
+    border-color: #d1d5db !important;
+  }
+
+  /* Prevent page breaks inside cards */
+  .rounded-xl, .rounded-lg, [class*="Card"] {
+    break-inside: avoid;
+  }
+
+  /* Remove dark mode overrides */
+  * {
+    color: black !important;
+    background-color: white !important;
+    border-color: #e5e7eb !important;
+  }
+
+  /* But keep status badge colors readable */
+  .bg-yellow-100  { background-color: #fef9c3 !important; }
+  .bg-blue-100    { background-color: #dbeafe !important; }
+  .bg-green-100   { background-color: #dcfce7 !important; }
+  .bg-red-100     { background-color: #fee2e2 !important; }
+  .bg-gray-100    { background-color: #f3f4f6 !important; }
+  .text-yellow-800 { color: #854d0e !important; }
+  .text-blue-800   { color: #1e40af !important; }
+  .text-green-800  { color: #166534 !important; }
+  .text-red-800    { color: #991b1b !important; }
+  .text-gray-800   { color: #1f2937 !important; }
+
+  @page {
+    margin: 1.5cm 2cm;
+    size: A4 portrait;
+  }
+}
+
+/* ─── Animations ────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Radix animate-in/out utilities */
+@layer utilities {
+  .animate-in {
+    animation-duration: 200ms;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-out {
+    animation-duration: 150ms;
+    animation-fill-mode: both;
+    animation-timing-function: ease-in;
+  }
+
+  .fade-in-0 { animation-name: fadeIn; }
+  .fade-out-0 {
+    animation-name: fadeIn;
+    animation-direction: reverse;
+  }
+
+  .zoom-in-95 {
+    animation-name: scaleIn;
+  }
+  .zoom-out-95 {
+    animation-name: scaleIn;
+    animation-direction: reverse;
+  }
+
+  .slide-in-from-top-2 {
+    animation-name: slideFromTop;
+  }
+  .slide-in-from-bottom-2 {
+    animation-name: slideFromBottom;
+  }
+  .slide-in-from-left-1\/2 {
+    animation-name: slideFromLeft;
+  }
+  .slide-out-to-left-1\/2 {
+    animation-name: slideFromLeft;
+    animation-direction: reverse;
+  }
+  .slide-in-from-top-\[48\%\] {
+    animation-name: slideFromTopCenter;
+  }
+  .slide-out-to-top-\[48\%\] {
+    animation-name: slideFromTopCenter;
+    animation-direction: reverse;
+  }
+
+  @keyframes slideFromTop {
+    from { transform: translateY(-8px); }
+    to { transform: translateY(0); }
+  }
+  @keyframes slideFromBottom {
+    from { transform: translateY(8px); }
+    to { transform: translateY(0); }
+  }
+  @keyframes slideFromLeft {
+    from { transform: translateX(-50%); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes slideFromTopCenter {
+    from { transform: translate(-50%, calc(-48% - 10px)); }
+    to { transform: translate(-50%, -50%); }
+  }
+}

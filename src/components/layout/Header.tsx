@@ -1,0 +1,91 @@
+'use client'
+
+import Image from 'next/image'
+import { Sun, Moon } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { Badge } from '@/components/ui/badge'
+import { useState, useEffect } from 'react'
+
+export function Header({ title }: { title?: string }) {
+  const { userData } = useAuth()
+  const [dark, setDark] = useState(false)
+  const [now, setNow] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setNow(new Date())
+    const tick = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(tick)
+  }, [])
+
+  const formattedDate = now
+    ? now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark')
+      setDark(true)
+    }
+  }, [])
+
+  const toggleDark = () => {
+    const next = !dark
+    setDark(next)
+    if (next) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }
+
+  return (
+    <header className="sticky top-0 z-30 h-12 flex items-center justify-between px-4 bg-white/80 backdrop-blur border-b border-gray-100 dark:bg-gray-950/80 dark:border-gray-800 shrink-0">
+      <div className="flex items-center gap-3">
+        <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          {title || 'TESDA Region VII MBMS'}
+        </h1>
+        {formattedDate && (
+          <>
+            <span className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+              {formattedDate}
+            </span>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={toggleDark}
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 dark:text-gray-400"
+        >
+          {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+
+        {userData && (
+          <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-700 ml-1">
+            <div className="text-right hidden sm:block">
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{userData.username}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{userData.department}</p>
+            </div>
+            <div className="h-8 w-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 bg-white flex items-center justify-center shrink-0">
+              <Image
+                src="/tesda-logo.png"
+                alt="TESDA"
+                width={32}
+                height={32}
+                className="object-contain w-full h-full p-0.5"
+              />
+            </div>
+            {userData.role === 'admin' && (
+              <Badge variant="info" className="text-[10px] px-1.5 py-0">admin</Badge>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
+  )
+}

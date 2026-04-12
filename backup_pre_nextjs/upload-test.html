@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            transition: border-color 0.3s;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .log-area {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .log-info { background-color: #d1ecf1; }
+        .log-success { background-color: #d4edda; }
+        .log-error { background-color: #f8d7da; }
+        .log-warning { background-color: #fff3cd; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Upload Test</h1>
+        <p>This page helps debug PDF upload issues to Firebase Storage.</p>
+        
+        <div class="status info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Select a PDF file (max 10MB)</li>
+                <li>Enter a test memo ID (e.g., "test123")</li>
+                <li>Click Upload to test the functionality</li>
+                <li>Check the logs below for detailed information</li>
+            </ol>
+        </div>
+
+        <div>
+            <label for="memoId">Test Memo ID:</label>
+            <input type="text" id="memoId" value="test123" style="width: 200px; padding: 5px; margin: 5px;">
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <p>Drag and drop a PDF file here, or click to select</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+            <button onclick="document.getElementById('fileInput').click()">Select PDF File</button>
+        </div>
+
+        <div>
+            <button id="uploadBtn" onclick="uploadFile()" disabled>Upload PDF</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+            <button onclick="testAuth()">Test Authentication</button>
+        </div>
+
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div class="log-area" id="logArea">
+            <div class="log-entry log-info">Logs will appear here...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        let { uploadPDF, auth } = {};
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                log('🔧 Initializing Firebase...', 'info');
+                const firebaseModule = await import('./firebase-config.js');
+                uploadPDF = firebaseModule.uploadPDF;
+                auth = firebaseModule.auth;
+                log('✅ Firebase initialized successfully', 'success');
+            } catch (error) {
+                log('❌ Failed to initialize Firebase: ' + error.message, 'error');
+            }
+        }
+
+        // Logging function
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logArea.appendChild(logEntry);
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Clear logs
+        window.clearLogs = function() {
+            document.getElementById('logArea').innerHTML = '<div class="log-entry log-info">Logs cleared...</div>';
+        };
+
+        // Test authentication
+        window.testAuth = async function() {
+            try {
+                log('🔐 Testing authentication...', 'info');
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    log(`✅ User authenticated: ${currentUser.email} (${currentUser.uid})`, 'success');
+                    
+                    // Test token refresh
+                    try {
+                        const token = await currentUser.getIdToken(true);
+                        log('✅ Auth token refreshed successfully', 'success');
+                        log(`Token length: ${token.length} characters`, 'info');
+                    } catch (tokenError) {
+                        log('⚠️ Token refresh failed: ' + tokenError.message, 'warning');
+                    }
+                } else {
+                    log('❌ No authenticated user found', 'error');
+                }
+            } catch (error) {
+                log('❌ Authentication test failed: ' + error.message, 'error');
+            }
+        };
+
+        // File selection handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                log(`📁 File selected: ${file.name} (${file.size} bytes, ${file.type})`, 'info');
+                
+                if (file.type !== 'application/pdf') {
+                    log('❌ Invalid file type. Only PDF files are allowed.', 'error');
+                    showStatus('Please select a PDF file.', 'error');
+                    return;
+                }
+                
+                if (file.size > 10 * 1024 * 1024) {
+                    log('❌ File too large. Maximum size is 10MB.', 'error');
+                    showStatus('File size must be less than 10MB.', 'error');
+                    return;
+                }
+                
+                log('✅ File validation passed', 'success');
+                document.getElementById('uploadBtn').disabled = false;
+                showStatus('File ready for upload', 'success');
+            }
+        });
+
+        // Drag and drop handlers
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                document.getElementById('fileInput').dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Upload function
+        window.uploadFile = async function() {
+            const fileInput = document.getElementById('fileInput');
+            const memoId = document.getElementById('memoId').value;
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                log('❌ No file selected', 'error');
+                showStatus('Please select a file first.', 'error');
+                return;
+            }
+            
+            if (!memoId) {
+                log('❌ No memo ID provided', 'error');
+                showStatus('Please enter a memo ID.', 'error');
+                return;
+            }
+            
+            log(`🚀 Starting upload for memo: ${memoId}`, 'info');
+            log(`📁 File: ${file.name} (${file.size} bytes)`, 'info');
+            
+            // Show progress bar
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            try {
+                const downloadURL = await uploadPDF(memoId, file, (percent) => {
+                    document.getElementById('progressFill').style.width = percent + '%';
+                    log(`📊 Upload progress: ${Math.round(percent)}%`, 'info');
+                });
+                
+                log('✅ Upload completed successfully!', 'success');
+                log(`🔗 Download URL: ${downloadURL}`, 'success');
+                showStatus('Upload successful!', 'success');
+                
+            } catch (error) {
+                log('❌ Upload failed: ' + error.message, 'error');
+                log('Error details: ' + JSON.stringify(error, null, 2), 'error');
+                showStatus('Upload failed: ' + error.message, 'error');
+            } finally {
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('progressBar').style.display = 'none';
+                document.getElementById('progressFill').style.width = '0%';
+            }
+        };
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('📄 Upload test page loaded', 'info');
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html> 
