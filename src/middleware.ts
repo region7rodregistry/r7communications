@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Let Next.js handle all static files and API routes
@@ -18,6 +18,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Auth is handled client-side via AuthContext
+  // Middleware is kept lightweight — no Firebase Admin SDK dependency
   return NextResponse.next()
 }
 
