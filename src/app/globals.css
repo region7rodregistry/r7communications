@@ -86,83 +86,154 @@
 
 /* ─── Print styles ──────────────────────────────────────────────────────────── */
 @media print {
-  /* Hide all UI chrome */
-  .print\:hidden,
-  aside,
-  header,
-  nav,
-  [data-sidebar],
-  [data-header] {
-    display: none !important;
+
+  @page {
+    margin: 1cm 1.5cm;
+    size: A4 landscape;
   }
 
-  /* Reset body */
+  /* ── Reset ── */
   html, body {
     background: white !important;
     color: black !important;
-    font-size: 11pt;
-    line-height: 1.5;
+    font-size: 10pt;
+    line-height: 1.4;
     margin: 0;
     padding: 0;
   }
 
-  /* Log sheet overlay: let it fill the page naturally when printing */
-  .fixed.inset-0.z-50.bg-white {
+  /* ════════════════════════════════════════════════════════════════════════════
+     LOG SHEET PRINT MODE  (body.log-sheet-open)
+     The overlay is rendered as a direct child of <body> via a React portal.
+     Hide every other body child with display:none — the portal element stays.
+  ════════════════════════════════════════════════════════════════════════════ */
+
+  /* Hide everything except the log sheet portal */
+  body.log-sheet-open > *:not([data-print-root]) {
+    display: none !important;
+  }
+
+  /* Un-fix the overlay so it flows naturally on the page */
+  body.log-sheet-open > [data-print-root] {
     position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Force all text inside the log sheet to black */
+  body.log-sheet-open [data-print-root] * {
+    color: black !important;
+  }
+
+  /* Unlock every scroll / clamp container so nothing is clipped */
+  body.log-sheet-open [data-print-root] .overflow-auto,
+  body.log-sheet-open [data-print-root] .overflow-hidden,
+  body.log-sheet-open [data-print-root] .flex-1 {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: none !important;
+  }
+
+  /* Remove screen-only padding from the table wrapper */
+  body.log-sheet-open [data-print-root] .px-6 { padding-left: 0 !important; padding-right: 0 !important; }
+  body.log-sheet-open [data-print-root] .py-4 { padding-top: 0 !important; padding-bottom: 0 !important; }
+
+  /* Table: fill the page, compact font, fixed layout so columns respect widths */
+  body.log-sheet-open [data-print-root] table {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 7.5pt !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  /* All cells: thin border, tight padding */
+  body.log-sheet-open [data-print-root] th,
+  body.log-sheet-open [data-print-root] td {
+    border: 0.5pt solid #9ca3af !important;
+    padding: 3pt 4pt !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    background-color: white !important;
     overflow: visible !important;
   }
 
-  /* Expand main content to full width when sidebar is hidden */
-  main {
+  /* Table header: subtle gray tint */
+  body.log-sheet-open [data-print-root] thead th {
+    background-color: #f3f4f6 !important;
+    font-size: 6.5pt !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  /* Rows: let content set height — override the 180px inline screen value */
+  body.log-sheet-open [data-print-root] tbody tr {
+    height: auto !important;
+    min-height: 40pt !important;
+  }
+
+  /* Strip decorative chrome */
+  body.log-sheet-open [data-print-root] .rounded-xl,
+  body.log-sheet-open [data-print-root] .rounded-lg,
+  body.log-sheet-open [data-print-root] .shadow-sm {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     GENERAL PAGE PRINT  (no log sheet overlay)
+  ════════════════════════════════════════════════════════════════════════════ */
+  body:not(.log-sheet-open) .print\:hidden,
+  body:not(.log-sheet-open) aside,
+  body:not(.log-sheet-open) header,
+  body:not(.log-sheet-open) nav,
+  body:not(.log-sheet-open) [data-sidebar],
+  body:not(.log-sheet-open) [data-header] {
+    display: none !important;
+  }
+
+  body:not(.log-sheet-open) main {
     margin-left: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
   }
 
-  /* Make cards flat for print */
-  .shadow-sm, .shadow, .shadow-md, .shadow-lg {
+  body:not(.log-sheet-open) .shadow-sm,
+  body:not(.log-sheet-open) .shadow,
+  body:not(.log-sheet-open) .shadow-md,
+  body:not(.log-sheet-open) .shadow-lg {
     box-shadow: none !important;
   }
 
-  /* Show print-only elements */
-  .hidden.print\:block,
-  [class*="print:block"] {
+  body:not(.log-sheet-open) .hidden.print\:block,
+  body:not(.log-sheet-open) [class*="print:block"] {
     display: block !important;
   }
 
-  /* Borders print-friendly */
-  .border, .border-gray-100, .border-gray-200 {
-    border-color: #d1d5db !important;
-  }
-
-  /* Prevent page breaks inside cards */
-  .rounded-xl, .rounded-lg, [class*="Card"] {
-    break-inside: avoid;
-  }
-
-  /* Remove dark mode overrides */
-  * {
+  body:not(.log-sheet-open) * {
     color: black !important;
     background-color: white !important;
     border-color: #e5e7eb !important;
   }
 
-  /* But keep status badge colors readable */
-  .bg-yellow-100  { background-color: #fef9c3 !important; }
-  .bg-blue-100    { background-color: #dbeafe !important; }
-  .bg-green-100   { background-color: #dcfce7 !important; }
-  .bg-red-100     { background-color: #fee2e2 !important; }
-  .bg-gray-100    { background-color: #f3f4f6 !important; }
-  .text-yellow-800 { color: #854d0e !important; }
-  .text-blue-800   { color: #1e40af !important; }
-  .text-green-800  { color: #166534 !important; }
-  .text-red-800    { color: #991b1b !important; }
-  .text-gray-800   { color: #1f2937 !important; }
-
-  @page {
-    margin: 1.5cm 2cm;
-    size: A4 portrait;
-  }
+  body:not(.log-sheet-open) .bg-yellow-100  { background-color: #fef9c3 !important; }
+  body:not(.log-sheet-open) .bg-blue-100    { background-color: #dbeafe !important; }
+  body:not(.log-sheet-open) .bg-green-100   { background-color: #dcfce7 !important; }
+  body:not(.log-sheet-open) .bg-red-100     { background-color: #fee2e2 !important; }
+  body:not(.log-sheet-open) .bg-gray-100    { background-color: #f3f4f6 !important; }
+  body:not(.log-sheet-open) .text-yellow-800 { color: #854d0e !important; }
+  body:not(.log-sheet-open) .text-blue-800   { color: #1e40af !important; }
+  body:not(.log-sheet-open) .text-green-800  { color: #166534 !important; }
+  body:not(.log-sheet-open) .text-red-800    { color: #991b1b !important; }
+  body:not(.log-sheet-open) .text-gray-800   { color: #1f2937 !important; }
 }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */

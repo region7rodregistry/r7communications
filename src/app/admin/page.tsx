@@ -25,7 +25,7 @@ import { useMemos } from '@/hooks/useMemos'
 import {
   updateMemoStatus, updateMemo, deleteMemoFromFirestore,
   deleteActivityLogsForMemos, cleanupOrphanedActivityLogs,
-  logMemoActivity, getCurrentMemoNumber,
+  logMemoActivity, subscribeToMemoCounters,
 } from '@/lib/memo-service'
 import { useToast } from '@/components/ui/toast'
 import { formatDate, cn } from '@/lib/utils'
@@ -69,11 +69,11 @@ export default function AdminPage() {
   const [counters, setCounters]           = useState<Partial<Record<MemoType, number>>>({})
   const [selectedYear, setSelectedYear]   = useState(CURRENT_YEAR)
 
-  // Load memo number counters
+  // Subscribe to memo number counters in real time
   useEffect(() => {
-    Promise.all(
-      COUNTER_TYPES.map(async ({ type }) => [type, await getCurrentMemoNumber(type)] as [MemoType, number])
-    ).then(entries => setCounters(Object.fromEntries(entries))).catch(() => {})
+    const types = COUNTER_TYPES.map(c => c.type)
+    const unsubscribe = subscribeToMemoCounters(types, setCounters)
+    return unsubscribe
   }, [])
 
   // Available years from memo data (+ current year always included)

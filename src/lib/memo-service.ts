@@ -217,6 +217,35 @@ export async function getCurrentMemoNumber(memoType: MemoType): Promise<number> 
   return data.number ?? 0
 }
 
+/** Real-time subscription to all memo number counters. Returns an unsubscribe fn. */
+export function subscribeToMemoCounters(
+  types: MemoType[],
+  callback: (counters: Partial<Record<MemoType, number>>) => void
+): () => void {
+  const currentYear = new Date().getFullYear()
+  const state: Partial<Record<MemoType, number>> = {}
+  const unsubscribers: (() => void)[] = []
+
+  for (const memoType of types) {
+    const key = MEMO_TYPE_KEYS[memoType]
+    if (!key) continue
+    const ref = doc(db, 'memoNumbers', key)
+    const unsub = onSnapshot(ref, (snap) => {
+      if (!snap.exists()) {
+        state[memoType] = 0
+      } else {
+        const data = snap.data()
+        const storedYear: number = data.year ?? currentYear
+        state[memoType] = storedYear !== currentYear ? 0 : (data.number ?? 0)
+      }
+      callback({ ...state })
+    })
+    unsubscribers.push(unsub)
+  }
+
+  return () => unsubscribers.forEach(u => u())
+}
+
 export async function updateMemoNumberCounter(
   memoType: MemoType,
   newNumber: number

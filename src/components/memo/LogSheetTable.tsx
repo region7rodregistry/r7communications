@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Printer, X, SendHorizonal, Check } from 'lucide-react'
@@ -22,12 +23,16 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
   const [seriesInput, setSeriesInput]   = useState('')
   const dragRef = useRef<{ id: string; startY: number; startH: number } | null>(null)
 
-  /* ── Force light mode while overlay is open ── */
+  /* ── Force light mode + mark body for print isolation while overlay is open ── */
   useEffect(() => {
     const html = document.documentElement
     const wasDark = html.classList.contains('dark')
     html.classList.remove('dark')
-    return () => { if (wasDark) html.classList.add('dark') }
+    document.body.classList.add('log-sheet-open')
+    return () => {
+      if (wasDark) html.classList.add('dark')
+      document.body.classList.remove('log-sheet-open')
+    }
   }, [])
 
   /* ── Row resize ── */
@@ -62,7 +67,7 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
     setSeriesInput('')
   }
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
@@ -70,6 +75,7 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
       className="fixed inset-0 z-50 flex flex-col bg-white"
       style={{ colorScheme: 'light' }}
+      data-print-root
     >
 
       {/* ════════════════════════════════════════
@@ -192,24 +198,33 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
           </motion.div>
         ) : (
           <div className="rounded-xl overflow-auto border border-gray-200 shadow-sm bg-white">
-            <table className="border-collapse text-sm" style={{ minWidth: '1300px', width: '100%' }}>
+            <table className="border-collapse text-sm" style={{ minWidth: '1100px', width: '100%' }}>
               <colgroup>
-                <col style={{ width: 34 }} />
-                <col style={{ minWidth: 120 }} />
-                <col style={{ minWidth: 240 }} />
-                <col style={{ minWidth: 70 }} />
-                <col style={{ minWidth: 130 }} />
-                <col style={{ minWidth: 150 }} />
-                <col style={{ minWidth: 170 }} />
-                <col style={{ minWidth: 200 }} />
-                <col style={{ minWidth: 150 }} />
+                {/* checkbox — hidden on print */}
+                <col style={{ width: 34 }} className="print:hidden" />
+                {/* Memo No: 10% */}
+                <col style={{ width: '10%' }} />
+                {/* Subject: 22% */}
+                <col style={{ width: '22%' }} />
+                {/* Dept: 6% */}
+                <col style={{ width: '6%' }} />
+                {/* Recipients: 12% */}
+                <col style={{ width: '12%' }} />
+                {/* Created At: 11% */}
+                <col style={{ width: '11%' }} />
+                {/* Released: 13% */}
+                <col style={{ width: '13%' }} />
+                {/* Received: 13% */}
+                <col style={{ width: '13%' }} />
+                {/* Action Taken: 13% */}
+                <col style={{ width: '13%' }} />
               </colgroup>
 
               {/* ── Header ── */}
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {/* Select-all */}
-                  <th className="px-2 py-3 text-center print:hidden">
+                  {/* Select-all — hidden on print */}
+                  <th className="px-2 py-3 text-center print:hidden" style={{ width: 34 }}>
                     <button
                       onClick={toggleAll}
                       className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center mx-auto hover:border-blue-500 transition-colors"
@@ -344,6 +359,7 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
           </div>
         )}
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }
