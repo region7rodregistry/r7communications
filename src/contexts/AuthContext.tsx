@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { getUserData } from '@/lib/memo-service'
@@ -43,11 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe()
   }, [])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOut(auth)
     setUser(null)
     setUserData(null)
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, userData, loading, logout }}>

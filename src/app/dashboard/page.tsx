@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { PlusCircle, Clock, PenLine, CheckCircle, Archive } from 'lucide-react'
@@ -72,14 +72,22 @@ export default function DashboardPage() {
     archived: yearMemos.filter(m => m.status === 'archived').length,
   }), [yearMemos])
 
-  /* ── Inactivity timeout ── */
+  /* ── Inactivity timeout ──
+     Keep refs to the latest logout/toast so the effect never needs to
+     re-run when those function references change. The timer is set up
+     exactly once (empty dep array), preventing overlapping timers. */
+  const logoutRef = useRef(logout)
+  const toastRef  = useRef(toast)
+  useEffect(() => { logoutRef.current = logout }, [logout])
+  useEffect(() => { toastRef.current  = toast  }, [toast])
+
   useEffect(() => {
     let timer: NodeJS.Timeout
     const reset = () => {
       clearTimeout(timer)
       timer = setTimeout(() => {
-        toast({ title: 'Session expired', description: 'You have been logged out due to inactivity.', variant: 'warning' })
-        logout()
+        toastRef.current({ title: 'Session expired', description: 'You have been logged out due to inactivity.', variant: 'warning' })
+        logoutRef.current()
       }, INACTIVITY_MS)
     }
     reset()
@@ -90,7 +98,7 @@ export default function DashboardPage() {
       window.removeEventListener('mousemove', reset)
       window.removeEventListener('keydown', reset)
     }
-  }, [logout, toast])
+  }, []) // intentionally empty — refs keep the callbacks current
 
   /* ── Auth guard ── */
   useEffect(() => {
