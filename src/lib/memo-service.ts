@@ -384,6 +384,18 @@ function suffixToIndex(suffix: string): number {
   return result - 1
 }
 
+function getMemoDateKey(m: Memo): string | null {
+  if (m.antedationDate) return m.antedationDate
+  const raw = m.createdAt
+  if (!raw) return null
+  const d: Date = raw?.toDate?.() ?? (raw instanceof Date ? raw : new Date(raw))
+  if (isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const da = String(d.getDate()).padStart(2, '0')
+  return `${y}-${mo}-${da}`
+}
+
 export async function getNextAntedatedMemoNumber(
   memoType: MemoType,
   selectedDate: string,
@@ -398,7 +410,7 @@ export async function getNextAntedatedMemoNumber(
   const memosForDate = allMemos.filter((m) => {
     if (!m.memoNumber || !m.memoNumber.startsWith(`${typePrefix}-${year}-${deptCode}-`)) return false
     // Compare date portion
-    const memoDate = m.antedationDate || (m.createdAt?.toDate ? m.createdAt.toDate().toISOString().slice(0, 10) : null)
+    const memoDate = getMemoDateKey(m)
     return memoDate === selectedDate
   })
 
@@ -429,8 +441,8 @@ async function findLatestPreviousMemo(
   const relevant = allMemos
     .filter((m) => {
       if (!m.memoNumber?.startsWith(prefix)) return false
-      const memoDate = m.antedationDate || (m.createdAt?.toDate ? m.createdAt.toDate().toISOString().slice(0, 10) : null)
-      return memoDate && memoDate < selectedDate
+      const memoDate = getMemoDateKey(m)
+      return !!memoDate && memoDate < selectedDate
     })
     .sort((a, b) => {
       const aNum = parseInt(a.memoNumber.replace(/[A-Z]+$/, '').split('-').pop() || '0')
@@ -448,21 +460,30 @@ function getNextSuffixForExistingDate(
   deptCode: string
 ): string {
   const prefix = `${typePrefix}-${year}-${deptCode}-`
-  const suffixes = memosForDate
+  const parsed = memosForDate
     .map((m) => {
       const part = m.memoNumber.replace(prefix, '')
       const match = part.match(/^(\d+)([A-Z]*)$/)
-      return match ? match[2] : ''
+      if (!match) return null
+      return { base: match[1], suffix: match[2] }
     })
-    .filter(Boolean)
+    .filter((x): x is { base: string; suffix: string } => x !== null)
 
-  if (suffixes.length === 0) return `${prefix}0001A`
+  if (parsed.length === 0) return `${prefix}0001A`
 
-  // Find highest suffix
-  const maxSuffix = suffixes.reduce((max, s) => suffixToIndex(s) > suffixToIndex(max) ? s : max, suffixes[0])
-  const nextIndex = suffixToIndex(maxSuffix) + 1
-  const baseNum = memosForDate[0].memoNumber.replace(prefix, '').replace(/[A-Z]+$/, '')
-  return `${prefix}${baseNum}${indexToSuffix(nextIndex)}`
+  // Highest base number on this date
+  const maxBase = parsed.reduce((max, p) =>
+    parseInt(p.base) > parseInt(max.base) ? p : max, parsed[0]).base
+
+  // Among memos sharing that base, find the highest suffix (empty = index -1)
+  const sameBase = parsed.filter((p) => p.base === maxBase)
+  const maxSuffixIdx = sameBase.reduce(
+    (max, p) => (p.suffix ? suffixToIndex(p.suffix) : -1) > max
+      ? (p.suffix ? suffixToIndex(p.suffix) : -1)
+      : max,
+    -1
+  )
+  return `${prefix}${maxBase}${indexToSuffix(maxSuffixIdx + 1)}`
 }
 
 export async function validateMemoNumberUniqueness(
