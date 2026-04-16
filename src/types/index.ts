@@ -85,9 +85,20 @@ export const STATUS_COLORS: Record<MemoStatus, string> = {
 }
 
 export const ALL_RECIPIENTS = [
-  'ORD', 'ROD', 'FASD', 'Administration',
-  'All Departments', 'All Regional Centers',
-  'Others'
+  'Office of the Regional Director',
+  'Regional Operations Division',
+  'Finance and Administrative Services Division',
+  'Central Office',
+  'All Operating Units',
+  'All Provincial Offices',
+  'All TTIs / TTI',
+  'Provincial Office - Cebu',
+  'Provincial Office - Bohol',
+  'Provincial Office - Siquijor',
+  'Provincial Office - Negros Oriental',
+  'Lazi Technical Institute',
+  'Regional Training Center VII',
+  'Others',
 ]
 
 export const ALL_SIGNATORIES = [

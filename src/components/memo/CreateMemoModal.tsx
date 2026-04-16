@@ -36,7 +36,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
     recipients: [] as string[],
     authorFocal: '',
     authorFocalCustom: '',
-    signatory: '',
+    signatory: 'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.',
     signatoryCustom: '',
     isAntedated: false,
     antedationDate: '',
@@ -52,7 +52,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
-      setForm({ memoType: '', title: '', description: '', recipients: [], authorFocal: '', authorFocalCustom: '', signatory: '', signatoryCustom: '', isAntedated: false, antedationDate: '' })
+      setForm({ memoType: '', title: '', description: '', recipients: [], authorFocal: '', authorFocalCustom: '', signatory: 'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.', signatoryCustom: '', isAntedated: false, antedationDate: '' })
       setRecipientCustom('')
       setErrors({})
       setDone(null)
