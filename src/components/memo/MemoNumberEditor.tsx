@@ -72,7 +72,7 @@ export function MemoNumberEditor() {
             key={type}
             className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50"
           >
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32">{type}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 sm:w-32 truncate">{type}</span>
 
             {editing === type ? (
               <div className="flex items-center gap-1.5">
@@ -80,7 +80,7 @@ export function MemoNumberEditor() {
                   type="number"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="w-24 h-7 text-sm"
+                  className="w-20 sm:w-24 h-7 text-sm"
                   min="0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveEdit()

@@ -108,10 +108,47 @@ export const ALL_SIGNATORIES = [
   'Others',
 ]
 
+export const FOCAL_GROUPS: { label: string; options: string[] }[] = [
+  {
+    label: 'ROD - Regional Operations Division',
+    options: [
+      'AGBAY, ANNALIE B.',
+      'CABAHUG, JOCELYN V',
+      'CALAGO, ZHAIRAH P',
+      'GAYAS, PRISCILLA B.',
+      'NAVARRO, CHRISTINE A.',
+      'SAROMINES, KISSYLEN G.',
+      'SERINAS, KATRINA MAE CELESTE G.',
+      'SOON, CHEYENNE S.',
+      'TECSON, GERARD RANDOLF G.',
+      'DAMOLO, JAMINEL A.',
+    ],
+  },
+  {
+    label: 'FASD - Finance and Administrative Services Division',
+    options: [
+      'AKIATAN, JOSEPHINE F.',
+      'ALCERA, RIVA JANE D.',
+      'DALIGDIG, ALEXANDER A.',
+      'MACACHOR, DONNE MAR L.',
+      'MOLDE, MARK ERVIN D.',
+      'PARBA, MARLOU G.',
+      'RECESIO, LIRA M.',
+      'VASQUEZ, IVY MICHELLE T.',
+      'VERDEFLOR, JASMIN S.',
+    ],
+  },
+  {
+    label: 'ORD - Office of the Regional Director',
+    options: [
+      'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.',
+      'Alexander A. Daligdig',
+      'Marlou G. Parba',
+    ],
+  },
+]
+
 export const ALL_FOCAL = [
-  'ORD Staff',
-  'ROD Staff',
-  'FASD Staff',
-  'Admin Staff',
-  'Others'
+  ...FOCAL_GROUPS.flatMap((g) => g.options),
+  'Others',
 ]

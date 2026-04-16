@@ -90,7 +90,7 @@ export default function IctTeamPage() {
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[100px] hidden dark:block" />
 
       {/* ─── Top bar ─── */}
-      <header className="relative z-10 flex items-center gap-4 px-6 py-4 border-b border-slate-200 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md">
+      <header className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md flex-wrap">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -111,7 +111,7 @@ export default function IctTeamPage() {
         </div>
       </header>
 
-      <main className="relative z-10 flex flex-col items-center px-6 py-14 sm:py-20 flex-1">
+      <main className="relative z-10 flex flex-col items-center px-4 sm:px-6 py-10 sm:py-14 md:py-20 flex-1">
 
         {/* ─── Hero ─── */}
         <motion.div
@@ -126,7 +126,7 @@ export default function IctTeamPage() {
             Information &amp; Communications Technology
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
             The{' '}
             <span className="relative inline-block">
               <span className="relative z-10 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 dark:from-blue-400 dark:via-sky-300 dark:to-cyan-300 bg-clip-text text-transparent">
@@ -194,7 +194,7 @@ function MemberCard({ member }: { member: typeof TEAM[number] }) {
       <span className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-slate-200 dark:border-white/10 group-hover:border-blue-300 dark:group-hover:border-blue-500/50 transition-colors duration-300 rounded-tr-sm" />
       <span className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-slate-200 dark:border-white/10 group-hover:border-blue-300 dark:group-hover:border-blue-500/50 transition-colors duration-300 rounded-bl-sm" />
 
-      <div className="flex flex-col items-center px-6 pt-8 pb-7 gap-5">
+      <div className="flex flex-col items-center px-4 sm:px-6 pt-6 sm:pt-8 pb-5 sm:pb-7 gap-4 sm:gap-5">
 
         {/* Avatar + role tag */}
         <div className="relative">

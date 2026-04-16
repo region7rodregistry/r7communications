@@ -51,7 +51,7 @@ function ApprovalTracker({ status }: { status: string }) {
             >
               {i <= stepIndex ? <CheckCircle className="h-4 w-4" /> : i + 1}
             </div>
-            <span className={`text-xs mt-1 font-medium ${i <= stepIndex ? 'text-blue-600' : 'text-gray-400'}`}>
+            <span className={`text-[10px] sm:text-xs mt-1 font-medium whitespace-nowrap ${i <= stepIndex ? 'text-blue-600' : 'text-gray-400'}`}>
               {step}
             </span>
           </div>
@@ -102,16 +102,16 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
       className="space-y-6"
     >
       {/* Header */}
-      <div className="flex items-start justify-between print:hidden">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => window.history.back()}>
+      <div className="flex items-start justify-between gap-3 flex-wrap print:hidden">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="rounded-full shrink-0" onClick={() => window.history.back()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-mono">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 font-mono truncate">
               {memo.memoNumber}
             </h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[memo.status]}`}>
                 {statusIcons[memo.status]}
                 {memo.status}
@@ -121,7 +121,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           {memo.pdfUrl && (
             <a href={memo.pdfUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
@@ -148,7 +148,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
             <p className="font-mono font-bold text-base">{memo.memoNumber}</p>
           </div>
         </div>
-        <div className="flex justify-between mt-4 text-sm">
+        <div className="flex flex-wrap justify-between gap-2 mt-4 text-sm">
           <div><span className="font-semibold">Type:</span> {memo.memoType}</div>
           <div><span className="font-semibold">Department:</span> {memo.department}</div>
           <div><span className="font-semibold">Date:</span> {formatDate(memo.createdAt)}</div>
@@ -181,7 +181,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
 
               <Separator />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InfoRow icon={<Tag className="h-4 w-4" />} label="Type" value={memo.memoType} />
                 <InfoRow icon={<Building className="h-4 w-4" />} label="Department" value={memo.department} />
                 <InfoRow icon={<User className="h-4 w-4" />} label="Author/Focal" value={memo.authorFocal} />
@@ -200,7 +200,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
 
               {/* Timestamps */}
               <Separator />
-              <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 {memo.releasedToRodFasd && (
                   <InfoRow icon={<CheckCircle className="h-3.5 w-3.5" />} label="Released to ROD/FASD" value={formatDateTime(memo.releasedToRodFasd)} small />
                 )}

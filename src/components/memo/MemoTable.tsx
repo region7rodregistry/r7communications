@@ -80,7 +80,7 @@ export function MemoTable({
     <div className={cn(fluid ? 'flex flex-col h-full min-h-0' : 'space-y-3')}>
       <div className={cn(
         'rounded-xl border border-gray-100 dark:border-gray-800',
-        fluid ? 'flex-1 min-h-0 overflow-auto' : 'overflow-hidden'
+        fluid ? 'flex-1 min-h-0 overflow-auto' : 'overflow-x-auto'
       )}>
         <Table>
           <TableHeader>
@@ -195,7 +195,7 @@ export function MemoTable({
                     </TableCell>
                   )}
                   <TableCell>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 flex-nowrap">
                       {/* View */}
                       <Link href={`/memo/${memo.id}`}>
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="View">
@@ -276,11 +276,11 @@ export function MemoTable({
 
       {/* Pagination */}
       {pages > 1 && (
-        <div className={cn('flex items-center justify-between text-sm', fluid ? 'shrink-0 pt-2' : '')}>
-          <p className="text-gray-500 dark:text-gray-400">
+        <div className={cn('flex flex-wrap items-center justify-between gap-2 text-sm', fluid ? 'shrink-0 pt-2' : '')}>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
           </p>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
               Prev
             </Button>

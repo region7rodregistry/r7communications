@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/toast'
 import { useMemoNumber } from '@/hooks/useMemoNumber'
 import { getMemoTypePrefix, padNumber } from '@/lib/utils'
-import { DEPARTMENT_CODES, ALL_RECIPIENTS, ALL_SIGNATORIES, ALL_FOCAL } from '@/types'
+import { DEPARTMENT_CODES, ALL_RECIPIENTS, ALL_SIGNATORIES, FOCAL_GROUPS } from '@/types'
 import type { MemoType, Department } from '@/types'
 
 const MEMO_TYPES: MemoType[] = ['PO', 'CO', 'Office Order', 'Advisory', 'AdvisoryBulletin', 'Bulletin', 'Acknowledgment']
@@ -216,7 +216,7 @@ export function CreateMemoForm() {
         {/* Memo Type */}
         <Card>
           <CardContent className="pt-6 space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Memo Type <span className="text-red-500">*</span></Label>
                 <Select value={form.memoType} onValueChange={(v) => setField('memoType', v as MemoType)}>
@@ -384,9 +384,15 @@ export function CreateMemoForm() {
                   <SelectValue placeholder="Select author/focal…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ALL_FOCAL.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  {FOCAL_GROUPS.map((group) => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel>{group.label}</SelectLabel>
+                      {group.options.map((f) => (
+                        <SelectItem key={f} value={f}>{f}</SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
+                  <SelectItem value="Others">Other (Please specify)</SelectItem>
                 </SelectContent>
               </Select>
               <AnimatePresence>
@@ -435,11 +441,11 @@ export function CreateMemoForm() {
         </Card>
 
         {/* Submit */}
-        <div className="flex gap-3 justify-end">
-          <Link href="/dashboard">
-            <Button type="button" variant="outline">Cancel</Button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+          <Link href="/dashboard" className="w-full sm:w-auto">
+            <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
-          <Button type="submit" disabled={loading} className="min-w-[120px]">
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto sm:min-w-[120px]">
             {loading ? (
               <><Loader2 className="h-4 w-4 animate-spin" />Creating…</>
             ) : (

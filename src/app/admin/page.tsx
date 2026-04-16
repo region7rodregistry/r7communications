@@ -247,15 +247,15 @@ export default function AdminPage() {
       <div className="h-full flex flex-col gap-2 min-h-0">
 
         {/* ── Row 1: Title bar ── */}
-        <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             <Shield className="h-4 w-4 text-blue-600 shrink-0" />
             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Admin Portal</span>
-            <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
-            <span className="text-xs text-gray-400 dark:text-gray-500">{userData?.username}</span>
-            <span className="h-3.5 w-px bg-gray-200 dark:bg-gray-700 mx-0.5" />
+            <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 hidden sm:inline" />
+            <span className="hidden sm:inline text-xs text-gray-400 dark:text-gray-500 truncate">{userData?.username}</span>
+            <span className="hidden sm:inline h-3.5 w-px bg-gray-200 dark:bg-gray-700 mx-0.5" />
             {/* Year selector */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {availableYears.map(year => (
                 <button
                   key={year}
@@ -272,7 +272,7 @@ export default function AdminPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {selectedIds.size > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -342,7 +342,7 @@ export default function AdminPage() {
           className="flex-1 min-h-0 flex flex-col overflow-hidden"
         >
           {/* Tab list */}
-          <TabsList className="shrink-0 w-full justify-start h-8 gap-0.5 bg-gray-100/80 dark:bg-gray-800/80 px-1">
+          <TabsList className="shrink-0 w-full justify-start h-8 gap-0.5 bg-gray-100/80 dark:bg-gray-800/80 px-1 overflow-x-auto">
             {STATUS_TABS.map(tab => (
               <TabsTrigger
                 key={tab.value}
@@ -368,11 +368,11 @@ export default function AdminPage() {
               className="flex-1 min-h-0 flex flex-col mt-2 data-[state=inactive]:hidden overflow-hidden"
             >
               {/* Tab toolbar row */}
-              <div className="flex items-center justify-between mb-1.5 shrink-0 min-h-[28px]">
+              <div className="flex items-center justify-between gap-2 mb-1.5 shrink-0 min-h-[28px] flex-wrap">
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   {filterMemos(tab.value).length} memo{filterMemos(tab.value).length !== 1 ? 's' : ''}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {selectedIds.size > 0 && (
                     <Button variant="destructive" size="sm" className="h-6 text-xs px-2"
                       onClick={() => setBulkDeleteModal(true)}>
@@ -453,7 +453,7 @@ export default function AdminPage() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed right-0 top-0 h-full w-[380px] bg-white dark:bg-gray-950 shadow-2xl border-l border-gray-100 dark:border-gray-800 z-50 flex flex-col"
+              className="fixed right-0 top-0 h-full w-full sm:w-[380px] max-w-full bg-white dark:bg-gray-950 shadow-2xl border-l border-gray-100 dark:border-gray-800 z-50 flex flex-col"
             >
               {/* Panel header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">

@@ -54,7 +54,7 @@ export function MemoFilters({
   return (
     <div className="flex flex-wrap gap-2 items-center">
       {/* Search */}
-      <div className="relative flex-1 min-w-[180px]">
+      <div className="relative w-full sm:flex-1 sm:min-w-[180px]">
         <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${iconSize} text-gray-400`} />
         <Input
           placeholder="Search by number, title, dept…"
@@ -67,7 +67,7 @@ export function MemoFilters({
       {/* Type filter */}
       {showTypeFilter && onMemoTypeChange && (
         <Select value={memoType || 'all'} onValueChange={onMemoTypeChange}>
-          <SelectTrigger className={`w-[130px] ${h}`}>
+          <SelectTrigger className={`flex-1 sm:flex-none sm:w-[130px] ${h}`}>
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -84,7 +84,7 @@ export function MemoFilters({
           type="date"
           value={dateFrom || ''}
           onChange={(e) => onDateFromChange(e.target.value)}
-          className={`w-[130px] ${h}`}
+          className={`flex-1 sm:flex-none sm:w-[130px] ${h}`}
           title="From date"
         />
       )}
@@ -93,7 +93,7 @@ export function MemoFilters({
           type="date"
           value={dateTo || ''}
           onChange={(e) => onDateToChange(e.target.value)}
-          className={`w-[130px] ${h}`}
+          className={`flex-1 sm:flex-none sm:w-[130px] ${h}`}
           title="To date"
         />
       )}

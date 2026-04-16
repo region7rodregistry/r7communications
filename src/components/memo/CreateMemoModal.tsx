@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/toast'
 import { useMemoNumber } from '@/hooks/useMemoNumber'
 import { getMemoTypePrefix, padNumber } from '@/lib/utils'
-import { DEPARTMENT_CODES, ALL_RECIPIENTS, ALL_SIGNATORIES, ALL_FOCAL } from '@/types'
+import { DEPARTMENT_CODES, ALL_RECIPIENTS, ALL_SIGNATORIES, FOCAL_GROUPS } from '@/types'
 import type { MemoType, Department } from '@/types'
 
 const MEMO_TYPES: MemoType[] = ['PO', 'CO', 'Office Order', 'Advisory', 'AdvisoryBulletin', 'Bulletin', 'Acknowledgment']
@@ -153,12 +153,12 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
 
           {/* Modal */}
           <motion.div
-            className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+            className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center p-2 sm:p-4 pointer-events-none"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           >
             <motion.div
-              className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col pointer-events-auto"
-              style={{ maxHeight: 'calc(100vh - 2rem)' }}
+              className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl sm:rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col pointer-events-auto"
+              style={{ maxHeight: 'calc(100vh - 1rem)' }}
               initial={{ scale: 0.94, y: 16 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.94, y: 16 }}
@@ -173,7 +173,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 sm:py-4">
                 {done ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -192,7 +192,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
                   <form id="create-memo-form" onSubmit={handleSubmit} className="space-y-4">
 
                     {/* Row 1: Type + Department */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Memo Type <span className="text-red-500">*</span></Label>
                         <Select value={form.memoType} onValueChange={v => setField('memoType', v as MemoType)}>
@@ -318,7 +318,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
                     </div>
 
                     {/* Author + Signatory */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Author / Focal <span className="text-red-500">*</span></Label>
                         <Select value={form.authorFocal} onValueChange={v => setField('authorFocal', v)}>
@@ -326,7 +326,13 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
                             <SelectValue placeholder="Select…" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ALL_FOCAL.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
+                            {FOCAL_GROUPS.map((group) => (
+                              <SelectGroup key={group.label}>
+                                <SelectLabel className="text-[11px]">{group.label}</SelectLabel>
+                                {group.options.map(f => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
+                              </SelectGroup>
+                            ))}
+                            <SelectItem value="Others" className="text-xs">Other (Please specify)</SelectItem>
                           </SelectContent>
                         </Select>
                         {form.authorFocal === 'Others' && (

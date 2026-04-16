@@ -170,7 +170,7 @@ export function LoginForm() {
         className="w-full max-w-md"
       >
         {/* Card */}
-        <div className="relative bg-white rounded-2xl shadow-2xl border border-blue-100 p-8">
+        <div className="relative bg-white rounded-2xl shadow-2xl border border-blue-100 p-5 sm:p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <motion.div
@@ -194,8 +194,8 @@ export function LoginForm() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <h1 className="text-2xl font-bold text-gray-900">TESDA Region VII</h1>
-              <p className="mt-1 text-sm text-gray-500">Memo-Based Management System</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">TESDA Region VII</h1>
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">Memo-Based Management System</p>
             </motion.div>
           </div>
 

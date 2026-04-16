@@ -148,18 +148,18 @@ export default function DashboardPage() {
       <div className="h-full flex flex-col gap-2 min-h-0">
 
         {/* ── Row 1: Title bar ── */}
-        <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div>
-              <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
                 {userData?.department} Dashboard
               </h1>
-              <p className="text-xs text-gray-400 dark:text-gray-500">{userData?.username}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{userData?.username}</p>
             </div>
             {isAdmin && (
               <>
                 <span className="h-3.5 w-px bg-gray-200 dark:bg-gray-700" />
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   {availableYears.map(year => (
                     <button
                       key={year}
@@ -208,7 +208,7 @@ export default function DashboardPage() {
           onValueChange={v => setActiveTab(v as MemoStatus)}
           className="flex-1 min-h-0 flex flex-col overflow-hidden"
         >
-          <TabsList className="shrink-0 w-full justify-start h-8 gap-0.5 bg-gray-100/80 dark:bg-gray-800/80 px-1">
+          <TabsList className="shrink-0 w-full justify-start h-8 gap-0.5 bg-gray-100/80 dark:bg-gray-800/80 px-1 overflow-x-auto">
             {STATUS_TABS.map(tab => (
               <TabsTrigger
                 key={tab.value}

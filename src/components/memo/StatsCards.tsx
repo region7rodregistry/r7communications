@@ -106,7 +106,7 @@ export function StatsCards({
   }
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-6 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
       {items.map((item, i) => (
         <motion.div
           key={item.label}

@@ -83,8 +83,8 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
       ════════════════════════════════════════ */}
       <div className="print:hidden shrink-0 border-b border-gray-200 bg-white shadow-sm">
         {/* Brand row */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap px-3 sm:px-6 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-white flex items-center justify-center">
               <Image
                 src="/tesda-logo.png"
@@ -94,21 +94,21 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
                 className="object-contain w-full h-full p-0.5"
               />
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900 leading-tight">TESDA Region VII — Records Unit</p>
-              <p className="text-xs text-gray-400">Outgoing Communications · Log Sheet Preview</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 leading-tight truncate">TESDA Region VII — Records Unit</p>
+              <p className="text-xs text-gray-400 truncate">Outgoing Communications · Log Sheet Preview</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Series Number Input */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-none min-w-0">
               <input
                 type="text"
                 value={seriesInput}
                 onChange={e => setSeriesInput(e.target.value)}
                 placeholder="Enter Series Number…"
-                className="h-8 w-52 rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className="h-8 w-full sm:w-52 rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               />
               <Button
                 size="sm"
@@ -146,7 +146,7 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
         </div>
 
         {/* Status bar */}
-        <div className="px-6 py-1.5 flex items-center gap-3">
+        <div className="px-3 sm:px-6 py-1.5 flex items-center gap-3 flex-wrap">
           <span className="text-[11px] text-gray-400">
             Showing <span className="font-semibold text-gray-600">{memos.length}</span> received memo{memos.length !== 1 ? 's' : ''}
           </span>
@@ -183,7 +183,7 @@ export function LogSheetTable({ memos, onRelease, onClose }: LogSheetTableProps)
       {/* ════════════════════════════════════════
           TABLE AREA
       ════════════════════════════════════════ */}
-      <div className="flex-1 overflow-auto px-6 py-4">
+      <div className="flex-1 overflow-auto px-3 sm:px-6 py-4">
         {memos.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

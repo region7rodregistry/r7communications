@@ -137,18 +137,18 @@ export default function OldSystemPage() {
       <div className="h-full flex flex-col gap-3 min-h-0">
 
         {/* ── Header row ── */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
           <Link href="/admin">
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
           </Link>
-          <div className="flex-1">
-            <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">Old Records (Outgoing)</h1>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Historical memo log — read only</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">Old Records (Outgoing)</h1>
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate">Historical memo log — read only</p>
           </div>
           {/* Search */}
-          <div className="relative w-52">
+          <div className="relative w-full sm:w-52 order-last sm:order-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               placeholder="Search…"
