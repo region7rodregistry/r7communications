@@ -1,0 +1,43 @@
+{
+  "name": "Extract Duda Data-Injects",
+  "nodes": [
+    {
+      "id": "HTTP_Request_Duda",
+      "name": "Get Duda HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "parameters": {
+        "url": "https://simplebiz.responsivesiteeditor.com/home/site/58ab1507/home",
+        "responseFormat": "string",
+        "options": {}
+      }
+    },
+    {
+      "id": "Code_Extract_DataInjects",
+      "name": "Extract Data-Injects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "language": "javascript",
+        "jsCode": "// Get HTML from previous HTTP Request node\\nconst html = $json.body;\\n\\n// Regex to capture all data-inject attributes\\nconst regex = /data-inject\\s*=\\s*[\\\"']([^\\\"']+)[\\\"']/g;\\nlet match;\\nconst injectKeys = [];\\n\\nwhile ((match = regex.exec(html)) !== null) {\\n  injectKeys.push(match[1]);\\n}\\n\\n// Remove duplicates\\nconst uniqueInjects = [...new Set(injectKeys)];\\n\\n// Return results\\nreturn [{\\n  json: {\\n    total_found: uniqueInjects.length,\\n    data_injects: uniqueInjects\\n  }\\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Get Duda HTML": {
+      "main": [
+        [
+          {
+            "node": "Extract Data-Injects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  ],
+  "settings": {},
+  "version": 2
+}

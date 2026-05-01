@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { cn, formatDate, truncate } from '@/lib/utils'
 import { STATUS_COLORS } from '@/types'
 import type { Memo } from '@/types'
+import { ReceiveMemoDialog } from '@/components/memo/ReceiveMemoDialog'
 
 interface MemoTableProps {
   memos: Memo[]
@@ -21,7 +22,15 @@ interface MemoTableProps {
   onToggleSelectAll?: (ids: string[]) => void
   onDelete?: (id: string) => void
   onStatusChange?: (memo: Memo) => void
-  onMarkReceived?: (id: string) => void
+  /** Called after the user enters who received the memo (only shown when memo is approved, released, and not yet received). */
+  onMarkReceived?: (memoId: string, receivedByName: string) => void | Promise<void>
+  /** Prefills the receive dialog name field (e.g. `userData.username`). */
+  defaultReceiverName?: string
+  /**
+   * When true (default), non-admins always see a Receive button on approved unreceived rows;
+   * it stays disabled until `releasedToRodFasd` is set. Admins only see Receive after release.
+   */
+  showReceiveOnApproved?: boolean
   onMarkActionTaken?: (id: string, value: boolean) => void
   onRelease?: (id: string) => void
   emptyMessage?: string
@@ -33,11 +42,14 @@ export function MemoTable({
   memos, loading, isAdmin, fluid,
   selectedIds, onToggleSelect, onToggleSelectAll,
   onDelete, onStatusChange, onMarkReceived, onMarkActionTaken, onRelease,
+  defaultReceiverName = '',
+  showReceiveOnApproved = true,
   emptyMessage = 'No memos found.',
 }: MemoTableProps) {
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<keyof Memo>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [receiveMemoId, setReceiveMemoId] = useState<string | null>(null)
 
   const sorted = [...memos].sort((a, b) => {
     const av = a[sortField]
@@ -195,7 +207,7 @@ export function MemoTable({
                     </TableCell>
                   )}
                   <TableCell>
-                    <div className="flex items-center justify-end gap-1 flex-nowrap">
+                    <div className="flex items-center justify-end gap-1 flex-wrap">
                       {/* View */}
                       <Link href={`/memo/${memo.id}`}>
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="View">
@@ -243,16 +255,33 @@ export function MemoTable({
                         </Button>
                       )}
 
-                      {/* Mark as Received */}
-                      {onMarkReceived && memo.status === 'approved' && !memo.receivedByRodFasd && (
-                        <Button
-                          variant="ghost" size="sm"
-                          className="h-7 text-xs px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                          onClick={() => onMarkReceived(memo.id)}
-                        >
-                          Received
-                        </Button>
-                      )}
+                      {/* Receive — users always see it on Approved (disabled until released); admins only after release */}
+                      {onMarkReceived &&
+                        memo.status === 'approved' &&
+                        !memo.receivedByRodFasd &&
+                        ((!isAdmin && showReceiveOnApproved) || (!!isAdmin && !!memo.releasedToRodFasd)) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!memo.releasedToRodFasd}
+                            className={cn(
+                              'h-7 text-xs px-2 font-medium',
+                              memo.releasedToRodFasd
+                                ? 'text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20'
+                                : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-80'
+                            )}
+                            onClick={() =>
+                              memo.releasedToRodFasd && setReceiveMemoId(memo.id)
+                            }
+                            title={
+                              memo.releasedToRodFasd
+                                ? 'Confirm receipt — enter who received this document'
+                                : 'Available after an administrator releases this memo to ROD/FASD'
+                            }
+                          >
+                            Receive
+                          </Button>
+                        )}
 
                       {/* Delete */}
                       {isAdmin && onDelete && (
@@ -302,6 +331,20 @@ export function MemoTable({
             </Button>
           </div>
         </div>
+      )}
+
+      {onMarkReceived && (
+        <ReceiveMemoDialog
+          open={receiveMemoId !== null}
+          onOpenChange={(open) => !open && setReceiveMemoId(null)}
+          defaultName={defaultReceiverName}
+          title="Received by"
+          description="Enter the name of the person who received this memo (focal or receiving staff)."
+          onConfirm={async (receivedByName) => {
+            if (!receiveMemoId) return
+            await onMarkReceived(receiveMemoId, receivedByName)
+          }}
+        />
       )}
     </div>
   )

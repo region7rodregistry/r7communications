@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { PlusCircle, Clock, PenLine, CheckCircle, Archive } from 'lucide-react'
+import { PlusCircle, Clock, PenLine, CheckCircle, Archive, Inbox } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatsCards } from '@/components/memo/StatsCards'
 import { MemoFilters } from '@/components/memo/MemoFilters'
@@ -72,6 +72,17 @@ export default function DashboardPage() {
     archived: yearMemos.filter(m => m.status === 'archived').length,
   }), [yearMemos])
 
+  /** Approved memos released by admin but not yet acknowledged — user must click Receive and enter a name. */
+  const awaitingReceiptCount = useMemo(() => {
+    if (isAdmin) return 0
+    return yearMemos.filter(
+      m =>
+        m.status === 'approved' &&
+        m.releasedToRodFasd &&
+        !m.receivedByRodFasd
+    ).length
+  }, [yearMemos, isAdmin])
+
   /* ── Inactivity timeout ──
      Keep refs to the latest logout/toast so the effect never needs to
      re-run when those function references change. The timer is set up
@@ -128,16 +139,17 @@ export default function DashboardPage() {
     })
   }, [yearMemos, search, dateFrom, dateTo])
 
-  const handleMarkReceived = async (memoId: string) => {
+  const handleMarkReceived = async (memoId: string, receivedByName: string) => {
     try {
       await updateMemo(memoId, {
         receivedByRodFasd: new Date(),
-        receivedByName: userData?.username || 'unknown',
+        receivedByName,
       })
-      await logMemoActivity(memoId, 'Marked as received', userData?.username || 'unknown')
+      await logMemoActivity(memoId, 'Received Memo', userData?.username || userData?.email || 'user')
       toast({ title: 'Memo marked as received', variant: 'success' })
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'error' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      toast({ title: 'Error', description: message, variant: 'error' })
     }
   }
 
@@ -202,6 +214,35 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* Released memos waiting for ROD/FASD (or your office) to confirm receipt */}
+        {!isAdmin && awaitingReceiptCount > 0 && (
+          <div
+            className="shrink-0 rounded-xl border border-purple-200/90 dark:border-purple-800/70 bg-purple-50/80 dark:bg-purple-950/30 px-3 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+            role="status"
+          >
+            <div className="flex items-start gap-2 min-w-0">
+              <Inbox className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+              <div className="min-w-0 text-xs sm:text-sm text-purple-900 dark:text-purple-100">
+                <p className="font-semibold">
+                  {awaitingReceiptCount} document{awaitingReceiptCount !== 1 ? 's' : ''} ready to receive
+                </p>
+                <p className="text-purple-800/90 dark:text-purple-200/90 mt-0.5 leading-snug">
+                  Open the <strong>Approved</strong> tab. Use <strong>Receive</strong> on each row, then type who received it.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="shrink-0 h-8 text-xs border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-900 hover:bg-purple-100/80 dark:hover:bg-purple-900/40"
+              onClick={() => setActiveTab('approved')}
+            >
+              Open Approved tab
+            </Button>
+          </div>
+        )}
+
         {/* ── Row 4+: Tabs — fills remaining height ── */}
         <Tabs
           value={activeTab}
@@ -244,6 +285,7 @@ export default function DashboardPage() {
                   memos={filterMemos(tab.value)}
                   loading={memosLoading}
                   onMarkReceived={handleMarkReceived}
+                  defaultReceiverName={userData?.username ?? ''}
                   emptyMessage={`No ${tab.label.toLowerCase()} memos.`}
                 />
               </div>

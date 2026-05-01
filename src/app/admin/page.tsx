@@ -193,12 +193,12 @@ export default function AdminPage() {
     toast({ title: value ? 'Marked as action taken' : 'Cleared', variant: 'success' })
   }
 
-  const handleMarkReceived = async (memoId: string) => {
+  const handleMarkReceived = async (memoId: string, receivedByName: string) => {
     await updateMemo(memoId, {
       receivedByRodFasd: new Date(),
-      receivedByName: userData?.username || 'admin',
+      receivedByName,
     })
-    await logMemoActivity(memoId, 'Marked as received', userData?.username || 'admin')
+    await logMemoActivity(memoId, 'Received Memo', userData?.username || 'admin')
     toast({ title: 'Marked as received', variant: 'success' })
   }
 
@@ -426,6 +426,7 @@ export default function AdminPage() {
                   onDelete={id => setDeleteModal({ open: true, memoId: id })}
                   onStatusChange={memo => setStatusModal({ open: true, memo })}
                   onMarkReceived={handleMarkReceived}
+                  defaultReceiverName={userData?.username ?? ''}
                   onMarkActionTaken={handleMarkActionTaken}
                   onRelease={tab.value === 'approved' ? handleRelease : undefined}
                   emptyMessage={`No ${tab.label.toLowerCase()} memos.`}

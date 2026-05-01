@@ -1,11 +1,21 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { LoginForm } from '@/components/auth/LoginForm'
 import { useAuth } from '@/contexts/AuthContext'
+
+const LoginForm = dynamic(
+  () => import('@/components/auth/LoginForm').then((mod) => ({ default: mod.LoginForm })),
+  {
+    loading: () => (
+      <div className="relative w-full max-w-md min-h-[20rem] flex items-center justify-center">
+        <p className="text-sm text-blue-500/80">Loading sign-in…</p>
+      </div>
+    ),
+  }
+)
 
 export default function LoginPage() {
   const { user, userData, loading } = useAuth()
@@ -21,12 +31,7 @@ export default function LoginPage() {
     <div className="min-h-screen h-screen flex overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-200">
 
       {/* ── Left panel: office photo ── */}
-      <motion.div
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="hidden lg:block relative flex-1"
-      >
+      <div className="hidden lg:block relative flex-1 animate-login-panel">
         <Image
           src="/office.jpg"
           alt="TESDA Region VII Office"
@@ -62,7 +67,7 @@ export default function LoginPage() {
             className="object-contain"
           />
         </div>
-      </motion.div>
+      </div>
 
       {/* ── Right panel: login form ── */}
       <div className="flex-1 lg:max-w-lg xl:max-w-xl flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 py-8 sm:py-12 relative">
@@ -73,14 +78,9 @@ export default function LoginPage() {
           <LoginForm />
         </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="absolute bottom-6 text-xs text-blue-400/70"
-        >
+        <p className="absolute bottom-6 text-xs text-blue-400/70 animate-login-footer">
           © {new Date().getFullYear()} TESDA Region VII · All rights reserved
-        </motion.p>
+        </p>
       </div>
     </div>
   )

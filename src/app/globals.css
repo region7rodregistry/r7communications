@@ -242,6 +242,27 @@
   to { opacity: 1; }
 }
 
+/* Login shell — CSS only so /login compiles without framer-motion in the page chunk */
+@keyframes loginPanelIn {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes loginFooterIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -304,6 +325,13 @@
   .slide-out-to-top-\[48\%\] {
     animation-name: slideFromTopCenter;
     animation-direction: reverse;
+  }
+
+  .animate-login-panel {
+    animation: loginPanelIn 0.6s ease-out forwards;
+  }
+  .animate-login-footer {
+    animation: loginFooterIn 0.6s ease-out 0.8s both;
   }
 
   @keyframes slideFromTop {

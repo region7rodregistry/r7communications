@@ -34,14 +34,18 @@ export function StatusChangeModal({ open, memo, onClose, onConfirm }: StatusChan
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const requiresPassword = newStatus !== 'archived'
+
   const handleSubmit = async () => {
-    if (!memo || !user?.email) return
+    if (!memo) return
+    if (requiresPassword && !user?.email) return
     setError('')
     setLoading(true)
 
     try {
-      // Re-authenticate with password
-      await signInWithEmailAndPassword(auth, user.email, password)
+      if (requiresPassword) {
+        await signInWithEmailAndPassword(auth, user!.email!, password)
+      }
       await onConfirm(memo.id, newStatus)
       setPassword('')
       onClose()
@@ -76,7 +80,14 @@ export function StatusChangeModal({ open, memo, onClose, onConfirm }: StatusChan
         <div className="space-y-4 mt-2">
           <div className="space-y-1.5">
             <Label>New Status</Label>
-            <Select value={newStatus} onValueChange={(v) => setNewStatus(v as MemoStatus)}>
+            <Select
+              value={newStatus}
+              onValueChange={(v) => {
+                setNewStatus(v as MemoStatus)
+                setPassword('')
+                setError('')
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -88,22 +99,26 @@ export function StatusChangeModal({ open, memo, onClose, onConfirm }: StatusChan
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Confirm your password</Label>
-            <Input
-              type="password"
-              placeholder="Enter your password…"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError('') }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-          </div>
+          {requiresPassword ? (
+            <div className="space-y-1.5">
+              <Label>Confirm your password</Label>
+              <Input
+                type="password"
+                placeholder="Enter your password…"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError('') }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              />
+              {error && <p className="text-xs text-red-500">{error}</p>}
+            </div>
+          ) : (
+            error && <p className="text-xs text-red-500">{error}</p>
+          )}
         </div>
 
         <DialogFooter className="mt-4 gap-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading || !password}>
+          <Button onClick={handleSubmit} disabled={loading || (requiresPassword && !password)}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
             Change Status
           </Button>

@@ -487,11 +487,19 @@ function getNextSuffixForExistingDate(
 }
 
 export async function validateMemoNumberUniqueness(
-  memoNumber: string
+  memoNumber: string,
+  excludeMemoId?: string
 ): Promise<boolean> {
   const q = query(collection(db, 'memos'), where('memoNumber', '==', memoNumber))
   const snap = await getDocs(q)
-  return snap.empty
+  if (snap.empty) return true
+  if (
+    excludeMemoId &&
+    snap.docs.every((d) => d.id === excludeMemoId)
+  ) {
+    return true
+  }
+  return false
 }
 
 function getMemoTypePrefix(memoType: string): string {
