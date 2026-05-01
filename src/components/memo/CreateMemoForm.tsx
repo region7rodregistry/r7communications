@@ -32,7 +32,6 @@ export function CreateMemoForm() {
     title: '',
     description: '',
     department: (userData?.department || '') as Department | '',
-    recipients: [] as string[],
     authorFocal: '',
     authorFocalCustom: '',
     signatory: '',
@@ -44,6 +43,7 @@ export function CreateMemoForm() {
   const [success, setSuccess] = useState<{ memoNumber: string } | null>(null)
   const [countdown, setCountdown] = useState(10)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [recipientSelect, setRecipientSelect] = useState('')
   const [recipientCustom, setRecipientCustom] = useState('')
 
   const { previewNumber, loading: numLoading } = useMemoNumber(
@@ -81,7 +81,8 @@ export function CreateMemoForm() {
     if (form.title.length > 200) e.title = 'Title max 200 chars'
     if (form.description.length > 500) e.description = 'Description max 500 chars'
     if (!form.department) e.department = 'Department is required'
-    if (form.recipients.length === 0 && !recipientCustom) e.recipients = 'At least one recipient required'
+    if (!recipientSelect) e.recipients = 'Select a recipient'
+    if (recipientSelect === 'Others' && !recipientCustom.trim()) e.recipients = 'Enter the other recipient'
     if (!form.authorFocal) e.authorFocal = 'Author/Focal is required'
     if (!form.signatory) e.signatory = 'Signatory is required'
     if (form.isAntedated && !form.antedationDate) e.antedationDate = 'Antedation date is required'
@@ -120,10 +121,10 @@ export function CreateMemoForm() {
         memoNumber = `${typePrefix}-${year}-${deptCode}-${padNumber(num)}`
       }
 
-      const recipients = [
-        ...form.recipients.filter((r) => r !== 'Others'),
-        ...(recipientCustom ? [recipientCustom] : []),
-      ]
+      const recipients =
+        recipientSelect === 'Others'
+          ? [recipientCustom.trim()]
+          : [recipientSelect]
 
       const authorFocal = form.authorFocal === 'Others' ? form.authorFocalCustom : form.authorFocal
       const signatory = form.signatory === 'Others' ? form.signatoryCustom : form.signatory
@@ -343,36 +344,53 @@ export function CreateMemoForm() {
           <CardContent className="pt-6 space-y-5">
             {/* Recipients */}
             <div className="space-y-1.5">
-              <Label>Recipients <span className="text-red-500">*</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {ALL_RECIPIENTS.filter((r) => r !== 'Others').map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => {
-                      setForm((f) => ({
-                        ...f,
-                        recipients: f.recipients.includes(r)
-                          ? f.recipients.filter((x) => x !== r)
-                          : [...f.recipients, r],
-                      }))
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      form.recipients.includes(r)
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-200 text-gray-600 hover:border-blue-300 dark:border-gray-700 dark:text-gray-400'
-                    }`}
+              <Label>Recipient <span className="text-red-500">*</span></Label>
+              <Select
+                value={recipientSelect}
+                onValueChange={(v) => {
+                  setRecipientSelect(v)
+                  setRecipientCustom('')
+                  setErrors((e) => {
+                    const c = { ...e }
+                    delete c.recipients
+                    return c
+                  })
+                }}
+              >
+                <SelectTrigger className={errors.recipients ? 'border-red-400' : ''}>
+                  <SelectValue placeholder="Select recipient…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_RECIPIENTS.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <AnimatePresence>
+                {recipientSelect === 'Others' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
                   >
-                    {r}
-                  </button>
-                ))}
-              </div>
-              <Input
-                placeholder="Other recipient (optional)…"
-                value={recipientCustom}
-                onChange={(e) => setRecipientCustom(e.target.value)}
-                className="mt-2"
-              />
+                    <Input
+                      placeholder="Enter recipient name or office…"
+                      value={recipientCustom}
+                      onChange={(e) => {
+                        setRecipientCustom(e.target.value)
+                        setErrors((e) => {
+                          const c = { ...e }
+                          delete c.recipients
+                          return c
+                        })
+                      }}
+                      className="mt-2"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {errors.recipients && <p className="text-xs text-red-500">{errors.recipients}</p>}
             </div>
 

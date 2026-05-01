@@ -33,7 +33,6 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
     memoType: '' as MemoType | '',
     title: '',
     description: '',
-    recipients: [] as string[],
     authorFocal: '',
     authorFocalCustom: '',
     signatory: 'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.',
@@ -41,6 +40,7 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
     isAntedated: false,
     antedationDate: '',
   })
+  const [recipientSelect, setRecipientSelect] = useState('')
   const [recipientCustom, setRecipientCustom] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<string | null>(null)
@@ -52,7 +52,8 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
-      setForm({ memoType: '', title: '', description: '', recipients: [], authorFocal: '', authorFocalCustom: '', signatory: 'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.', signatoryCustom: '', isAntedated: false, antedationDate: '' })
+      setForm({ memoType: '', title: '', description: '', authorFocal: '', authorFocalCustom: '', signatory: 'Gamaliel B. Vicente, Jr. CESO III, ASEAN ENG.', signatoryCustom: '', isAntedated: false, antedationDate: '' })
+      setRecipientSelect('')
       setRecipientCustom('')
       setErrors({})
       setDone(null)
@@ -80,7 +81,8 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
     if (form.title.length > 200) e.title   = 'Max 200 chars'
     if (!form.authorFocal)   e.authorFocal = 'Required'
     if (!form.signatory)     e.signatory   = 'Required'
-    if (form.recipients.length === 0 && !recipientCustom) e.recipients = 'Select at least one'
+    if (!recipientSelect) e.recipients = 'Select a recipient'
+    if (recipientSelect === 'Others' && !recipientCustom.trim()) e.recipients = 'Enter the other recipient'
     if (form.isAntedated && !form.antedationDate) e.antedationDate = 'Required'
     return e
   }
@@ -112,7 +114,10 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
         memoNumber = `${typePrefix}-${year}-${deptCode}-${padNumber(num)}`
       }
 
-      const recipients = [...form.recipients.filter(r => r !== 'Others'), ...(recipientCustom ? [recipientCustom] : [])]
+      const recipients =
+        recipientSelect === 'Others'
+          ? [recipientCustom.trim()]
+          : [recipientSelect]
       const authorFocal = form.authorFocal === 'Others' ? form.authorFocalCustom : form.authorFocal
       const signatory   = form.signatory   === 'Others' ? form.signatoryCustom   : form.signatory
 
@@ -290,30 +295,47 @@ export function CreateMemoModal({ open, onClose, onCreated }: Props) {
                       />
                     </div>
 
-                    {/* Recipients */}
+                    {/* Recipient */}
                     <div className="space-y-1">
-                      <Label className="text-xs">Recipients <span className="text-red-500">*</span></Label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {ALL_RECIPIENTS.filter(r => r !== 'Others').map(r => (
-                          <button key={r} type="button"
-                            onClick={() => setForm(f => ({
-                              ...f,
-                              recipients: f.recipients.includes(r)
-                                ? f.recipients.filter(x => x !== r)
-                                : [...f.recipients, r],
-                            }))}
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                              form.recipients.includes(r)
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300'
-                            }`}
-                          >{r}</button>
-                        ))}
-                      </div>
-                      <Input placeholder="Other recipient…" value={recipientCustom}
-                        onChange={e => setRecipientCustom(e.target.value)}
-                        className="h-7 text-xs mt-1"
-                      />
+                      <Label className="text-xs">Recipient <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={recipientSelect}
+                        onValueChange={(v) => {
+                          setRecipientSelect(v)
+                          setRecipientCustom('')
+                          setErrors((e) => {
+                            const c = { ...e }
+                            delete c.recipients
+                            return c
+                          })
+                        }}
+                      >
+                        <SelectTrigger className={`h-8 text-xs ${errors.recipients ? 'border-red-400' : ''}`}>
+                          <SelectValue placeholder="Select recipient…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ALL_RECIPIENTS.map((r) => (
+                            <SelectItem key={r} value={r} className="text-xs">
+                              {r}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {recipientSelect === 'Others' && (
+                        <Input
+                          placeholder="Enter recipient…"
+                          value={recipientCustom}
+                          onChange={(e) => {
+                            setRecipientCustom(e.target.value)
+                            setErrors((er) => {
+                              const c = { ...er }
+                              delete c.recipients
+                              return c
+                            })
+                          }}
+                          className="h-7 text-xs mt-1"
+                        />
+                      )}
                       {errors.recipients && <p className="text-[11px] text-red-500">{errors.recipients}</p>}
                     </div>
 
