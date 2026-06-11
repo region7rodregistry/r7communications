@@ -23,12 +23,14 @@ export function Header({ title, onMenuClick }: { title?: string; onMenuClick?: (
 
   useEffect(() => {
     const stored = localStorage.getItem('theme')
+    // Default to light mode — only go dark when the user has explicitly chosen it.
     if (stored === 'dark') {
       document.documentElement.classList.add('dark')
       setDark(true)
     } else {
       document.documentElement.classList.remove('dark')
       setDark(false)
+      if (!stored) localStorage.setItem('theme', 'light')
     }
   }, [])
 
@@ -45,7 +47,7 @@ export function Header({ title, onMenuClick }: { title?: string; onMenuClick?: (
   }
 
   return (
-    <header className="sticky top-0 z-30 h-12 flex items-center justify-between px-3 sm:px-4 gap-2 bg-white/80 backdrop-blur border-b border-gray-100 dark:bg-gray-950/80 dark:border-gray-800 shrink-0">
+    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-3 sm:px-4 gap-2 bg-white/80 backdrop-blur border-b border-gray-100 dark:bg-gray-950/80 dark:border-gray-800 shrink-0">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {onMenuClick && (
           <button
@@ -56,12 +58,27 @@ export function Header({ title, onMenuClick }: { title?: string; onMenuClick?: (
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
-          {title || 'TESDA Region VII MBMS'}
-        </h1>
+        <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-white flex items-center justify-center">
+          <Image
+            src="/tesda-logo.png"
+            alt="TESDA Region VII"
+            width={40}
+            height={40}
+            className="object-contain w-full h-full"
+            priority
+          />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">
+            {title || 'TESDA Region VII - Records Unit'}
+          </h1>
+          <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate leading-tight">
+            Outgoing Communications
+          </p>
+        </div>
         {formattedDate && (
           <>
-            <span className="hidden sm:block h-4 w-px bg-gray-200 dark:bg-gray-700" />
+            <span className="hidden sm:block h-6 w-px bg-gray-200 dark:bg-gray-700 ml-1" />
             <span className="hidden sm:block text-xs text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap">
               {formattedDate}
             </span>

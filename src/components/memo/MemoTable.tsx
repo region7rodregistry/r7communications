@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Eye, Trash2, ArrowUpDown, FileDown, CheckSquare, Square, Printer, SendHorizonal } from 'lucide-react'
+import { Eye, Trash2, ArrowUpDown, FileDown, CheckSquare, Square, Printer, SendHorizonal, Undo2 } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,8 +31,12 @@ interface MemoTableProps {
    * it stays disabled until `releasedToRodFasd` is set. Admins only see Receive after release.
    */
   showReceiveOnApproved?: boolean
+  /** When false, the Receive button is hidden (e.g. user's department is not ROD/FASD/ORD). Defaults to true. */
+  canReceive?: boolean
   onMarkActionTaken?: (id: string, value: boolean) => void
   onRelease?: (id: string) => void
+  /** Undo a release — only offered while the memo is released but not yet received. */
+  onRevokeRelease?: (id: string) => void
   emptyMessage?: string
 }
 
@@ -41,9 +45,10 @@ const PAGE_SIZE = 10
 export function MemoTable({
   memos, loading, isAdmin, fluid,
   selectedIds, onToggleSelect, onToggleSelectAll,
-  onDelete, onStatusChange, onMarkReceived, onMarkActionTaken, onRelease,
+  onDelete, onStatusChange, onMarkReceived, onMarkActionTaken, onRelease, onRevokeRelease,
   defaultReceiverName = '',
   showReceiveOnApproved = true,
+  canReceive = true,
   emptyMessage = 'No memos found.',
 }: MemoTableProps) {
   const [page, setPage] = useState(1)
@@ -237,10 +242,23 @@ export function MemoTable({
                         </Button>
                       )}
 
-                      {/* Released indicator */}
+                      {/* Released indicator + revoke (revoke only while not yet received) */}
                       {isAdmin && memo.status === 'approved' && memo.releasedToRodFasd && (
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 whitespace-nowrap">
-                          Released
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 whitespace-nowrap">
+                            Released
+                          </span>
+                          {onRevokeRelease && !memo.receivedByRodFasd && (
+                            <Button
+                              variant="ghost" size="sm"
+                              className="h-7 text-xs px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                              onClick={() => onRevokeRelease(memo.id)}
+                              title="Revoke release — return this memo to unreleased"
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" />
+                              Revoke
+                            </Button>
+                          )}
                         </span>
                       )}
 
@@ -257,6 +275,7 @@ export function MemoTable({
 
                       {/* Receive — users always see it on Approved (disabled until released); admins only after release */}
                       {onMarkReceived &&
+                        canReceive &&
                         memo.status === 'approved' &&
                         !memo.receivedByRodFasd &&
                         ((!isAdmin && showReceiveOnApproved) || (!!isAdmin && !!memo.releasedToRodFasd)) && (

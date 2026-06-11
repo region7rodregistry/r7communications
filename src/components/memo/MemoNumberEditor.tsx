@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Edit2, Save, X, RefreshCw } from 'lucide-react'
 import { getCurrentMemoNumber, updateMemoNumberCounter } from '@/lib/memo-service'
 import { Button } from '@/components/ui/button'
@@ -74,37 +75,55 @@ export function MemoNumberEditor() {
           >
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 sm:w-32 truncate">{type}</span>
 
-            {editing === type ? (
-              <div className="flex items-center gap-1.5">
-                <Input
-                  type="number"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="w-20 sm:w-24 h-7 text-sm"
-                  min="0"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveEdit()
-                    if (e.key === 'Escape') cancelEdit()
-                  }}
-                  autoFocus
-                />
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={saveEdit}>
-                  <Save className="h-3.5 w-3.5" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={cancelEdit}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  {loading ? '…' : counters[type] ?? '—'}
-                </span>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(type)}>
-                  <Edit2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              {editing === type ? (
+                <motion.div
+                  key="edit"
+                  initial={{ opacity: 0, scale: 0.9, x: 8 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, x: 8 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="w-20 sm:w-24 h-7 text-sm"
+                    min="0"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit()
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={saveEdit}>
+                    <Save className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={cancelEdit}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="view"
+                  initial={{ opacity: 0, scale: 0.9, x: -8 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, x: -8 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className="flex items-center gap-2"
+                >
+                  <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    {loading ? '…' : counters[type] ?? '—'}
+                  </span>
+                  <motion.div whileHover={{ scale: 1.15, rotate: -12 }} whileTap={{ scale: 0.85 }}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(type)}>
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>

@@ -10,8 +10,9 @@ interface StatItem {
   label: string
   value: number
   icon: React.ReactNode
-  color: string
-  bgColor: string
+  gradient: string
+  text: string
+  iconColor: string
 }
 
 function CountUp({ target }: { target: number }) {
@@ -59,72 +60,83 @@ export function StatsCards({
 }) {
   const items: StatItem[] = [
     {
-      label: 'Total Memos',
+      label: 'Total Documents',
       value: stats.total,
-      icon: <FileText className="h-5 w-5" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      icon: <FileText />,
+      gradient: 'from-blue-100 to-blue-300 dark:from-blue-900/40 dark:to-blue-800/40',
+      text: 'text-blue-900 dark:text-blue-100',
+      iconColor: 'text-blue-600',
     },
     {
-      label: 'Pending',
+      label: 'Pending Memos',
       value: stats.pending,
-      icon: <Clock className="h-5 w-5" />,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+      icon: <Clock />,
+      gradient: 'from-yellow-100 to-yellow-300 dark:from-yellow-900/40 dark:to-yellow-800/40',
+      text: 'text-yellow-900 dark:text-yellow-100',
+      iconColor: 'text-yellow-600',
     },
     {
-      label: 'Signed',
+      label: 'Signed Memos',
       value: stats.signed,
-      icon: <PenLine className="h-5 w-5" />,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+      icon: <PenLine />,
+      gradient: 'from-red-100 to-red-300 dark:from-red-900/40 dark:to-red-800/40',
+      text: 'text-red-900 dark:text-red-100',
+      iconColor: 'text-red-600',
     },
     {
-      label: 'Approved',
+      label: 'Approved Memos',
       value: stats.approved,
-      icon: <CheckCircle className="h-5 w-5" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      icon: <CheckCircle />,
+      gradient: 'from-green-100 to-green-300 dark:from-green-900/40 dark:to-green-800/40',
+      text: 'text-green-900 dark:text-green-100',
+      iconColor: 'text-green-600',
     },
     {
-      label: 'Archived',
+      label: 'Archived Memos',
       value: stats.archived,
-      icon: <Archive className="h-5 w-5" />,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50 dark:bg-gray-900/20',
+      icon: <Archive />,
+      gradient: 'from-gray-100 to-gray-300 dark:from-gray-800/60 dark:to-gray-700/60',
+      text: 'text-gray-800 dark:text-gray-100',
+      iconColor: 'text-gray-600',
     },
   ]
 
   if (typeof stats.cancelled === 'number') {
     items.splice(4, 0, {
-      label: 'Cancelled',
+      label: 'Cancelled Memos',
       value: stats.cancelled,
-      icon: <XCircle className="h-5 w-5" />,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      icon: <XCircle />,
+      gradient: 'from-rose-100 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40',
+      text: 'text-rose-900 dark:text-rose-100',
+      iconColor: 'text-rose-600',
     })
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
       {items.map((item, i) => (
         <motion.div
           key={item.label}
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
+          animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }}
+          whileHover={{ scale: 1.04, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className={cn('p-1.5 rounded-md', item.bgColor, item.color)}>
-                  <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{item.icon}</span>
-                </div>
-                <p className={cn('text-lg font-bold leading-none', item.color)}>
+          <Card className={cn(
+            'border-0 rounded-2xl bg-gradient-to-br shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-default',
+            item.gradient
+          )}>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-14 w-14 shrink-0 rounded-full bg-white/90 shadow-sm flex items-center justify-center">
+                <span className={cn('[&>svg]:h-7 [&>svg]:w-7', item.iconColor)}>{item.icon}</span>
+              </div>
+              <div className="min-w-0">
+                <p className={cn('text-sm font-semibold leading-tight truncate', item.text)}>{item.label}</p>
+                <p className={cn('text-4xl font-extrabold leading-none mt-1.5', item.text)}>
                   <CountUp target={item.value} />
                 </p>
               </div>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{item.label}</p>
             </CardContent>
           </Card>
         </motion.div>

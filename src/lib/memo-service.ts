@@ -405,85 +405,79 @@ export async function getNextAntedatedMemoNumber(
   const allMemos = await getAllMemos()
   const typePrefix = getMemoTypePrefix(memoType)
   const deptCode = getDeptCode(department)
+  const prefix = `${typePrefix}-${year}-${deptCode}-`
 
-  // Find memos on the same date
-  const memosForDate = allMemos.filter((m) => {
-    if (!m.memoNumber || !m.memoNumber.startsWith(`${typePrefix}-${year}-${deptCode}-`)) return false
-    // Compare date portion
-    const memoDate = getMemoDateKey(m)
-    return memoDate === selectedDate
-  })
-
-  // Find the latest memo before this date to base the number on
-  const prevMemo = await findLatestPreviousMemo(allMemos, selectedDate, typePrefix, year, deptCode)
-
-  if (memosForDate.length === 0) {
-    // Use base number + A suffix
-    if (!prevMemo) {
-      return `${typePrefix}-${year}-${deptCode}-0001A`
-    }
-    const baseNum = prevMemo.memoNumber.replace(/[A-Z]+$/, '').split('-').pop() || '0001'
-    return `${typePrefix}-${year}-${deptCode}-${baseNum}A`
+  // The base number is the last number that existed on OR BEFORE the selected
+  // date. If the selected day itself has no memo, this looks back through the
+  // previous days until it finds the number that was last in use.
+  const baseNum = findBaseNumberForDate(allMemos, selectedDate, prefix)
+  if (!baseNum) {
+    return `${prefix}0001A`
   }
 
-  // Get next suffix for existing date
-  return getNextSuffixForExistingDate(memosForDate, typePrefix, year, deptCode)
+  // Append the next suffix that is free for this base number across ALL days —
+  // not just the selected day — so we never reissue a suffix already used on a
+  // previous (or later) date.
+  return getNextSuffixForBase(allMemos, prefix, baseNum)
 }
 
-async function findLatestPreviousMemo(
+// Base number to antedate against: the highest number issued on the selected
+// day itself. If that day has no memo, backtrack to the most recent earlier day
+// that does, and use that day's highest number. Returns null when no memo
+// exists on or before the selected date.
+function findBaseNumberForDate(
   allMemos: Memo[],
   selectedDate: string,
-  typePrefix: string,
-  year: number,
-  deptCode: string
-): Promise<Memo | null> {
-  const prefix = `${typePrefix}-${year}-${deptCode}-`
-  const relevant = allMemos
-    .filter((m) => {
-      if (!m.memoNumber?.startsWith(prefix)) return false
-      const memoDate = getMemoDateKey(m)
-      return !!memoDate && memoDate < selectedDate
-    })
-    .sort((a, b) => {
-      const aNum = parseInt(a.memoNumber.replace(/[A-Z]+$/, '').split('-').pop() || '0')
-      const bNum = parseInt(b.memoNumber.replace(/[A-Z]+$/, '').split('-').pop() || '0')
-      return bNum - aNum
-    })
+  prefix: string
+): string | null {
+  // Date key of the most recent day (<= selectedDate) that has any memo.
+  let latestDay: string | null = null
+  for (const m of allMemos) {
+    if (!m.memoNumber?.startsWith(prefix)) continue
+    const memoDate = getMemoDateKey(m)
+    if (!memoDate || memoDate > selectedDate) continue
+    if (!latestDay || memoDate > latestDay) latestDay = memoDate
+  }
+  if (!latestDay) return null
 
-  return relevant[0] || null
+  // Highest base number among the memos on that day.
+  let best: { num: number; base: string } | null = null
+  for (const m of allMemos) {
+    if (!m.memoNumber?.startsWith(prefix)) continue
+    if (getMemoDateKey(m) !== latestDay) continue
+
+    const match = m.memoNumber.replace(prefix, '').match(/^(\d+)([A-Z]*)$/)
+    if (!match) continue
+
+    const num = parseInt(match[1])
+    if (!best || num > best.num) best = { num, base: match[1] }
+  }
+
+  return best?.base ?? null
 }
 
-function getNextSuffixForExistingDate(
-  memosForDate: Memo[],
-  typePrefix: string,
-  year: number,
-  deptCode: string
+// Next free suffix for `baseNum`, scanning every memo that shares the base
+// number regardless of which day it falls on. Empty suffix (the original,
+// non-antedated number) counts as index -1, so the first suffix is "A".
+function getNextSuffixForBase(
+  allMemos: Memo[],
+  prefix: string,
+  baseNum: string
 ): string {
-  const prefix = `${typePrefix}-${year}-${deptCode}-`
-  const parsed = memosForDate
-    .map((m) => {
-      const part = m.memoNumber.replace(prefix, '')
-      const match = part.match(/^(\d+)([A-Z]*)$/)
-      if (!match) return null
-      return { base: match[1], suffix: match[2] }
-    })
-    .filter((x): x is { base: string; suffix: string } => x !== null)
+  const target = parseInt(baseNum)
+  let maxSuffixIdx = -1
 
-  if (parsed.length === 0) return `${prefix}0001A`
+  for (const m of allMemos) {
+    if (!m.memoNumber?.startsWith(prefix)) continue
+    const part = m.memoNumber.replace(prefix, '')
+    const match = part.match(/^(\d+)([A-Z]*)$/)
+    if (!match || parseInt(match[1]) !== target) continue
 
-  // Highest base number on this date
-  const maxBase = parsed.reduce((max, p) =>
-    parseInt(p.base) > parseInt(max.base) ? p : max, parsed[0]).base
+    const idx = match[2] ? suffixToIndex(match[2]) : -1
+    if (idx > maxSuffixIdx) maxSuffixIdx = idx
+  }
 
-  // Among memos sharing that base, find the highest suffix (empty = index -1)
-  const sameBase = parsed.filter((p) => p.base === maxBase)
-  const maxSuffixIdx = sameBase.reduce(
-    (max, p) => (p.suffix ? suffixToIndex(p.suffix) : -1) > max
-      ? (p.suffix ? suffixToIndex(p.suffix) : -1)
-      : max,
-    -1
-  )
-  return `${prefix}${maxBase}${indexToSuffix(maxSuffixIdx + 1)}`
+  return `${prefix}${baseNum}${indexToSuffix(maxSuffixIdx + 1)}`
 }
 
 export async function validateMemoNumberUniqueness(
