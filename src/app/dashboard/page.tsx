@@ -38,6 +38,8 @@ export default function DashboardPage() {
 
   const isAdmin = userData?.role === 'admin'
   const STATUS_TABS = isAdmin ? ADMIN_STATUS_TABS : ALL_STATUS_TABS
+  /** Only ROD, FASD and ORD confirm receipt of released documents. */
+  const canReceive = ['ROD', 'FASD', 'ORD'].includes(userData?.department ?? '')
 
   const currentYear = new Date().getFullYear()
   const [search, setSearch]           = useState('')
@@ -74,14 +76,14 @@ export default function DashboardPage() {
 
   /** Approved memos released by admin but not yet acknowledged — user must click Receive and enter a name. */
   const awaitingReceiptCount = useMemo(() => {
-    if (isAdmin) return 0
+    if (isAdmin || !canReceive) return 0
     return yearMemos.filter(
       m =>
         m.status === 'approved' &&
         m.releasedToRodFasd &&
         !m.receivedByRodFasd
     ).length
-  }, [yearMemos, isAdmin])
+  }, [yearMemos, isAdmin, canReceive])
 
   /* ── Inactivity timeout ──
      Keep refs to the latest logout/toast so the effect never needs to
@@ -285,6 +287,7 @@ export default function DashboardPage() {
                   memos={filterMemos(tab.value)}
                   loading={memosLoading}
                   onMarkReceived={handleMarkReceived}
+                  canReceive={canReceive}
                   defaultReceiverName={userData?.username ?? ''}
                   emptyMessage={`No ${tab.label.toLowerCase()} memos.`}
                 />

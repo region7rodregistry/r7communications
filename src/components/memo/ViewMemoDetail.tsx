@@ -145,6 +145,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
   const showReceiveCta =
     !!memo &&
     !isAdmin &&
+    ['ROD', 'FASD', 'ORD'].includes(userData?.department ?? '') &&
     memo.status === 'approved' &&
     !!memo.releasedToRodFasd &&
     !memo.receivedByRodFasd
