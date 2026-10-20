@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 import { ToastProvider } from '@/components/ui/toast'
 import { Toaster } from '@/components/shared/Toaster'
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ToastProvider>
           <AuthProvider>
-            {children}
+            <SidebarProvider>
+              {children}
+            </SidebarProvider>
             <Toaster />
           </AuthProvider>
         </ToastProvider>

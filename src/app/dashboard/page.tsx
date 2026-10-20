@@ -19,17 +19,14 @@ import type { Memo, MemoStatus, AttachmentFilter } from '@/types'
 
 const INACTIVITY_MS = 15 * 60 * 1000
 
-const ALL_STATUS_TABS: { value: MemoStatus; label: string; icon: React.ReactNode }[] = [
+const STATUS_TABS: { value: MemoStatus; label: string; icon: React.ReactNode }[] = [
   { value: 'pending',  label: 'Pending',  icon: <Clock className="h-3.5 w-3.5" /> },
   { value: 'signed',   label: 'Signed',   icon: <PenLine className="h-3.5 w-3.5" /> },
   { value: 'approved', label: 'Approved', icon: <CheckCircle className="h-3.5 w-3.5" /> },
   { value: 'archived', label: 'Archive',  icon: <Archive className="h-3.5 w-3.5" /> },
 ]
 
-const ADMIN_STATUS_TABS: { value: MemoStatus; label: string; icon: React.ReactNode }[] = [
-  { value: 'archived', label: 'Archive',  icon: <Archive className="h-3.5 w-3.5" /> },
-]
-
+// Staff dashboard. Admins are sent to /overview instead.
 export default function DashboardPage() {
   const { user, userData, loading: authLoading, logout } = useAuth()
   const router = useRouter()
@@ -37,54 +34,34 @@ export default function DashboardPage() {
   const { memos, loading: memosLoading, stats } = useMemos(userData?.department)
 
   const isAdmin = userData?.role === 'admin'
-  const STATUS_TABS = isAdmin ? ADMIN_STATUS_TABS : ALL_STATUS_TABS
   /** Only ROD, FASD and ORD confirm receipt of released documents. */
   const canReceive = ['ROD', 'FASD', 'ORD'].includes(userData?.department ?? '')
 
-  const currentYear = new Date().getFullYear()
   const [search, setSearch]           = useState('')
   const [dateFrom, setDateFrom]       = useState('')
   const [dateTo, setDateTo]           = useState('')
   const [attachment, setAttachment]   = useState<AttachmentFilter>('all')
-  const [activeTab, setActiveTab]     = useState<MemoStatus>(isAdmin ? 'archived' : 'pending')
+  const [activeTab, setActiveTab]     = useState<MemoStatus>('pending')
   const [createOpen, setCreateOpen]   = useState(false)
-  const [selectedYear, setSelectedYear] = useState(currentYear)
-
-  const availableYears = useMemo(() => {
-    const years = new Set<number>([currentYear])
-    memos.forEach(m => {
-      const d = m.createdAt?.toDate ? m.createdAt.toDate() : new Date(m.createdAt)
-      if (!isNaN(d.getTime())) years.add(d.getFullYear())
-    })
-    return Array.from(years).sort((a, b) => b - a)
-  }, [memos, currentYear])
-
-  const yearMemos = useMemo(() => {
-    if (!isAdmin) return memos
-    return memos.filter(m => {
-      const d = m.createdAt?.toDate ? m.createdAt.toDate() : new Date(m.createdAt)
-      return !isNaN(d.getTime()) && d.getFullYear() === selectedYear
-    })
-  }, [memos, isAdmin, selectedYear])
 
   const displayStats = useMemo(() => ({
-    total:    yearMemos.length,
-    pending:  yearMemos.filter(m => m.status === 'pending').length,
-    signed:   yearMemos.filter(m => m.status === 'signed').length,
-    approved: yearMemos.filter(m => m.status === 'approved').length,
-    archived: yearMemos.filter(m => m.status === 'archived').length,
-  }), [yearMemos])
+    total:    memos.length,
+    pending:  memos.filter(m => m.status === 'pending').length,
+    signed:   memos.filter(m => m.status === 'signed').length,
+    approved: memos.filter(m => m.status === 'approved').length,
+    archived: memos.filter(m => m.status === 'archived').length,
+  }), [memos])
 
   /** Approved memos released by admin but not yet acknowledged — user must click Receive and enter a name. */
   const awaitingReceiptCount = useMemo(() => {
-    if (isAdmin || !canReceive) return 0
-    return yearMemos.filter(
+    if (!canReceive) return 0
+    return memos.filter(
       m =>
         m.status === 'approved' &&
         m.releasedToRodFasd &&
         !m.receivedByRodFasd
     ).length
-  }, [yearMemos, isAdmin, canReceive])
+  }, [memos, canReceive])
 
   /* ── Inactivity timeout ──
      Keep refs to the latest logout/toast so the effect never needs to
@@ -114,13 +91,14 @@ export default function DashboardPage() {
     }
   }, []) // intentionally empty — refs keep the callbacks current
 
-  /* ── Auth guard ── */
+  /* ── Auth guard — admins use the Overview page instead of this dashboard ── */
   useEffect(() => {
     if (!authLoading && !user) router.replace('/login')
-  }, [authLoading, user, router])
+    else if (!authLoading && isAdmin) router.replace('/overview')
+  }, [authLoading, user, isAdmin, router])
 
   const filterMemos = useCallback((tabStatus: MemoStatus) => {
-    return yearMemos.filter((m) => {
+    return memos.filter((m) => {
       if (m.status !== tabStatus) return false
       if (attachment === 'with' && !m.pdfUrl) return false
       if (attachment === 'without' && m.pdfUrl) return false
@@ -142,7 +120,7 @@ export default function DashboardPage() {
       }
       return true
     })
-  }, [yearMemos, search, dateFrom, dateTo, attachment])
+  }, [memos, search, dateFrom, dateTo, attachment])
 
   const handleMarkReceived = async (memoId: string, receivedByName: string) => {
     try {
@@ -158,7 +136,8 @@ export default function DashboardPage() {
     }
   }
 
-  if (authLoading) return null
+  // Admins are being redirected to /overview — render nothing meanwhile
+  if (authLoading || isAdmin) return null
 
   return (
     <DashboardLayout title="Dashboard" fullHeight>
@@ -173,34 +152,11 @@ export default function DashboardPage() {
               </h1>
               <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{userData?.username}</p>
             </div>
-            {isAdmin && (
-              <>
-                <span className="h-3.5 w-px bg-gray-200 dark:bg-gray-700" />
-                <div className="flex items-center gap-1 flex-wrap">
-                  {availableYears.map(year => (
-                    <button
-                      key={year}
-                      onClick={() => setSelectedYear(year)}
-                      className={[
-                        'h-6 px-2.5 rounded-md text-xs font-semibold transition-colors',
-                        selectedYear === year
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
-                      ].join(' ')}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
-          {!isAdmin && (
-            <Button size="sm" className="h-7 text-xs px-2.5" onClick={() => setCreateOpen(true)}>
-              <PlusCircle className="h-3.5 w-3.5 mr-1" />
-              New Memo
-            </Button>
-          )}
+          <Button size="sm" className="h-7 text-xs px-2.5" onClick={() => setCreateOpen(true)}>
+            <PlusCircle className="h-3.5 w-3.5 mr-1" />
+            New Memo
+          </Button>
         </div>
 
         {/* ── Row 2: Stats cards ── */}
@@ -221,7 +177,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Released memos waiting for ROD/FASD (or your office) to confirm receipt */}
-        {!isAdmin && awaitingReceiptCount > 0 && (
+        {awaitingReceiptCount > 0 && (
           <div
             className="shrink-0 rounded-xl border border-purple-200/90 dark:border-purple-800/70 bg-purple-50/80 dark:bg-purple-950/30 px-3 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
             role="status"

@@ -18,9 +18,12 @@ import {
   Archive,
   XCircle,
   Pencil,
+  Timer,
+  Hourglass,
 } from 'lucide-react'
 import { getMemoById, updateMemo, logMemoActivity, validateMemoNumberUniqueness } from '@/lib/memo-service'
 import { formatDate, formatDateTime } from '@/lib/utils'
+import { durationBetween, formatDuration, getSignedAt, getStartedAt } from '@/lib/processing-time'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -40,7 +43,7 @@ import { ActivityTimeline } from './ActivityTimeline'
 import { ReceiveMemoDialog } from './ReceiveMemoDialog'
 import { MemoAttachment } from './MemoAttachment'
 import { STATUS_COLORS } from '@/types'
-import type { Memo, Department } from '@/types'
+import type { Memo, MemoActivity, Department } from '@/types'
 
 const DEPTS: Department[] = ['ORD', 'ROD', 'FASD', 'Administration']
 
@@ -124,6 +127,63 @@ function ApprovalTracker({ status }: { status: string }) {
   )
 }
 
+const NOTE_TONES = {
+  blue: 'border-blue-100 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-100',
+  amber: 'border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100',
+  gray: 'border-gray-100 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-800/50 dark:text-gray-300',
+}
+
+// How long the memo took to get signed (or has been waiting), measured from
+// creation to the first "signed" status change in the activity log.
+function SigningTimeNote({ memo, logs }: { memo: Memo; logs: MemoActivity[] | null }) {
+  if (!logs) return null
+
+  const startedAt = getStartedAt(memo, logs)
+  const signedAt = getSignedAt(logs)
+  if (!signedAt && memo.status === 'cancelled') return null
+
+  let tone: keyof typeof NOTE_TONES = 'gray'
+  let icon = <Timer />
+  let headline: React.ReactNode = 'Signing time not recorded'
+  let detail: string
+
+  if (signedAt) {
+    const ms = durationBetween(startedAt, signedAt)
+    if (ms != null) {
+      tone = 'blue'
+      headline = <>Signed in <strong>{formatDuration(ms)}</strong></>
+      detail = `Created ${formatDateTime(startedAt)} · Signed ${formatDateTime(signedAt)}`
+    } else {
+      detail = memo.isAntedated
+        ? `Signed ${formatDateTime(signedAt)}. This antedated memo has no creation entry in the activity log to measure from.`
+        : `Signed ${formatDateTime(signedAt)}, which is earlier than its created date.`
+    }
+  } else if (memo.status === 'pending') {
+    const ms = durationBetween(startedAt, new Date())
+    if (ms != null) {
+      tone = 'amber'
+      icon = <Hourglass />
+      headline = <>Waiting for signature for <strong>{formatDuration(ms)}</strong></>
+      detail = `Created ${formatDateTime(startedAt)}`
+    } else {
+      headline = 'Waiting for signature'
+      detail = 'This antedated memo has no creation entry in the activity log to measure from.'
+    }
+  } else {
+    detail = 'No change to Signed status was found in the activity log.'
+  }
+
+  return (
+    <div className={`mt-5 flex items-start gap-2.5 rounded-lg border px-3 py-2.5 ${NOTE_TONES[tone]}`}>
+      <span className="mt-0.5 shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-sm">{headline}</p>
+        <p className="text-xs opacity-80 mt-0.5">{detail}</p>
+      </div>
+    </div>
+  )
+}
+
 export function ViewMemoDetail({ memoId }: { memoId: string }) {
   const { userData } = useAuth()
   const { toast } = useToast()
@@ -134,6 +194,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
   const [saving, setSaving] = useState(false)
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false)
   const [activityKey, setActivityKey] = useState(0)
+  const [logs, setLogs] = useState<MemoActivity[] | null>(null)
 
   useEffect(() => {
     getMemoById(memoId)
@@ -455,6 +516,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
       <Card className="print:hidden">
         <CardContent className="pt-6">
           <ApprovalTracker status={memo.status} />
+          <SigningTimeNote memo={memo} logs={logs} />
         </CardContent>
       </Card>
 
@@ -724,7 +786,7 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
               <CardTitle className="text-base">Activity Log</CardTitle>
             </CardHeader>
             <CardContent>
-              <ActivityTimeline key={activityKey} memoId={memo.id} />
+              <ActivityTimeline key={activityKey} memoId={memo.id} onLoaded={setLogs} />
             </CardContent>
           </Card>
         </div>

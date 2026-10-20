@@ -16,6 +16,7 @@ import {
 import { db } from './firebase'
 import type { Memo, MemoActivity, UserData, MemoType } from '@/types'
 import { MEMO_TYPE_KEYS } from '@/types'
+import { SIGNED_ACTIONS, toDate } from './processing-time'
 
 // ─── Memo CRUD ────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,36 @@ export async function getActivityLogsForMemo(
     const bt = b.timestamp?.toDate?.() ?? new Date(b.timestamp ?? 0)
     return at.getTime() - bt.getTime()
   })
+}
+
+/**
+ * Real-time map of memoId → the first time it was signed. Queries only the
+ * "status changed to signed" log entries (single-field `in`, no composite
+ * index), so it costs one read per signing instead of a scan of every log.
+ */
+export function subscribeToSigningEvents(
+  callback: (signedAt: Map<string, Date>) => void,
+  onError?: (err: Error) => void
+): () => void {
+  const q = query(collection(db, 'memoActivities'), where('action', 'in', SIGNED_ACTIONS))
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const signedAt = new Map<string, Date>()
+      snapshot.docs.forEach((d) => {
+        const { memoId, timestamp } = d.data()
+        const t = toDate(timestamp)
+        if (!memoId || !t) return
+        const prev = signedAt.get(memoId)
+        if (!prev || t < prev) signedAt.set(memoId, t)
+      })
+      callback(signedAt)
+    },
+    (err) => {
+      console.error('[subscribeToSigningEvents]', err)
+      onError?.(err)
+    }
+  )
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────

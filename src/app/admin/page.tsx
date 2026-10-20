@@ -7,7 +7,7 @@ import {
   Trash2, Download, RefreshCw, Shield,
   Settings2, X, Clock, CheckCircle,
   Archive, XCircle, PenLine, ChevronRight, FolderOpen,
-  Hash, Award, Building2, Link2, Loader2
+  Link2, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
@@ -26,36 +26,12 @@ import { useMemos } from '@/hooks/useMemos'
 import {
   updateMemoStatus, updateMemo, deleteMemoFromFirestore,
   deleteActivityLogsForMemos, cleanupOrphanedActivityLogs,
-  logMemoActivity, subscribeToMemoCounters,
+  logMemoActivity,
 } from '@/lib/memo-service'
 import { relinkStoragePdfs, type RelinkResult } from '@/lib/storage-service'
 import { useToast } from '@/components/ui/toast'
 import { formatDate, cn } from '@/lib/utils'
-import type { Memo, MemoStatus, MemoType, AttachmentFilter } from '@/types'
-
-const COUNTER_TYPES: { type: MemoType; label: string }[] = [
-  { type: 'PO',              label: 'Provincial Office'    },
-  { type: 'CO',              label: 'Central Office'       },
-  { type: 'Office Order',    label: 'Office Order'         },
-  { type: 'Advisory',        label: 'Advisory'             },
-  { type: 'AdvisoryBulletin',label: 'Advisory Bulletin'   },
-  { type: 'Bulletin',        label: 'Bulletin'             },
-  { type: 'Acknowledgment',  label: 'Acknowledgment'       },
-]
-
-// Gradient palette for the KPI cards — mirrors the dashboard StatsCards design.
-const KPI_PALETTE = [
-  { gradient: 'from-blue-100 to-blue-300 dark:from-blue-900/40 dark:to-blue-800/40',       text: 'text-blue-900 dark:text-blue-100',     icon: 'text-blue-600' },
-  { gradient: 'from-indigo-100 to-indigo-300 dark:from-indigo-900/40 dark:to-indigo-800/40', text: 'text-indigo-900 dark:text-indigo-100', icon: 'text-indigo-600' },
-  { gradient: 'from-pink-100 to-pink-300 dark:from-pink-900/40 dark:to-pink-800/40',       text: 'text-pink-900 dark:text-pink-100',     icon: 'text-pink-600' },
-  { gradient: 'from-amber-100 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40',    text: 'text-amber-900 dark:text-amber-100',   icon: 'text-amber-600' },
-  { gradient: 'from-emerald-100 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40', text: 'text-emerald-900 dark:text-emerald-100', icon: 'text-emerald-600' },
-  { gradient: 'from-purple-100 to-purple-300 dark:from-purple-900/40 dark:to-purple-800/40', text: 'text-purple-900 dark:text-purple-100', icon: 'text-purple-600' },
-  { gradient: 'from-orange-100 to-orange-300 dark:from-orange-900/40 dark:to-orange-800/40', text: 'text-orange-900 dark:text-orange-100', icon: 'text-orange-600' },
-  { gradient: 'from-cyan-100 to-cyan-300 dark:from-cyan-900/40 dark:to-cyan-800/40',       text: 'text-cyan-900 dark:text-cyan-100',     icon: 'text-cyan-600' },
-  { gradient: 'from-rose-100 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40',       text: 'text-rose-900 dark:text-rose-100',     icon: 'text-rose-600' },
-  { gradient: 'from-teal-100 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40',       text: 'text-teal-900 dark:text-teal-100',     icon: 'text-teal-600' },
-]
+import type { Memo, MemoStatus, AttachmentFilter } from '@/types'
 
 const STATUS_TABS: { value: MemoStatus; label: string; icon: React.ReactNode }[] = [
   { value: 'pending',   label: 'Pending',   icon: <Clock className="h-3.5 w-3.5" /> },
@@ -86,15 +62,7 @@ export default function AdminPage() {
   const [relink, setRelink]               = useState<{ running: boolean; done: number; total: number; result: RelinkResult | null }>(
     { running: false, done: 0, total: 0, result: null }
   )
-  const [counters, setCounters]           = useState<Partial<Record<MemoType, number>>>({})
   const [selectedYear, setSelectedYear]   = useState(CURRENT_YEAR)
-
-  // Subscribe to memo number counters in real time
-  useEffect(() => {
-    const types = COUNTER_TYPES.map(c => c.type)
-    const unsubscribe = subscribeToMemoCounters(types, setCounters)
-    return unsubscribe
-  }, [])
 
   // Available years from memo data (+ current year always included)
   const availableYears = useMemo(() => {
@@ -272,14 +240,6 @@ export default function AdminPage() {
     toast({ title: `Cleaned up ${count} orphaned log(s)`, variant: 'success' })
   }
 
-  const deptStats = useMemo(() => (
-    ['ORD', 'ROD', 'FASD'].map(d => ({
-      dept: d,
-      total: yearMemos.filter(m => m.department === d).length,
-    }))
-  ), [yearMemos])
-
-
   if (authLoading) return null
 
   const logSheetMemos = filterMemos('approved').filter(m => m.receivedByRodFasd)
@@ -343,53 +303,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* ── Row 2: Memo number counters (KPI cards) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 shrink-0">
-          {[
-            ...COUNTER_TYPES.map(({ type, label }) => ({
-              key: type,
-              label,
-              value: counters[type] ?? '—',
-              icon: type === 'Acknowledgment' ? <Award /> : <Hash />,
-            })),
-            ...deptStats.map(d => ({
-              key: d.dept,
-              label: `${d.dept} Total`,
-              value: memosLoading ? '—' : d.total,
-              icon: <Building2 />,
-            })),
-          ].map((card, i) => {
-            const c = KPI_PALETTE[i % KPI_PALETTE.length]
-            return (
-              <motion.div
-                key={card.key}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: i * 0.04 } }}
-                whileHover={{ scale: 1.04, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className={cn(
-                  'rounded-2xl bg-gradient-to-br shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-default',
-                  c.gradient
-                )}
-              >
-                <div className="p-4 flex items-center gap-3">
-                  <div className="h-11 w-11 shrink-0 rounded-full bg-white/90 shadow-sm flex items-center justify-center">
-                    <span className={cn('[&>svg]:h-5 [&>svg]:w-5', c.icon)}>{card.icon}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className={cn('text-xs font-semibold leading-tight truncate', c.text)}>{card.label}</p>
-                    <p className={cn('text-2xl font-extrabold leading-none mt-1 font-mono', c.text)}>
-                      {card.value}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* ── Row 3: Filters ── */}
+        {/* ── Row 2: Filters ── */}
         <div className="shrink-0">
           <MemoFilters
             search={search} onSearchChange={setSearch}
@@ -402,7 +316,7 @@ export default function AdminPage() {
           />
         </div>
 
-        {/* ── Row 4+: Tabs — fills all remaining height ── */}
+        {/* ── Row 3+: Tabs — fills all remaining height ── */}
         <Tabs
           value={activeTab}
           onValueChange={v => setActiveTab(v as MemoStatus)}

@@ -7,15 +7,25 @@ import { getActivityLogsForMemo } from '@/lib/memo-service'
 import { formatDateTime } from '@/lib/utils'
 import type { MemoActivity } from '@/types'
 
-export function ActivityTimeline({ memoId }: { memoId: string }) {
+export function ActivityTimeline({
+  memoId,
+  onLoaded,
+}: {
+  memoId: string
+  /** Receives the fetched logs, so the parent can reuse them without a second query */
+  onLoaded?: (logs: MemoActivity[]) => void
+}) {
   const [logs, setLogs] = useState<MemoActivity[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getActivityLogsForMemo(memoId)
-      .then(setLogs)
+      .then((fetched) => {
+        setLogs(fetched)
+        onLoaded?.(fetched)
+      })
       .finally(() => setLoading(false))
-  }, [memoId])
+  }, [memoId, onLoaded])
 
   if (loading) {
     return (

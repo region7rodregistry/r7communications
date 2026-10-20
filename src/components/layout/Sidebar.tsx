@@ -5,10 +5,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, LogOut, Menu, X, ChevronRight, Shield, Users
+  LayoutDashboard, LogOut, Menu, X, ChevronRight, Shield, Users, BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSidebar } from '@/contexts/SidebarContext'
+
+// Matches DashboardLayout's content margin (`duration-300 ease-out`) so the
+// content slides over in step with the sidebar instead of being covered by it.
+const SIDEBAR_TRANSITION = { type: 'tween', duration: 0.3, ease: [0, 0, 0.2, 1] } as const
 
 interface NavItem {
   href: string
@@ -19,7 +24,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  // Admins get Overview in place of Dashboard
+  { href: '/overview', label: 'Overview', icon: <BarChart3 className="h-5 w-5" />, adminOnly: true },
+  { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, hideForAdmin: true },
   { href: '/admin', label: 'Admin Portal', icon: <Shield className="h-5 w-5" />, adminOnly: true },
   { href: '/ict-team', label: 'ICT Team', icon: <Users className="h-5 w-5" /> },
 ]
@@ -30,7 +37,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
-  const [expanded, setExpanded] = useState(false)
+  const { expanded, setExpanded } = useSidebar()
   const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
   const { userData, logout } = useAuth()
@@ -72,7 +79,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
           width: showExpanded ? 240 : 64,
           x: isMobile && !mobileOpen ? -260 : 0,
         }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={SIDEBAR_TRANSITION}
         className="fixed left-0 top-0 h-full z-40 flex flex-col bg-white border-r border-gray-100 dark:bg-gray-950 dark:border-gray-800 shadow-sm"
       >
         {/* Logo / Toggle */}

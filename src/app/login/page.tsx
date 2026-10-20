@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user && userData) {
-      router.replace(userData.role === 'admin' ? '/admin' : '/dashboard')
+      router.replace(userData.role === 'admin' ? '/overview' : '/dashboard')
     }
   }, [user, userData, loading, router])
 

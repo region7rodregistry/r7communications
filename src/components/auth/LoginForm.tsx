@@ -142,7 +142,7 @@ export function LoginForm() {
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password)
       const userData = await getUserData(credential.user.email!)
-      redirectTo.current = userData.role === 'admin' ? '/admin' : '/dashboard'
+      redirectTo.current = userData.role === 'admin' ? '/overview' : '/dashboard'
       setTransitioning(true)
     } catch (err: any) {
       const code = err.code
