@@ -2,6 +2,7 @@ export type MemoStatus = 'pending' | 'signed' | 'approved' | 'cancelled' | 'arch
 export type MemoType = 'PO' | 'CO' | 'Office Order' | 'Advisory' | 'AdvisoryBulletin' | 'Bulletin' | 'Acknowledgment'
 export type Department = 'ORD' | 'ROD' | 'FASD' | 'Administration'
 export type UserRole = 'user' | 'admin'
+export type AttachmentFilter = 'all' | 'with' | 'without'
 
 export interface Memo {
   id: string

@@ -30,7 +30,7 @@ import {
 } from '@/lib/memo-service'
 import { useToast } from '@/components/ui/toast'
 import { formatDate, cn } from '@/lib/utils'
-import type { Memo, MemoStatus, MemoType } from '@/types'
+import type { Memo, MemoStatus, MemoType, AttachmentFilter } from '@/types'
 
 const COUNTER_TYPES: { type: MemoType; label: string }[] = [
   { type: 'PO',              label: 'Provincial Office'    },
@@ -76,6 +76,7 @@ export default function AdminPage() {
   const [memoTypeFilter, setMemoTypeFilter] = useState('all')
   const [dateFrom, setDateFrom]           = useState('')
   const [dateTo, setDateTo]               = useState('')
+  const [attachment, setAttachment]       = useState<AttachmentFilter>('all')
   const [activeTab, setActiveTab]         = useState<MemoStatus>('pending')
   const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set())
   const [logSheetMode, setLogSheetMode]   = useState(false)
@@ -140,6 +141,8 @@ export default function AdminPage() {
     return yearMemos.filter((m) => {
       if (m.status !== tabStatus) return false
       if (memoTypeFilter !== 'all' && m.memoType !== memoTypeFilter) return false
+      if (attachment === 'with' && !m.pdfUrl) return false
+      if (attachment === 'without' && m.pdfUrl) return false
       if (search) {
         const q = search.toLowerCase()
         if (
@@ -159,7 +162,7 @@ export default function AdminPage() {
       }
       return true
     })
-  }, [yearMemos, search, memoTypeFilter, dateFrom, dateTo])
+  }, [yearMemos, search, memoTypeFilter, dateFrom, dateTo, attachment])
 
   const handleToggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -375,6 +378,7 @@ export default function AdminPage() {
             dateFrom={dateFrom} onDateFromChange={setDateFrom}
             dateTo={dateTo} onDateToChange={setDateTo}
             showTypeFilter memoType={memoTypeFilter} onMemoTypeChange={setMemoTypeFilter}
+            attachment={attachment} onAttachmentChange={setAttachment}
             compact
           />
         </div>
@@ -549,7 +553,7 @@ export default function AdminPage() {
                     </div>
                     {pdfMemoId && (
                       <PdfUpload
-                        memoId={pdfMemoId}
+                        memoId={pdfMemoId.trim()}
                         onUploaded={() => {
                           toast({ title: 'PDF uploaded', variant: 'success' })
                           setPdfMemoId('')

@@ -3,7 +3,7 @@
 import { Search, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { MemoStatus } from '@/types'
+import type { MemoStatus, AttachmentFilter } from '@/types'
 
 interface MemoFiltersProps {
   search: string
@@ -17,6 +17,8 @@ interface MemoFiltersProps {
   showTypeFilter?: boolean
   memoType?: string
   onMemoTypeChange?: (v: string) => void
+  attachment?: AttachmentFilter
+  onAttachmentChange?: (v: AttachmentFilter) => void
   compact?: boolean
 }
 
@@ -40,12 +42,19 @@ const typeOptions = [
   { label: 'Acknowledgment', value: 'Acknowledgment' },
 ]
 
+const attachmentOptions: { label: string; value: AttachmentFilter }[] = [
+  { label: 'All Attachments', value: 'all' },
+  { label: 'With Attachment', value: 'with' },
+  { label: 'Without Attachment', value: 'without' },
+]
+
 export function MemoFilters({
   search, onSearchChange,
   status, onStatusChange,
   dateFrom, onDateFromChange,
   dateTo, onDateToChange,
   showTypeFilter, memoType, onMemoTypeChange,
+  attachment, onAttachmentChange,
   compact,
 }: MemoFiltersProps) {
   const h = compact ? 'h-8 text-xs' : ''
@@ -78,6 +87,20 @@ export function MemoFilters({
         </Select>
       )}
 
+      {/* Attachment filter */}
+      {onAttachmentChange && (
+        <Select value={attachment || 'all'} onValueChange={(v) => onAttachmentChange(v as AttachmentFilter)}>
+          <SelectTrigger className={`flex-1 sm:flex-none sm:w-[160px] ${h}`}>
+            <SelectValue placeholder="Attachment" />
+          </SelectTrigger>
+          <SelectContent>
+            {attachmentOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
       {/* Date range */}
       {onDateFromChange && (
         <Input
@@ -99,13 +122,14 @@ export function MemoFilters({
       )}
 
       {/* Clear filters */}
-      {(search || dateFrom || dateTo || (memoType && memoType !== 'all')) && (
+      {(search || dateFrom || dateTo || (memoType && memoType !== 'all') || (attachment && attachment !== 'all')) && (
         <button
           onClick={() => {
             onSearchChange('')
             onDateFromChange?.('')
             onDateToChange?.('')
             onMemoTypeChange?.('all')
+            onAttachmentChange?.('all')
           }}
           className={`flex items-center gap-1 px-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${compact ? 'h-8 text-xs' : 'h-10 text-sm'}`}
         >

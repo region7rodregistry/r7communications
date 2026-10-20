@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react'
 import { Upload, FileText, Loader2, CheckCircle, X } from 'lucide-react'
 import { uploadPDF } from '@/lib/storage-service'
+import { logMemoActivity } from '@/lib/memo-service'
+import { useAuth } from '@/contexts/AuthContext'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -18,6 +20,7 @@ interface PdfUploadProps {
 export function PdfUpload({
   memoId, currentPdfUrl, currentPdfName, onUploaded, onError
 }: PdfUploadProps) {
+  const { userData } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -36,9 +39,15 @@ export function PdfUpload({
     setDone(false)
 
     try {
-      const url = await uploadPDF(memoId, file, ({ percent }) => {
+      const { url, fileName } = await uploadPDF(memoId, file, ({ percent }) => {
         setProgress(Math.round(percent))
       })
+      // The file is already saved, so a failed log entry shouldn't fail the upload
+      await logMemoActivity(
+        memoId,
+        `PDF attached: ${fileName}`,
+        userData?.username || userData?.email || 'admin'
+      ).catch(() => {})
       setDone(true)
       onUploaded?.(url)
     } catch (err: any) {
@@ -77,6 +86,7 @@ export function PdfUpload({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0]
+            e.target.value = ''
             if (file) handleFile(file)
           }}
         />

@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useMemos } from '@/hooks/useMemos'
 import { updateMemo, logMemoActivity } from '@/lib/memo-service'
 import { useToast } from '@/components/ui/toast'
-import type { Memo, MemoStatus } from '@/types'
+import type { Memo, MemoStatus, AttachmentFilter } from '@/types'
 
 const INACTIVITY_MS = 15 * 60 * 1000
 
@@ -45,6 +45,7 @@ export default function DashboardPage() {
   const [search, setSearch]           = useState('')
   const [dateFrom, setDateFrom]       = useState('')
   const [dateTo, setDateTo]           = useState('')
+  const [attachment, setAttachment]   = useState<AttachmentFilter>('all')
   const [activeTab, setActiveTab]     = useState<MemoStatus>(isAdmin ? 'archived' : 'pending')
   const [createOpen, setCreateOpen]   = useState(false)
   const [selectedYear, setSelectedYear] = useState(currentYear)
@@ -121,6 +122,8 @@ export default function DashboardPage() {
   const filterMemos = useCallback((tabStatus: MemoStatus) => {
     return yearMemos.filter((m) => {
       if (m.status !== tabStatus) return false
+      if (attachment === 'with' && !m.pdfUrl) return false
+      if (attachment === 'without' && m.pdfUrl) return false
       if (search) {
         const q = search.toLowerCase()
         if (
@@ -139,7 +142,7 @@ export default function DashboardPage() {
       }
       return true
     })
-  }, [yearMemos, search, dateFrom, dateTo])
+  }, [yearMemos, search, dateFrom, dateTo, attachment])
 
   const handleMarkReceived = async (memoId: string, receivedByName: string) => {
     try {
@@ -212,6 +215,7 @@ export default function DashboardPage() {
             status="all" onStatusChange={() => {}}
             dateFrom={dateFrom} onDateFromChange={setDateFrom}
             dateTo={dateTo} onDateToChange={setDateTo}
+            attachment={attachment} onAttachmentChange={setAttachment}
             compact
           />
         </div>

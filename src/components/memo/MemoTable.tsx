@@ -129,6 +129,7 @@ export function MemoTable({
                 </button>
               </TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Attachment</TableHead>
               {isAdmin && <TableHead className="hidden lg:table-cell">Dept</TableHead>}
               {onMarkActionTaken && isAdmin && <TableHead className="hidden xl:table-cell">Action Taken</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
@@ -169,16 +170,6 @@ export function MemoTable({
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {truncate(memo.title || '—', 50)}
                     </p>
-                    {memo.pdfUrl && (
-                      <a
-                        href={memo.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline mt-0.5"
-                      >
-                        <FileDown className="h-3 w-3" />PDF
-                      </a>
-                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <span className="text-xs text-gray-500 dark:text-gray-400">{memo.memoType}</span>
@@ -190,6 +181,22 @@ export function MemoTable({
                     <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', STATUS_COLORS[memo.status])}>
                       {memo.status}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {memo.pdfUrl ? (
+                      <a
+                        href={memo.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+                      >
+                        <FileDown className="h-3 w-3" />PDF
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                        No PDF
+                      </span>
+                    )}
                   </TableCell>
                   {isAdmin && (
                     <TableCell className="hidden lg:table-cell text-xs text-gray-500 dark:text-gray-400">

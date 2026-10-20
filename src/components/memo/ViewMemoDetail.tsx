@@ -38,6 +38,7 @@ import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { ActivityTimeline } from './ActivityTimeline'
 import { ReceiveMemoDialog } from './ReceiveMemoDialog'
+import { MemoAttachment } from './MemoAttachment'
 import { STATUS_COLORS } from '@/types'
 import type { Memo, Department } from '@/types'
 
@@ -132,12 +133,19 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false)
+  const [activityKey, setActivityKey] = useState(0)
 
   useEffect(() => {
     getMemoById(memoId)
       .then(setMemo)
       .finally(() => setLoading(false))
   }, [memoId])
+
+  // Re-reads the memo and remounts the activity log after an attachment change
+  const refreshMemo = () => {
+    getMemoById(memoId).then((m) => m && setMemo(m))
+    setActivityKey((k) => k + 1)
+  }
 
   const isAdmin = userData?.role === 'admin'
   const editingLocked = memo?.status === 'archived'
@@ -709,13 +717,14 @@ export function ViewMemoDetail({ memoId }: { memoId: string }) {
           </Card>
         </div>
 
-        <div>
+        <div className="space-y-5">
+          <MemoAttachment memo={memo} canManage={isAdmin} onChanged={refreshMemo} />
           <Card className="print:hidden">
             <CardHeader>
               <CardTitle className="text-base">Activity Log</CardTitle>
             </CardHeader>
             <CardContent>
-              <ActivityTimeline memoId={memo.id} />
+              <ActivityTimeline key={activityKey} memoId={memo.id} />
             </CardContent>
           </Card>
         </div>
