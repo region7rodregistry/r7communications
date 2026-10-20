@@ -7,7 +7,7 @@ import {
   Trash2, Download, RefreshCw, Shield,
   Settings2, X, Clock, CheckCircle,
   Archive, XCircle, PenLine, ChevronRight, FolderOpen,
-  Hash, Award, Building2
+  Hash, Award, Building2, Link2, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
@@ -28,6 +28,7 @@ import {
   deleteActivityLogsForMemos, cleanupOrphanedActivityLogs,
   logMemoActivity, subscribeToMemoCounters,
 } from '@/lib/memo-service'
+import { relinkStoragePdfs, type RelinkResult } from '@/lib/storage-service'
 import { useToast } from '@/components/ui/toast'
 import { formatDate, cn } from '@/lib/utils'
 import type { Memo, MemoStatus, MemoType, AttachmentFilter } from '@/types'
@@ -82,6 +83,9 @@ export default function AdminPage() {
   const [logSheetMode, setLogSheetMode]   = useState(false)
   const [toolsOpen, setToolsOpen]         = useState(false)
   const [pdfMemoId, setPdfMemoId]         = useState('')
+  const [relink, setRelink]               = useState<{ running: boolean; done: number; total: number; result: RelinkResult | null }>(
+    { running: false, done: 0, total: 0, result: null }
+  )
   const [counters, setCounters]           = useState<Partial<Record<MemoType, number>>>({})
   const [selectedYear, setSelectedYear]   = useState(CURRENT_YEAR)
 
@@ -246,6 +250,21 @@ export default function AdminPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'Archived Memos')
     XLSX.writeFile(wb, `archived-memos-${new Date().toISOString().slice(0, 10)}.xlsx`)
     toast({ title: 'Excel exported', variant: 'success' })
+  }
+
+  const handleRelinkPdfs = async () => {
+    setRelink({ running: true, done: 0, total: 0, result: null })
+    try {
+      const result = await relinkStoragePdfs(memos, (done, total) => setRelink(r => ({ ...r, done, total })))
+      setRelink({ running: false, done: result.checked, total: result.checked, result })
+      toast({
+        title: result.linked ? `Linked ${result.linked} PDF(s) to their memos` : 'No unlinked PDFs found',
+        variant: 'success',
+      })
+    } catch (err: any) {
+      setRelink(r => ({ ...r, running: false }))
+      toast({ title: 'Storage scan failed', description: err?.message, variant: 'error' })
+    }
   }
 
   const handleCleanupLogs = async () => {
@@ -560,6 +579,40 @@ export default function AdminPage() {
                         }}
                         onError={err => toast({ title: 'Upload failed', description: err, variant: 'error' })}
                       />
+                    )}
+                  </div>
+                </section>
+
+                {/* Link PDFs that exist in Storage but are missing from their memo */}
+                <section>
+                  <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+                    Link PDFs from Storage
+                  </h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-3 space-y-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                      Finds PDFs saved in Storage that aren&apos;t linked to their memo (common with uploads from the old system) and links them.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs justify-start"
+                      disabled={relink.running || memosLoading}
+                      onClick={() => void handleRelinkPdfs()}
+                    >
+                      {relink.running
+                        ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                        : <Link2 className="h-3.5 w-3.5 mr-2" />}
+                      {relink.running
+                        ? (relink.total ? `Checking ${relink.done} of ${relink.total}…` : 'Scanning Storage…')
+                        : 'Find and link PDFs'}
+                    </Button>
+                    {relink.result && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                        Checked {relink.result.checked} memo folder(s) without a link and linked {relink.result.linked}.
+                        {relink.result.failed > 0 && ` ${relink.result.failed} couldn't be read.`}
+                        {relink.result.orphanedFolders.length > 0 &&
+                          ` ${relink.result.orphanedFolders.length} folder(s) belong to memos that were deleted.`}
+                      </p>
                     )}
                   </div>
                 </section>

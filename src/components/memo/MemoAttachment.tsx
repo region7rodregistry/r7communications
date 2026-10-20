@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FileText, ExternalLink, Download, Upload, Trash2, Loader2, Paperclip } from 'lucide-react'
-import { deletePDF, downloadPDF } from '@/lib/storage-service'
+import { deletePDF, downloadPDF, findStoragePdf, linkStoragePdf, type StoragePdf } from '@/lib/storage-service'
 import { logMemoActivity } from '@/lib/memo-service'
 import { formatDateTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -25,8 +25,34 @@ export function MemoAttachment({ memo, canManage, onChanged }: MemoAttachmentPro
   const [replacing, setReplacing] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [storagePdf, setStoragePdf] = useState<StoragePdf | null>(null)
 
-  const hasPdf = !!memo.pdfUrl
+  const onChangedRef = useRef(onChanged)
+  useEffect(() => { onChangedRef.current = onChanged }, [onChanged])
+
+  // No link on the memo: look in its Storage folder, since older uploads didn't always save one.
+  // Admins also save the link so the tables and filters pick it up.
+  useEffect(() => {
+    setStoragePdf(null)
+    if (memo.pdfUrl) return
+    let cancelled = false
+    findStoragePdf(memo.id)
+      .then(async (found) => {
+        if (cancelled || !found) return
+        setStoragePdf(found)
+        if (canManage) {
+          await linkStoragePdf(memo.id, found)
+          onChangedRef.current()
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [memo.id, memo.pdfUrl, canManage])
+
+  const pdf = memo.pdfUrl
+    ? { url: memo.pdfUrl, fileName: memo.pdfFileName, uploadedAt: memo.pdfUploadedAt }
+    : storagePdf
+  const hasPdf = !!pdf
   const saveAs = `${memo.memoNumber || 'memo'}.pdf`
 
   const handleUploaded = () => {
@@ -36,9 +62,10 @@ export function MemoAttachment({ memo, canManage, onChanged }: MemoAttachmentPro
   }
 
   const handleDownload = async () => {
+    if (!pdf) return
     setDownloading(true)
     try {
-      await downloadPDF(memo, saveAs)
+      await downloadPDF({ id: memo.id, pdfFileName: pdf.fileName, pdfUrl: pdf.url }, saveAs)
     } catch {
       toast({ title: 'Could not download the PDF', variant: 'error' })
     } finally {
@@ -67,24 +94,24 @@ export function MemoAttachment({ memo, canManage, onChanged }: MemoAttachmentPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {hasPdf && (
+          {pdf && (
             <div className="rounded-lg border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-3 space-y-3">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="h-10 w-10 shrink-0 rounded-lg bg-white dark:bg-gray-900 flex items-center justify-center">
                   <FileText className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={memo.pdfFileName || saveAs}>
-                    {memo.pdfFileName || saveAs}
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={pdf.fileName || saveAs}>
+                    {pdf.fileName || saveAs}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {memo.pdfUploadedAt ? `Uploaded ${formatDateTime(memo.pdfUploadedAt)}` : 'PDF document'}
+                    {pdf.uploadedAt ? `Uploaded ${formatDateTime(pdf.uploadedAt)}` : 'PDF document'}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Button asChild size="sm">
-                  <a href={memo.pdfUrl!} target="_blank" rel="noopener noreferrer">
+                  <a href={pdf.url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open PDF
                   </a>
@@ -143,7 +170,7 @@ export function MemoAttachment({ memo, canManage, onChanged }: MemoAttachmentPro
         onClose={() => setConfirmRemove(false)}
         onConfirm={handleRemove}
         title="Remove PDF"
-        description="The attached PDF will be deleted from storage. You can upload a new one afterwards."
+        description="The attached PDF, and any older copies stored for this memo, will be deleted from storage. You can upload a new one afterwards."
         confirmLabel="Remove"
         variant="danger"
       />
